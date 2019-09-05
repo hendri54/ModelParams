@@ -1,26 +1,28 @@
 using ModelParams
-using Test
+using Random, Test
 
-push!(LOAD_PATH, pwd())
+include("object_id_test.jl")
+include("parameters_test.jl")
+include("param_vector_test.jl")
+include("deviation_test.jl")
+include("model_test.jl")
+include("merge_test.jl")
 
-println(LOAD_PATH)
-
-using ModelParamsTest
 
 @testset "ModelParams" begin
     println("Testing ModelParams")
-    @test ModelParamsTest.single_id_test()
-    @test ModelParamsTest.object_id_test()
-    @test ModelParamsTest.param_test()
-   	@test ModelParamsTest.pvectorTest()
-   	@test ModelParamsTest.get_pvector_test()
-   	@test ModelParamsTest.pvectorDictTest()
-   	@test ModelParamsTest.report_test()
-    @test ModelParamsTest.modelTest()
-    @test ModelParamsTest.deviationTest()
-    @test ModelParamsTest.devVectorTest()
+    @test single_id_test()
+    @test object_id_test()
+    @test param_test()
+   	@test pvectorTest()
+   	@test get_pvector_test()
+   	@test pvectorDictTest()
+   	@test report_test()
+    @test modelTest()
+    @test deviationTest()
+    @test devVectorTest()
 
-    @test ModelParamsTest.merge_object_arrays_test()
+    @test merge_object_arrays_test()
 end
 
 
