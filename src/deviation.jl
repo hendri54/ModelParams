@@ -7,13 +7,19 @@ Intended workflow:
 * Compute deviations for calibration.
 * Report deviations.
 * Show model fit. (All the last steps can simply work of the deviation vector)
+
+# Todo
+
+* Make an iterator for deviations
 """
 
-import Base.show, Base.isempty, Base.length
+import Base.show, Base.isempty, Base.length, Base.getindex
 export Deviation, scalar_dev, short_display
 export DevVector, append!, length, retrieve, scalar_devs, show
 
 const DevType = Float64
+
+## -----------  Types
 
 """
 Deviation struct
@@ -50,6 +56,9 @@ end
 function Deviation()
     return Deviation(:empty, [0.0], [0.0], [0.0], "", "", "")
 end
+
+
+## -----------  Deviation struct
 
 
 function isempty(d :: Deviation)
@@ -95,18 +104,31 @@ function short_display(d :: Deviation)
 end
 
 
-"""
-## Deviation vector
-"""
+## -----------------  Deviation vector
 
+"""
+    DevVector()
+
+Constructs an empty deviation vector
+"""
 function DevVector()
     DevVector(Vector{Deviation}())
 end
 
+
+"""
+    length(d :: DevVector)
+"""
 function length(d :: DevVector)
     return Base.length(d.dv)
 end
 
+
+"""
+    append!(d :: DevVector, dev :: Deviation)
+
+Append a deviation.
+"""
 function append!(d :: DevVector, dev :: Deviation)
     @assert !dev_exists(d, dev.name)  "Deviation $(dev.name) already exists"
     Base.push!(d.dv, dev)
@@ -126,6 +148,10 @@ function set_weights!(d :: DevVector, name :: Symbol, wtV :: Array{DevType})
     return nothing
 end
 
+
+function getindex(d :: DevVector, j)
+    return d.dv[j]
+end
 
 """
 Retrieve

@@ -1,7 +1,7 @@
 name = "ModelParams"
 uuid = "4089ccbe-b1dc-5f86-a141-4606b18b4241"
 authors = ["hendri54 <hendricksl@protonmail.com>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 Formatting = "59287772-0a20-5a39-b81b-1366585eb4c0"
