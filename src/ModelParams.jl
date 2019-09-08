@@ -1,4 +1,6 @@
 """
+    ModelParams
+
 Support for calibrating models
 
 Change:
@@ -17,8 +19,19 @@ export collect_model_objects, collect_pvectors, validate
 
 const ValueType = Float64
 
+"""
+    ModelObject
+
+Abstract model object
+Must have field `objId :: ObjectId` that uniquely identifies it
+May contain a ParamVector, but need not.
+
+Child objects may be vectors. Then the vector must have a fixed element type that is
+a subtype of `ModelObject`
+"""
 abstract type ModelObject end
 
+# General purpose code copied from `CommonLH`
 include("helpers.jl")
 include("object_id.jl")
 include("parameters.jl")
@@ -26,16 +39,6 @@ include("param_vector.jl")
 include("deviation.jl")
 
 
-"""
-## Abstract model object
-
-Must have field `objId :: ObjectId` that uniquely identifies it
-
-Model may contain a ParamVector, but need not.
-
-Child objects may be vectors. Then the vector must have a fixed element type that is
-a subtype of `ModelObject`
-"""
 
 
 # There is currently nothing to validate

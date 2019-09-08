@@ -1,6 +1,4 @@
-"""
 ## Display string vector on fixed with screen
-"""
 function show_string_vector(sV :: Vector{T1},  width :: T2 = 80) where
     {T1 <: AbstractString,  T2 <: Integer}
 

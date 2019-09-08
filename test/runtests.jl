@@ -11,8 +11,6 @@ include("merge_test.jl")
 
 @testset "ModelParams" begin
     println("Testing ModelParams")
-    @test single_id_test()
-    @test object_id_test()
     @test param_test()
    	@test pvectorTest()
    	@test get_pvector_test()
