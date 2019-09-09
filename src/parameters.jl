@@ -1,19 +1,20 @@
-"""
-## Parameter
-
-Default value must always be set. Determines size of inputs.
-Everything else can be either empty or must have the same size.
-"""
-
 export Param
 export calibrate!, fix!, set_value!, update!, validate
 
+"""
+    Param
+
+Holds information about one potentially calibrated parameter (array).
+Default value must always be set. Determines size of inputs.
+Everything else can be either empty or must have the same size.
+"""
 mutable struct Param{T1 <: Any, T2 <: AbstractString}
     name :: Symbol
     description :: T2
     symbol :: T2
     value :: T1
     defaultValue :: T1
+    "Value bounds"
     lb :: T1
     ub :: T1
     isCalibrated :: Bool
@@ -21,8 +22,7 @@ end
 
 
 ## Constructor when not calibrated
-function Param(name :: Symbol, description :: T2, symbol :: T2, defaultValue :: T1) where
-    {T1 <: Any,  T2 <: AbstractString}
+function Param(name :: Symbol, description :: T2, symbol :: T2, defaultValue :: T1) where {T1 <: Any,  T2 <: AbstractString}
 
     return Param(name, description, symbol, defaultValue, defaultValue,
         defaultValue .- 0.001, defaultValue .+ 0.001, false)
@@ -42,23 +42,42 @@ function validate(p :: Param)
 end
 
 
+## ----------  Change / update
+
 """
-## Change / update
+    calibrate!
+
+Change calibration status to `true`
 """
 function calibrate!(p :: Param)
     p.isCalibrated = true
     return nothing
 end
 
+"""
+    fix!
+
+Change calibration status to `false`
+"""
 function fix!(p :: Param)
     p.isCalibrated = false
     return nothing
 end
 
+"""
+    set_value!
+
+Set parameter value. Used during calibration.
+"""
 function set_value!(p :: Param, vIn)
     p.value = vIn
 end
 
+"""
+    update!
+
+Update a parameter with optional arguments.
+"""
 function update!(p :: Param; value = nothing, defaultValue = nothing,
     lb = nothing, ub = nothing, isCalibrated = nothing)
     if !isnothing(value)
@@ -80,14 +99,19 @@ function update!(p :: Param; value = nothing, defaultValue = nothing,
 end
 
 
-"""
-## Show
-"""
+## ------------- Show
+
 function short_string(p :: Param)
     # improve value formatting +++
     return "$(p.name): $(p.value)"
 end
 
+"""
+    report_param
+
+Short summary of parameter and its value. 
+Can be used to generate a simple table of calibrated parameters.
+"""
 function report_param(p :: Param)
     # improve value formatting +++
     println("$(p.name): $(p.description): $(p.value)")

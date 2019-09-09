@@ -35,3 +35,24 @@ To see in action how this works, see the `SampleModel` repo in my `github` accou
 The abstract type [`ModelObject`](@ref) determines which objects the methods of `ModelParams` work on. Objects that are not subtypes of [`ModelObject`](@ref) are ignored.
 
 Each `ModelObject` has a unique [`ObjectId`](@ref). It identifies where each object is located in the model hierarchy. The `ObjectId` keeps track of the parent object and of an index. The index is used when a vector of objects is created. For example, if we have several household types, their `ObjectId`s might be `:hh1`, `:hh2`, etc. 
+
+## ParamVector
+
+The second key concept is a [`ParamVector`](@ref). It collects all potentially calibrated model parameters, represented as [`Param`](@ref) objects.
+
+## Calibrating a model
+
+The workflow is implemented and tested in the `SampleModel` repo.
+
+1. Initialize a model object, including its child objects. E.g., `SampleModel.Model`.
+2. Write the code and solves the model and computes any desired statistics. This part is not affected by anything related to `ModelParams` because the potentially calibrated parameters are stored inside each object and synced with the `ParamVector`s.
+3. Write a deviation function that accepts a vector of calibrated parameters as an input. Call [`set_params_from_guess!`](@ref) to copy the parameter values from the vector into the various model objects.
+4. In the calibration function, call [`make_guess`](@ref) to make a vector of parameter values from the parameter values in all of the model objects.
+
+
+
+# Function Reference
+
+```@autodocs
+Modules = [ModelParams]
+```

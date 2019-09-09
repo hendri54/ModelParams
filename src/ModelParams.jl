@@ -39,6 +39,77 @@ include("param_vector.jl")
 include("deviation.jl")
 
 
+## ------------  Main user interface functions
+
+"""
+    make_guess(m :: ModelObject)
+
+Make vector of parameters and bounds for an object
+Including nested objects
+"""
+function make_guess(m :: ModelObject)
+    pvecV = collect_pvectors(m);
+    guessV, lbV, ubV = make_vector(pvecV, true);
+    return guessV :: Vector{Float64}, lbV :: Vector{Float64}, ubV :: Vector{Float64}
+end
+
+
+"""
+    set_params_from_guess!(m :: ModelObject, guessV :: Vector)
+
+Make vector of guesses into model parameters
+
+# Todo: how to deal with guess transformations +++++
+"""
+function set_params_from_guess!(m :: ModelObject, guessV :: Vector{Float64})
+    # Copy guesses into model objects
+    pvecV = collect_pvectors(m);
+    objV, _ = collect_model_objects(m, :self);
+    # Copy param vectors into model
+    vOut = sync_from_vector!(objV, pvecV, guessV);
+    # Make sure all parameters have been used up
+    @assert isempty(vOut)
+    return nothing
+end
+
+
+"""
+    report_params(o :: T1, isCalibrated :: Bool)
+
+Report all parameters by calibration status
+For all ModelObjects contained in `o`
+"""
+function report_params(o :: T1, isCalibrated :: Bool) where T1 <: ModelObject
+    # objV, nameV = collect_model_objects(o, :self);
+    pvecV = collect_pvectors(o);
+
+    for i1 = 1 : length(pvecV)
+        # objType = typeof(objV[i1]);
+        # println("----  $(nameV[i1])  of type  $objType")
+        report_params(pvecV[i1], isCalibrated);
+    end
+end
+
+
+"""
+    n_calibrated_params(o, isCalibrated)
+
+Number of calibrated parameters
+"""
+function n_calibrated_params(o :: T1, isCalibrated :: Bool) where T1 <: ModelObject
+    pvecV = collect_pvectors(o);
+    nParam = 0;
+    nElem = 0;
+    for i1 = 1 : length(pvecV)
+        nParam2, nElem2 = n_calibrated_params(pvecV[i1], isCalibrated);
+        nParam += nParam2;
+        nElem += nElem2;
+    end
+    return nParam, nElem
+end
+
+
+## -------------  Internals
 
 
 # There is currently nothing to validate
@@ -52,7 +123,9 @@ end
 
 
 """
-## Find the child objects
+    get_child_objects
+
+Find the child objects inside a model object
 """
 function get_child_objects(o :: T1) where T1 <: ModelObject
     childV = Vector{Any}();
@@ -77,9 +150,7 @@ function get_child_objects(o :: T1) where T1 <: ModelObject
 end
 
 
-"""
 ## Find the ParamVector
-"""
 function get_pvector(o :: T1) where T1 <: ModelObject
     found = false;
     pvec = ParamVector(o.objId);
@@ -106,17 +177,16 @@ function get_pvector(o :: T1) where T1 <: ModelObject
 end
 
 
-"""
-Does object contain ParamVector
-"""
+## Does object contain ParamVector
 function has_pvector(o :: T1) where T1 <: ModelObject
     return length(get_pvector(o)) > 0
 end
 
 
 """
-## Collect all model objects inside an object
+    collect_model_objects
 
+Collect all model objects inside an object
 Recursive. Also collects objects inside child objects and so on.
 """
 function collect_model_objects(o :: T1, objName :: Symbol) where T1 <: ModelObject
@@ -149,64 +219,6 @@ function collect_pvectors(o :: T1) where T1 <: ModelObject
     return pvecV :: Vector{ParamVector}
 end
 
-
-"""
-Report all parameters by calibration status
-
-For all ModelObjects contained in `o`
-"""
-function report_params(o :: T1, isCalibrated :: Bool) where T1 <: ModelObject
-    # objV, nameV = collect_model_objects(o, :self);
-    pvecV = collect_pvectors(o);
-
-    for i1 = 1 : length(pvecV)
-        # objType = typeof(objV[i1]);
-        # println("----  $(nameV[i1])  of type  $objType")
-        report_params(pvecV[i1], isCalibrated);
-    end
-end
-
-
-# Number of calibrated parameters
-function n_calibrated_params(o :: T1, isCalibrated :: Bool) where T1 <: ModelObject
-    pvecV = collect_pvectors(o);
-    nParam = 0;
-    nElem = 0;
-    for i1 = 1 : length(pvecV)
-        nParam2, nElem2 = n_calibrated_params(pvecV[i1], isCalibrated);
-        nParam += nParam2;
-        nElem += nElem2;
-    end
-    return nParam, nElem
-end
-
-
-"""
-## Make vector of parameters and bounds for an object
-Including nested objects
-"""
-function make_guess(m :: ModelObject)
-    pvecV = collect_pvectors(m);
-    guessV, lbV, ubV = make_vector(pvecV, true);
-    return guessV :: Vector{Float64}, lbV :: Vector{Float64}, ubV :: Vector{Float64}
-end
-
-
-"""
-## Make vector of guesses into model parameters
-
-how to deal with guess transformations +++++
-"""
-function set_params_from_guess!(m :: ModelObject, guessV :: Vector{Float64})
-    # Copy guesses into model objects
-    pvecV = collect_pvectors(m);
-    objV, _ = collect_model_objects(m, :self);
-    # Copy param vectors into model
-    vOut = sync_from_vector!(objV, pvecV, guessV);
-    # Make sure all parameters have been used up
-    @assert isempty(vOut)
-    return nothing
-end
 
 
 """

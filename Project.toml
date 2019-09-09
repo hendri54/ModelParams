@@ -1,9 +1,10 @@
 name = "ModelParams"
 uuid = "4089ccbe-b1dc-5f86-a141-4606b18b4241"
 authors = ["hendri54 <hendricksl@protonmail.com>"]
-version = "0.2.0"
+version = "0.3.0"
 
 [deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 Formatting = "59287772-0a20-5a39-b81b-1366585eb4c0"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 

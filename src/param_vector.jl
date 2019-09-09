@@ -1,14 +1,23 @@
+import Base.length, Base.append!
+export ParamVector
+export param_exists, make_dict, make_vector
+export param_value, retrieve, vector_to_dict
+
 """
-Parameter vector
+    ParamVector
+
+Vector containing all of a model's potentially calibrated parameters.
+Parameters contain values, not just default values
+They are kept in sync with values in object
 
 Intended workflow:
     See `SampleModel`
     Create a model object with parameters as fields
         Otherwise the code gets too cumbersome
-        Constructor initializes parameter vector with defaults (or user inputs)
+        Constructor initializes ParamVector with defaults (or user inputs)
     During calibration
         Each object generates a Dict of calibrated parameters
-        Make into a vector of Floats
+        Make this into a vector of Floats that can be passed to the optimizer.
         Optimization algorithm changes the floats
         Make floats back into Dict
         Copy back into model objects
@@ -18,17 +27,14 @@ Going from a vector of Dicts to a vector of Floats and back:
     `set_params_from_guess!`
     These are called on the top level model object
 
-Parameters contain values, not just default values
-They are kept in sync with values in object
+# ToDo: Make the process of going from model -> vector and vice versa more robust.
+    Currently, the user has to ensure that the ordering of ParamVectors and model
+    objects never changes.
 """
-
-import Base.length, Base.append!
-export ParamVector
-export param_exists, make_dict, make_vector
-export param_value, retrieve, vector_to_dict
-
 mutable struct ParamVector
+    "ObjectId of the ModelObject. To ensure that no mismatches occur."
     objId :: ObjectId
+    # A Dict would be natural, but it helps to preserve the order of the params
     pv :: Vector{Param}
 end
 
@@ -37,6 +43,11 @@ function ParamVector(id :: ObjectId)
     return ParamVector(id, Vector{Param}())
 end
 
+"""
+    length
+
+Returns number of parameters
+"""
 function length(pvec :: ParamVector)
     return Base.length(pvec.pv)
 end
@@ -48,7 +59,8 @@ end
 
 
 """
-## Retrieve
+    retrieve
+
 Returns the index of a named parameter
 First occurrence. Returns 0 if not found
 """
@@ -88,8 +100,12 @@ function param_value(pvec :: ParamVector, pName :: Symbol)
 end
 
 
+## ------------  Modify
+
 """
-## Modify
+    append!
+
+Append a `Param` to a `ParamVector`
 """
 function append!(pvec :: ParamVector,  p :: Param)
     @assert !param_exists(pvec, p.name)  "$(p.name) already exists"
@@ -131,7 +147,7 @@ end
 
 
 """
-## Report
+    report_params
 
 Reports calibrated (or fixed) parameters for one ParamVector
 """
@@ -152,6 +168,8 @@ end
 
 
 """
+    n_calibrated_params
+
 Number of calibrated parameters
 """
 function n_calibrated_params(pvec :: ParamVector, isCalibrated :: Bool)
@@ -169,9 +187,11 @@ function n_calibrated_params(pvec :: ParamVector, isCalibrated :: Bool)
     return nParams, nElem
 end
 
-"""
-## Collect values or default values into Dict
 
+"""
+    make_dict
+
+Collect values or default values into Dict
 Used to go back and forth between guess and model parameters
 """
 function make_dict(pvec :: ParamVector, isCalibrated :: Bool,
@@ -208,7 +228,9 @@ end
 
 
 """
-## Make vector of values, lb, ub for optimization algorithm
+    make_vector
+
+Make vector of values, lb, ub for optimization algorithm
 """
 function make_vector(pvec :: ParamVector, isCalibrated :: Bool)
     T1 = ValueType;
@@ -235,7 +257,9 @@ end
 
 
 """
-## Make vector from a list of param vectors
+    make_vector
+
+Make vector from a list of param vectors
 """
 function make_vector(pvv :: Vector{ParamVector}, isCalibrated :: Bool)
     outV = Vector{ValueType}();
@@ -252,7 +276,9 @@ end
 
 
 """
-## Make a vector into a Dict
+    vector_to_dict
+
+Make a vector into a Dict
 
 The inverse of `make_vector`
 Used to go back from vector to model parameters
@@ -290,7 +316,9 @@ end
 
 
 """
-## Set values in param vector from dictionary
+    set_values_from_dict
+
+Set values in param vector from dictionary
 """
 function set_values_from_dict!(pvec :: ParamVector, d :: Dict{Symbol,Any})
     for (pName, newValue) in d
@@ -300,9 +328,7 @@ function set_values_from_dict!(pvec :: ParamVector, d :: Dict{Symbol,Any})
 end
 
 
-"""
 ## Set fields in a struct from a Dict{Symbol, Any}
-"""
 function set_values_from_dict!(x,  d :: Dict{Symbol, Any})
     for (k, val) in d
         if k ∈ propertynames(x)
@@ -315,9 +341,7 @@ function set_values_from_dict!(x,  d :: Dict{Symbol, Any})
 end
 
 
-"""
 ## Set fields in struct from param vector (using values, not defaults)
-"""
 function set_values_from_pvec!(x, pvec :: ParamVector, isCalibrated :: Bool)
     d = make_dict(pvec, isCalibrated, true);
     set_values_from_dict!(x, d);
@@ -325,10 +349,8 @@ function set_values_from_pvec!(x, pvec :: ParamVector, isCalibrated :: Bool)
 end
 
 
-"""
 ## Set default values from param vector
-Typically for non-calibrated parameters
-"""
+#Typically for non-calibrated parameters
 function set_default_values!(x, pvec :: ParamVector, isCalibrated :: Bool)
     d = make_dict(pvec, isCalibrated, false);
     set_values_from_dict!(x, d);
@@ -337,7 +359,9 @@ end
 
 
 """
-## Sync all values from param vector into object
+    sync_values!
+
+Sync all values from param vector into object
 """
 function sync_values!(x, pvec :: ParamVector)
     set_values_from_pvec!(x, pvec, true);
@@ -346,7 +370,9 @@ end
 
 
 """
-## Check that param vector values are consistent with object values
+    check_calibrated_params
+
+Check that param vector values are consistent with object values
 """
 function check_calibrated_params(x, pvec)
     d = make_dict(pvec, true);
@@ -361,6 +387,12 @@ function check_calibrated_params(x, pvec)
     return valid
 end
 
+
+"""
+    check_fixed_params
+
+Check that all fixed parameters have the correct values
+"""
 function check_fixed_params(x, pvec)
     # Make dict of default values for non-calibrated params
     d = make_dict(pvec, false);
@@ -377,7 +409,9 @@ end
 
 
 """
-## Copy values from vector into param vector and object
+    sync_from_vector
+
+Copy values from vector into param vector and object
 Calibrated parameters
 Uses the first `nUsed` values in `vAll`
 """
@@ -388,8 +422,16 @@ function sync_from_vector!(x, pvec :: ParamVector, vAll :: Vector{ValueType})
     return nUsed1
 end
 
-# The same using vector inputs
-# OUT: vAll: remaining values of vAllInV
+"""
+    sync_from_vector
+
+Copy values from a *vector* of `ParamVector` into a *vector* of `ModelObject`s.
+The order of the objects must match the order of the `ParamVector`s.
+The order of the values in `vAllInV` must match the order of `ParamVector`s.
+
+OUT: 
+    vAll: remaining values of vAllInV
+"""
 function sync_from_vector!(xV, pvecV :: Vector{ParamVector}, vAllInV :: Vector{ValueType})
     vAll = copy(vAllInV);
     for i1 = 1 : length(pvecV)

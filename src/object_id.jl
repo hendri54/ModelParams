@@ -6,10 +6,12 @@ export SingleId, ObjectId, has_index, make_child_id
 
 Id for one object or object vector. 
 Does not keep track of location in model.
+
+`index` is used when there is a vector or matrix of objects of the same type
+`index` is typically empty (scalar object) or scalar (vector objects)
 """
 struct SingleId
     name :: Symbol
-    # `index` is used when there is a vector of objects of the same type
     index :: Array{Int}
 end
 
