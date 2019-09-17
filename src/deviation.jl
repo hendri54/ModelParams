@@ -1,4 +1,4 @@
-"""
+#=
 Model/data deviations for calibration
 
 Intended workflow:
@@ -11,20 +11,30 @@ Intended workflow:
 # Todo
 
 * Make an iterator for deviations
-"""
+=#
 
 import Base.show, Base.isempty, Base.length, Base.getindex
-export Deviation, scalar_dev, short_display
+export AbstractDeviation, Deviation, scalar_dev, short_display
 export DevVector, append!, length, retrieve, scalar_devs, show
 
+# Numeric values are stored as this type
 const DevType = Float64
 
 ## -----------  Types
 
+abstract type AbstractDeviation end
+
+function isempty(d :: AbstractDeviation)
+    return d.name == :empty
+end
+
+
 """
-Deviation struct
+    Deviation
+
+Holds numeric arrays. The default for deviations.
 """
-mutable struct Deviation
+mutable struct Deviation <: AbstractDeviation
     name  :: Symbol     # eg 'fracEnterIq'
     modelV  :: Array{DevType}   # model values
     dataV  :: Array{DevType}    # data values
@@ -40,40 +50,67 @@ end
 
 
 """
-Deviation vector
+	ScalarDeviation
 """
-mutable struct DevVector
-    dv :: Vector{Deviation}
+mutable struct ScalarDeviation <: AbstractDeviation
+    name  :: Symbol     # eg 'fracEnterIq'
+    modelV  :: DevType   # model values
+    dataV  :: DevType    # data values
+    # relative weights, sum to user choice
+    wtV  :: DevType
+    # scaleFactor  :: T2    # multiply model and data by this when constructing scalarDev
+    shortStr  :: String       # eg 'enter/iq'
+    longStr  :: String   # eg 'fraction entering college by iq quartile'
+    # For displaying the deviation. Compatible with `Formatting.sprintf1`
+    # E.g. "%.2f"
+    fmtStr  :: String
 end
 
 
 """
-## Deviation struct
-"""
+    DevVector
 
-# Empty deviation. Mainly as return object when no match is found
-# in DevVector
-function Deviation()
-    return Deviation(:empty, [0.0], [0.0], [0.0], "", "", "")
+Deviation vector
+"""
+mutable struct DevVector
+    dv :: Vector{AbstractDeviation}
 end
 
 
 ## -----------  Deviation struct
 
+"""
+    Deviation()
 
-function isempty(d :: Deviation)
-    return d.name == :empty
+Empty deviation. Mainly as return object when no match is found in DevVector
+"""
+function Deviation()
+    return Deviation(:empty, [0.0], [0.0], [0.0], "", "", "")
+end
+
+function ScalarDeviation()
+    return Deviation(:empty, 0.0, 0.0, 0.0, "", "", "")
 end
 
 
-function set_model_values(d :: Deviation, modelV)
-    @assert size(modelV) == size(d.dataV)
+"""
+	set_model_values
+
+Set model values in an existing deviation
+"""
+function set_model_values(d :: AbstractDeviation, modelV)
+    @assert typeof(modelV) == typeof(d.dataV)  "Type mismatch: $(typeof(modelV)) vs $(typeof(d.dataV))"
+    @assert size(modelV) == size(d.dataV)  "Size mismatch: $(size(modelV)) vs $(size(d.dataV))"
     d.modelV = modelV;
     return nothing
 end
 
 
-function set_weights!(d :: Deviation, wtV :: Array{DevType})
+"""
+	set_weights
+"""
+function set_weights!(d :: AbstractDeviation, wtV)
+    @assert typeof(wtV) == typeof(d.dataV)
     @assert size(wtV) == size(d.dataV)
     d.wtV = wtV;
     return nothing
@@ -81,8 +118,9 @@ end
 
 
 """
-## Scalar deviation
+    scalar_dev
 
+Scalar deviation from one Deviation object
 Scaled to produce essentially an average deviation.
 That is: if all deviations in a vector are 0.1, then `scalar_dev = 0.1`
 """
@@ -96,9 +134,15 @@ function scalar_dev(d :: Deviation)
     return scalarDev :: DevType, scalarStr
 end
 
+function scalar_dev(d :: ScalarDeviation)
+    scalarDev = abs(d.modelV - d.dataV);
+    scalarStr = sprintf1(d.fmtStr, scalarDev);
+    return scalarDev, scalarStr
+end
+
 
 ## Formatted short deviation for display
-function short_display(d :: Deviation)
+function short_display(d :: AbstractDeviation)
    _, scalarStr = scalar_dev(d);
    return d.shortStr * ": " * scalarStr;
 end
@@ -112,7 +156,7 @@ end
 Constructs an empty deviation vector
 """
 function DevVector()
-    DevVector(Vector{Deviation}())
+    DevVector(Vector{AbstractDeviation}())
 end
 
 
@@ -129,19 +173,27 @@ end
 
 Append a deviation.
 """
-function append!(d :: DevVector, dev :: Deviation)
+function append!(d :: DevVector, dev :: AbstractDeviation)
     @assert !dev_exists(d, dev.name)  "Deviation $(dev.name) already exists"
     Base.push!(d.dv, dev)
 end
 
-function set_model_values(d :: DevVector, name :: Symbol, modelV :: Array{DevType})
+
+"""
+	set_model_values
+"""
+function set_model_values(d :: DevVector, name :: Symbol, modelV)
     dev = retrieve(d, name);
     @assert !isempty(dev)
-    set_model_values(dev, modelV)
+    set_model_values(dev, modelV);
     return nothing
 end
 
-function set_weights!(d :: DevVector, name :: Symbol, wtV :: Array{DevType})
+
+"""
+	set_weights!
+"""
+function set_weights!(d :: DevVector, name :: Symbol, wtV)
     dev = retrieve(d, name);
     @assert !isempty(dev)
     set_weights!(dev, wtV);
@@ -149,12 +201,16 @@ function set_weights!(d :: DevVector, name :: Symbol, wtV :: Array{DevType})
 end
 
 
+"""
+	getindex(d :: DevVector, j)
+"""
 function getindex(d :: DevVector, j)
     return d.dv[j]
 end
 
+
 """
-Retrieve
+    retrieve
 
 If not found: return empty Deviation
 """
@@ -185,6 +241,11 @@ function dev_exists(d :: DevVector, dName :: Symbol)
 end
 
 
+"""
+	show
+
+Show all deviations. Each gets a short display with name and scalar deviation.
+"""
 function show(d :: DevVector)
     if length(d) < 1
         println("No deviations");
@@ -199,6 +260,11 @@ function show(d :: DevVector)
 end
 
 
+"""
+	scalar_devs
+
+Return vector of scalar deviations
+"""
 function scalar_devs(d :: DevVector)
     n = length(d);
     if n > 0
