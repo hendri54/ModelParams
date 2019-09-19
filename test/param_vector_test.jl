@@ -136,23 +136,21 @@ function get_pvector_test()
 end
 
 
-"""
-## Showing param vector
-"""
 function report_test()
-    pv = init_pvector(9);
-    println("Calibrated parameters")
-    ModelParams.report_params(pv, true)
-    nParam, nElem = ModelParams.n_calibrated_params(pv, true);
-    @test nParam == 5
-    @test nElem > 10
+    @testset "Pvector reporting" begin
+        pv = init_pvector(9);
+        println("-----  Calibrated parameters")
+        ModelParams.report_params(pv, true)
+        nParam, nElem = ModelParams.n_calibrated_params(pv, true);
+        @test nParam == 5
+        @test nElem > 10
 
-    println("Fixed parameters")
-    ModelParams.report_params(pv, false)
-    nParam, nElem = ModelParams.n_calibrated_params(pv, false);
-    @test nParam == 4
-    @test nElem > 8
-    return true
+        println("-----  Fixed parameters")
+        ModelParams.report_params(pv, false)
+        nParam, nElem = ModelParams.n_calibrated_params(pv, false);
+        @test nParam == 4
+        @test nElem > 8
+    end
 end
 
 

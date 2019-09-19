@@ -26,6 +26,13 @@ Abstract type for Deviation objects. A Deviation object implements:
 
     * `set_model_values`
     * `scalar_dev`
+
+Contains:
+
+    * `wtV`: weights within a deviation (e.g. 1/std error)
+    * `scalarWt`: used by `DevVector` to weight each `scalar_dev`
+    * `showFct`: function that takes an `AbstractDeviation` as input and produces a model/data comparison
+    * `showPath`: file name where `showFct` files its output. `stdout` is used if empty.
 """
 abstract type AbstractDeviation end
 
@@ -40,10 +47,6 @@ end
 
 Holds numeric arrays. The default for deviations.
 
-Contains:
-
-* `showFct`: function that takes an `AbstractDeviation` as input and produces a model/data comparison
-* `showPath`: file name where `showFct` files its output. `stdout` is used if empty.
 """
 @with_kw mutable struct Deviation <: AbstractDeviation
     name  :: Symbol     # eg 'fracEnterIq'
@@ -51,6 +54,7 @@ Contains:
     dataV  :: Array{DevType} = DevType[0.0]   # data values
     # relative weights, sum to user choice
     wtV  :: Array{DevType} = ones(DevType, size(dataV))
+    scalarWt :: DevType = 1.0
     shortStr  :: String = String(name)      # eg 'enter/iq'
     # eg 'fraction entering college by iq quartile'
     longStr  :: String = shortStr
@@ -69,6 +73,7 @@ end
     name  :: Symbol     # eg 'fracEnterIq'
     modelV  :: DevType = DevType(0.0)  # model values
     dataV  :: DevType = DevType(0.0)   # data values
+    scalarWt :: DevType = 1.0
     shortStr  :: String = String(name)      # eg 'enter/iq'
     longStr  :: String = shortStr
     fmtStr  :: String = "%.2f"
@@ -86,21 +91,12 @@ Holds model and data in the form of `RegressionTable` objects
     name  :: Symbol   
     modelV  :: RegressionTable = RegressionTable()
     dataV  :: RegressionTable = RegressionTable()
+    scalarWt :: DevType = 1.0
     shortStr  :: String = String(name)      # eg 'enter/iq'
     longStr  :: String = shortStr
     fmtStr  :: String = "%.2f"
     showFct = regression_show_fct
     showPath :: String = ""
-end
-
-
-"""
-    DevVector
-
-Deviation vector
-"""
-mutable struct DevVector
-    dv :: Vector{AbstractDeviation}
 end
 
 
@@ -198,6 +194,7 @@ function set_weights!(d :: AbstractDeviation, wtV)
     if isa(d, Deviation)
         @assert typeof(wtV) == typeof(d.dataV)
         @assert size(wtV) == size(d.dataV)
+        @assert all(wtV .> 0.0)
         d.wtV = wtV;
     end
     return nothing
@@ -207,15 +204,13 @@ end
 """
     scalar_dev
 
-Scalar deviation from one Deviation object
-Scaled to produce essentially an average deviation.
-That is: if all deviations in a vector are 0.1, then `scalar_dev = 0.1`
+Scalar deviation from one Deviation object.
 """
 function scalar_dev(d :: Deviation)
     @assert size(d.modelV) == size(d.dataV)
 
-    devV = d.wtV ./ sum(d.wtV) .* ((d.modelV .- d.dataV) .^ 2);
-    scalarDev = sum(devV) .^ 0.5;
+    devV = d.wtV .* abs.(d.modelV .- d.dataV);
+    scalarDev = sum(devV);
     scalarStr = sprintf1(d.fmtStr, scalarDev);
 
     return scalarDev :: DevType, scalarStr
@@ -234,9 +229,9 @@ function scalar_dev(d :: RegressionDeviation; se2coeffLb :: Float64 = 0.1)
     @assert isequal(nameV, mNameV);
 
     seV = max.(seV, se2coeffLb .* abs.(coeffV));
-    devV = (abs.(coeffV - mCoeffV) ./ seV) .^ 2;
+    devV = abs.(coeffV - mCoeffV) ./ seV;
 
-    scalarDev = sum(devV) .^ 0.5;
+    scalarDev = sum(devV);
     scalarStr = sprintf1(d.fmtStr, scalarDev);
     return scalarDev, scalarStr
 end

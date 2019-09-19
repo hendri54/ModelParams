@@ -147,7 +147,7 @@ end
 
 
 """
-    report_params
+    $(SIGNATURES)
 
 Reports calibrated (or fixed) parameters for one ParamVector
 """

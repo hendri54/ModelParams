@@ -25,7 +25,7 @@ export AbstractDeviation, ScalarDeviation, Deviation, RegressionDeviation
 export get_data_values, get_model_values, set_model_values
 export scalar_dev, short_display, show_deviation
 # Deviation vectors
-export DevVector, append!, length, retrieve, scalar_devs, show
+export DevVector, append!, length, retrieve, scalar_deviation, scalar_devs, show
 
 const ValueType = Float64
 

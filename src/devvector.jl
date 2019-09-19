@@ -1,6 +1,17 @@
 ## -----------------  Deviation vector
 
 """
+    DevVector
+
+Deviation vector
+"""
+mutable struct DevVector
+    dv :: Vector{AbstractDeviation}
+end
+
+
+
+"""
     DevVector()
 
 Constructs an empty deviation vector
@@ -111,9 +122,11 @@ end
 
 
 """
-	scalar_devs
+	$(SIGNATURES)
 
-Return vector of scalar deviations
+Return vector of scalar deviations.
+
+Returns empty vector if `DevVector` is empty.
 """
 function scalar_devs(d :: DevVector)
     n = length(d);
@@ -127,6 +140,22 @@ function scalar_devs(d :: DevVector)
         devV = Vector{DevType}();
     end
     return devV
+end
+
+
+"""
+	$(SIGNATURES)
+
+Overall scalar deviation. Weighted sum of the scalar deviations returned by all `Deviation` objects
+"""
+function scalar_deviation(d :: DevVector)
+    scalarDev = 0.0;
+    for dev in d.dv
+        sDev, _ = scalar_dev(dev);
+        @assert sDev >= 0.0
+        scalarDev += sDev * dev.scalarWt;
+    end
+    return scalarDev
 end
 
 

@@ -130,7 +130,7 @@ function regression_dev_test()
 end
 
 
-function devVectorTest()
+function dev_vector_test()
     @testset "DevVector" begin
         d = DevVector()
         @test length(d) == 0
@@ -165,6 +165,10 @@ function devVectorTest()
         @test length(devV) == 3;
         scalarDev1, _ = scalar_dev(dev1);
         @test devV[1] == scalarDev1
+
+        scalarDev = scalar_deviation(d);
+        @test isa(scalarDev, Float64)
+        @test scalarDev >= 0.0
 
         @test isempty(retrieve(d, :notThere))
         dev = retrieve(d, :d1);
