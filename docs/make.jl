@@ -8,6 +8,6 @@ makedocs(
     pages = Any["index.md"]
 )
 
-deploydocs(
-    repo = "github.com/hendri54/ModelParams.git",
-)
+# deploydocs(
+#     repo = "github.com/hendri54/ModelParams.git",
+# )

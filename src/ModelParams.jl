@@ -12,10 +12,20 @@ Change:
 module ModelParams
 
 import Base.show, Base.isempty, Base.isequal
-using Formatting, Printf
+import Base.length, Base.getindex
 
+using DocStringExtensions, Formatting, Parameters, PrettyTables, Printf
+using EconometricsLH
+
+# Model objects
 export ModelObject
 export collect_model_objects, collect_pvectors, validate
+# Deviations
+export AbstractDeviation, ScalarDeviation, Deviation, RegressionDeviation
+export get_data_values, get_model_values, set_model_values
+export scalar_dev, short_display, show_deviation
+# Deviation vectors
+export DevVector, append!, length, retrieve, scalar_devs, show
 
 const ValueType = Float64
 
@@ -37,6 +47,7 @@ include("object_id.jl")
 include("parameters.jl")
 include("param_vector.jl")
 include("deviation.jl")
+include("devvector.jl")
 
 
 ## ------------  Main user interface functions

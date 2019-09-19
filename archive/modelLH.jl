@@ -7,7 +7,6 @@ Change:
             each node has name, type, pvec, children
             then one can re-engineer everything else from this (pvectors, child objects, etc)
 """
-
 module modelLH
 
 import Base.show
@@ -18,16 +17,11 @@ export collect_model_objects, collect_pvectors, validate
 
 const ValueType = Float64
 
-abstract type ModelObject end
-
-include("model/object_id.jl")
-include("model/parameters.jl")
-include("model/param_vector.jl")
-include("model/deviation.jl")
-
 
 """
-## Abstract model object
+    ModelObject
+
+Abstract model object
 
 Must have field `objId :: ObjectId` that uniquely identifies it
 
@@ -36,6 +30,12 @@ Model may contain a ParamVector, but need not.
 Child objects may be vectors. Then the vector must have a fixed element type that is
 a subtype of `ModelObject`
 """
+abstract type ModelObject end
+
+include("model/object_id.jl")
+include("model/parameters.jl")
+include("model/param_vector.jl")
+include("model/deviation.jl")
 
 
 # There is currently nothing to validate
@@ -49,7 +49,9 @@ end
 
 
 """
-## Find the child objects
+    $(SIGNATURES)
+
+Find the child objects
 """
 function get_child_objects(o :: T1) where T1 <: ModelObject
     childV = Vector{Any}();
@@ -75,7 +77,9 @@ end
 
 
 """
-## Find the ParamVector
+    $(SIGNATURES)
+
+Find the ParamVector
 """
 function get_pvector(o :: T1) where T1 <: ModelObject
     found = false;
@@ -104,6 +108,8 @@ end
 
 
 """
+    $(SIGNATURES)
+
 Does object contain ParamVector
 """
 function has_pvector(o :: T1) where T1 <: ModelObject
@@ -112,7 +118,9 @@ end
 
 
 """
-## Collect all model objects inside an object
+    $(SIGNATURES)
+
+Collect all model objects inside an object
 
 Recursive. Also collects objects inside child objects and so on.
 """
@@ -148,6 +156,8 @@ end
 
 
 """
+    $(SIGNATURES)
+
 Report all parameters by calibration status
 
 For all ModelObjects contained in `o`
@@ -179,7 +189,9 @@ end
 
 
 """
-## Make vector of parameters and bounds for an object
+    $(SIGNATURES)
+
+Make vector of parameters and bounds for an object.
 Including nested objects
 """
 function make_guess(m :: ModelObject)
@@ -190,7 +202,9 @@ end
 
 
 """
-## Make vector of guesses into model parameters
+    $(SIGNATURES)
+
+Make vector of guesses into model parameters
 
 how to deal with guess transformations +++++
 """
@@ -207,8 +221,8 @@ end
 
 
 """
-    merge_object_arrays!
-
+    $(SIGNATURES)
+    
 Merge all arrays (and vectors) from one object into the corresponding arrays
 in another object (at given index values)
 If target does not have corresponding field: behavior is governed by `skipMissingFields`

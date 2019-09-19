@@ -50,6 +50,16 @@ The workflow is implemented and tested in the `SampleModel` repo.
 4. In the calibration function, call [`make_guess`](@ref) to make a vector of parameter values from the parameter values in all of the model objects.
 
 
+## Data moments and deviations
+
+The [`AbstractDevation`](@ref) object is designed to keep track of target moments for the calibration. It also stores the corresponding model moments and can therefore compute and display measures of model fit.
+
+There are several types of `AbstractDeviation`s:
+
+1. [`Deviation`](@ref) is the default type. It holds `Array`s of `Float64`s of any dimension.
+2. [`ScalarDeviation`](@ref) holds scalar moments.
+3. [`RegressionDeviation`](@ref) handles the case where the target moments are represented by regression coefficients and their standard errors.
+
 
 # Function Reference
 

@@ -17,8 +17,10 @@ include("merge_test.jl")
    	@test pvectorDictTest()
    	@test report_test()
     @test modelTest()
-    @test deviationTest()
-    @test devVectorTest()
+    deviation_test()
+    scalar_dev_test()
+    regression_dev_test()
+    devVectorTest()
 
     @test merge_object_arrays_test()
 end
