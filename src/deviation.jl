@@ -247,42 +247,48 @@ end
 ## ---------------  Display
 
 """
-	show_deviation
+    $(SIGNATURES)
 
 Show a deviation using the show function contained in its definition.
+
+Optionally, a file path can be provided. If none is provided, the path inside the deviation is used.
 """
-function show_deviation(d :: AbstractDeviation)
-    return d.showFct(d)
+function show_deviation(d :: AbstractDeviation; showModel :: Bool = true, fPath :: String = "")
+    return d.showFct(d,  showModel = showModel, fPath = fPath)
 end
 
 
 """
-	scalar_show_fct
+    $(SIGNATURES)
 
 Show a scalar deviation. Fallback if not user-defined function is provided.
 Appends to the provided file (if any).
 """
-function scalar_show_fct(d :: ScalarDeviation)
-    io = open_show_path(d, writeMode = "a");
+function scalar_show_fct(d :: ScalarDeviation; showModel :: Bool = true, fPath :: String = "")
+    io = open_show_path(d, fPath = fPath, writeMode = "a");
     write(io, scalar_show_string(d) * "\n");
     close_show_path(d, io);
     return nothing
 end
 
-function scalar_show_string(d :: ScalarDeviation)
-    mStr = sprintf1(d.fmtStr, d.modelV)
+function scalar_show_string(d :: ScalarDeviation; showModel :: Bool = true)
+    if showModel
+        mStr = " m: " * sprintf1(d.fmtStr, d.modelV);
+    else
+        mStr = "";
+    end
     dStr = sprintf1(d.fmtStr, d.dataV)
-    return "$(d.name):  m: $mStr  d: $dStr"
+    return "$(d.name): $mStr  d: $dStr"
 end
 
 
 """
-	deviation_show_fct
+	$(SIGNATURES)
 
 Show a vector / matrix deviation
 """
-function deviation_show_fct(d :: Deviation)
-    io = open_show_path(d);
+function deviation_show_fct(d :: Deviation; showModel :: Bool = true, fPath :: String = "")
+    io = open_show_path(d, fPath = fPath);
 
     # Dimensions of data matrix
     nd = ndims(d.dataV);
@@ -301,7 +307,11 @@ function deviation_show_fct(d :: Deviation)
     for ir = 1 : nr
         print(io, "\t $ir: ");
         for ic = 1 : nc
-            mStr = sprintf1(d.fmtStr, d.modelV[ir, ic]);
+            if showModel
+                mStr = sprintf1(d.fmtStr, d.modelV[ir, ic]);
+            else
+                mStr = "  --  ";
+            end
             dStr = sprintf1(d.fmtStr, d.dataV[ir, ic]);
             print(io, "\t $mStr / $dStr");
         end
@@ -318,24 +328,35 @@ end
 
 Show a RegressionDeviation
 """
-function regression_show_fct(d :: RegressionDeviation)
-    nameV, coeffV, seV = get_data_values(d);
-    _, mCoeffV, mSeV = get_model_values(d);
-    dataM = hcat(nameV, 
-        round.(coeffV, digits = 3), round.(seV, digits = 3), 
-        round.(mCoeffV, digits = 3), round.(mSeV, digits = 3));
+function regression_show_fct(d :: RegressionDeviation; 
+    showModel :: Bool = true, fPath :: String = "")
 
-    io = open_show_path(d);
-    pretty_table(io, dataM,  ["Regressor", "Data", "s.e.", "Model", "s.e."]);
+    nameV, coeffV, seV = get_data_values(d);
+    dataM = hcat(nameV, round.(coeffV, digits = 3), round.(seV, digits = 3));
+    headerV = ["Regressor", "Data", "s.e."];
+
+    if showModel
+        _, mCoeffV, mSeV = get_model_values(d);
+        dataM = hcat(dataM,  round.(mCoeffV, digits = 3), round.(mSeV, digits = 3));
+        headerV = vcat(headerV, ["Model", "s.e."])
+    end
+
+    io = open_show_path(d, fPath = fPath);
+    pretty_table(io, dataM,  headerV);
     close_show_path(d, io);
 end
 
 
-function open_show_path(d :: AbstractDeviation; writeMode :: String = "w")
-    if isempty(d.showPath)
+function open_show_path(d :: AbstractDeviation; 
+    fPath :: String = "", writeMode :: String = "w")
+
+    if isempty(fPath)
+        showPath = d.showPath;
+    end
+    if isempty(showPath)
         io = stdout;
     else
-        io = open(d.showPath, "w");
+        io = open(showPath, "w");
     end
     return io
 end

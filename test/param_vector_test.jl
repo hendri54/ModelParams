@@ -88,10 +88,13 @@ function pvectorDictTest()
 
     # Make vector and its inverse (make Dict from vector)
     isCalibrated = true;
+    # Vector contains transformed parameters
     valV, lbV, ubV = make_vector(pv, isCalibrated);
     @test isa(valV,  Vector{Float64})
-    @test valV == vcat(vec(p1.value), vec(p3.value))
-    @test lbV == vcat(vec(p1.lb), vec(p3.lb))
+    p1Value = transform_param(pv.pTransform, p1);
+    p3Value = transform_param(pv.pTransform, p3);
+    @test valV == vcat(vec(p1Value), vec(p3Value))
+    @test all(lbV .≈ pv.pTransform.lb)
 
     pDict, _ = vector_to_dict(pv, valV, isCalibrated);
     @test length(pDict) == 2

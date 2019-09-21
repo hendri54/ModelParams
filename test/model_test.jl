@@ -144,8 +144,8 @@ function model_test()
 
         # The same step-by-step. Only needed for testing
         d11, nUsed1 = vector_to_dict(m.o1.pvec, vAll, isCalibrated);
-        @test d11[:x] == d1[:x]
-        @test d11[:y] == d1[:y]
+        @test d11[:x] ≈ d1[:x]
+        @test d11[:y] ≈ d1[:y]
         # copy into param vector; then sync with model object
         ModelParams.set_values_from_dict!(m.o1.pvec, d11);
         ModelParams.set_values_from_pvec!(m.o1, m.o1.pvec, isCalibrated);

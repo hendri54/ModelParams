@@ -1,24 +1,6 @@
 export Param
 export calibrate!, fix!, set_value!, update!, validate
 
-"""
-    Param
-
-Holds information about one potentially calibrated parameter (array).
-Default value must always be set. Determines size of inputs.
-Everything else can be either empty or must have the same size.
-"""
-mutable struct Param{T1 <: Any, T2 <: AbstractString}
-    name :: Symbol
-    description :: T2
-    symbol :: T2
-    value :: T1
-    defaultValue :: T1
-    "Value bounds"
-    lb :: T1
-    ub :: T1
-    isCalibrated :: Bool
-end
 
 
 ## Constructor when not calibrated

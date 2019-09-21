@@ -1,19 +1,6 @@
 export SingleId, ObjectId, has_index, make_child_id
 
-
-"""
-    SingleId
-
-Id for one object or object vector. 
-Does not keep track of location in model.
-
-`index` is used when there is a vector or matrix of objects of the same type
-`index` is typically empty (scalar object) or scalar (vector objects)
-"""
-struct SingleId
-    name :: Symbol
-    index :: Array{Int}
-end
+## ----------  SingleId
 
 # Object without index
 function SingleId(name :: Symbol)
@@ -54,28 +41,7 @@ function make_string(id :: SingleId)
 end
 
 
-"""
-    ObjectId
-
-Complete, unique ID of a `ModelObject`
-
-Contains own id and a vector of parent ids, so one knows exactly where the object
-is placed in the model tree
-"""
-struct ObjectId
-    # Store IDs as vector, not tuple (b/c empty tuples are tricky)
-    # "Youngest" member is positioned last in vector
-    ids :: Vector{SingleId}
-end
-
-"""
-    ParentId
-
-This is actually identical to `ObjectId` but avoid recursive definitions
-"""
-struct ParentId
-    ids :: Vector{SingleId}
-end
+## -----------  ObjectId
 
 function ParentId()
     return ParentId(Vector{SingleId}())

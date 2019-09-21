@@ -26,6 +26,8 @@ export get_data_values, get_model_values, set_model_values
 export scalar_dev, short_display, show_deviation
 # Deviation vectors
 export DevVector, append!, length, retrieve, scalar_deviation, scalar_devs, show
+# Transformations
+export LinearTransformation, transform_param, untransform_param
 
 const ValueType = Float64
 
@@ -41,9 +43,11 @@ a subtype of `ModelObject`
 """
 abstract type ModelObject end
 
+include("types.jl")
 # General purpose code copied from `CommonLH`
 include("helpers.jl")
 include("object_id.jl")
+include("transformations.jl")
 include("parameters.jl")
 include("param_vector.jl")
 include("deviation.jl")

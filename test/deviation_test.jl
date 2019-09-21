@@ -61,6 +61,7 @@ function deviation_test()
         @test dStr[1:4] == "dev1"
         println("--- Showing deviation")
         show_deviation(d);
+        show_deviation(d, showModel = false);
 
         wtV = d.dataV .+ 0.1;
         ModelParams.set_weights!(d, wtV);
@@ -72,6 +73,7 @@ function deviation_test()
 
         d2 = Deviation(name = :d2, modelV = rand(4,3), dataV = rand(4,3));
         show_deviation(d2);
+        show_deviation(d2, showModel = false);
     end 
 end
 
@@ -95,6 +97,7 @@ function scalar_dev_test()
 
         println("--- Showing scalar deviation")
         show_deviation(d);
+        show_deviation(d, showModel = false);
     end
 end
 
@@ -109,6 +112,7 @@ function regression_dev_test()
     @test all(dSeV .> 0.0)
 
     show_deviation(d);
+    show_deviation(d, showModel = false);
 
     mNameV, mCoeffV, mSeV = get_model_values(d);
     @test length(mCoeffV) == length(mSeV) == length(dCoeffV)

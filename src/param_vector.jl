@@ -3,45 +3,23 @@ export ParamVector
 export param_exists, make_dict, make_vector
 export param_value, retrieve, vector_to_dict
 
+
 """
-    ParamVector
+	$(SIGNATURES)
 
-Vector containing all of a model's potentially calibrated parameters.
-Parameters contain values, not just default values
-They are kept in sync with values in object
-
-Intended workflow:
-    See `SampleModel`
-    Create a model object with parameters as fields
-        Otherwise the code gets too cumbersome
-        Constructor initializes ParamVector with defaults (or user inputs)
-    During calibration
-        Each object generates a Dict of calibrated parameters
-        Make this into a vector of Floats that can be passed to the optimizer.
-        Optimization algorithm changes the floats
-        Make floats back into Dict
-        Copy back into model objects
-
-Going from a vector of Dicts to a vector of Floats and back:
-    `make_guess`
-    `set_params_from_guess!`
-    These are called on the top level model object
-
-# ToDo: Make the process of going from model -> vector and vice versa more robust.
-    Currently, the user has to ensure that the ordering of ParamVectors and model
-    objects never changes.
+Constructors for ParamVector
 """
-mutable struct ParamVector
-    "ObjectId of the ModelObject. To ensure that no mismatches occur."
-    objId :: ObjectId
-    # A Dict would be natural, but it helps to preserve the order of the params
-    pv :: Vector{Param}
-end
-
-## Constructor
 function ParamVector(id :: ObjectId)
-    return ParamVector(id, Vector{Param}())
+    return ParamVector(objId = id)
 end
+
+# With default parameter transformation
+function ParamVector(id :: ObjectId, 
+    pv :: Vector)
+
+    return ParamVector(id, pv, LinearTransformation(lb = 1.0, ub = 2.0))
+end
+
 
 """
     length
@@ -230,13 +208,15 @@ end
 """
     make_vector
 
-Make vector of values, lb, ub for optimization algorithm
+Make vector of values, lb, ub for optimization algorithm.
+
+Vectors are transformed using the `ParameterTransformation` specified in the `ParamVector`.
 """
 function make_vector(pvec :: ParamVector, isCalibrated :: Bool)
     T1 = ValueType;
     valueV = Vector{T1}();
-    lbV = Vector{T1}();
-    ubV = Vector{T1}();
+    # lbV = Vector{T1}();
+    # ubV = Vector{T1}();
 
     n = length(pvec);
     if n > 0
@@ -246,12 +226,17 @@ function make_vector(pvec :: ParamVector, isCalibrated :: Bool)
             if p.isCalibrated == isCalibrated
                 # Append works for scalars, vectors, and matrices (that get flattened)
                 # Need to qualify - otherwise local append! is called
-                Base.append!(valueV, p.value);
-                Base.append!(lbV, p.lb);
-                Base.append!(ubV, p.ub);
+                pValue = transform_param(pvec.pTransform,  p);
+                Base.append!(valueV, pValue);
+                # Base.append!(lbV, p.lb);
+                # Base.append!(ubV, p.ub);
             end
         end
     end
+
+    # Transformation bounds (these are returned b/c the parameters are transformed)
+    lbV = fill(pvec.pTransform.lb, size(valueV));
+    ubV = fill(pvec.pTransform.ub, size(valueV));
     return valueV :: Vector{T1}, lbV :: Vector{T1}, ubV :: Vector{T1}
 end
 
@@ -276,12 +261,14 @@ end
 
 
 """
-    vector_to_dict
+    $(SIGNATURES)
 
 Make a vector into a Dict
 
-The inverse of `make_vector`
-Used to go back from vector to model parameters
+The inverse of `make_vector`.
+Used to go back from vector to model parameters.
+
+Undoes the parameter transformation from `make_vector`.
 
 OUT
     pd :: Dict
@@ -303,11 +290,13 @@ function vector_to_dict(pvec :: ParamVector, v :: Vector{T1},
         if p.isCalibrated == isCalibrated
             nElem = length(p.defaultValue);
             if nElem == 1
-                pd[p.name] = v[iEnd + 1];
+                pValue = v[iEnd + 1];
             else
                 idxV = (iEnd + 1) : (iEnd + nElem);
-                pd[p.name] = reshape(v[idxV], size(p.defaultValue));
+                pValue = reshape(v[idxV], size(p.defaultValue));
             end
+            pValue = untransform_param(pvec.pTransform, p, pValue);
+            pd[p.name] = pValue;
             iEnd += nElem;
         end
     end
@@ -316,9 +305,9 @@ end
 
 
 """
-    set_values_from_dict
+    $(SIGNATURES)
 
-Set values in param vector from dictionary
+Set values in param vector from dictionary.
 """
 function set_values_from_dict!(pvec :: ParamVector, d :: Dict{Symbol,Any})
     for (pName, newValue) in d
