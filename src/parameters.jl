@@ -84,8 +84,8 @@ end
 ## ------------- Show
 
 function short_string(p :: Param)
-    # improve value formatting +++
-    return "$(p.name): $(p.value)"
+    vStr = formatted_value(p.value);
+    return "$(p.name): $vStr"
 end
 
 """
@@ -95,10 +95,28 @@ Short summary of parameter and its value.
 Can be used to generate a simple table of calibrated parameters.
 """
 function report_param(p :: Param)
-    # improve value formatting +++
-    println("$(p.name): $(p.description): $(p.value)")
+    vStr = formatted_value(p.value);
+    println("\t$(p.description):\t$(p.name) = $vStr")
 end
 
+function formatted_value(v :: AbstractFloat)
+    return sprintf1("%.3f", v)
+end
+
+function formatted_value(v :: Vector{T1}) where T1 <: AbstractFloat
+    vStr = "";
+    for j = 1 : length(v)
+        vStr = vStr * formatted_value(v[j]);
+        if j < length(v)
+            vStr = vStr * " | ";
+        end
+    end
+    return vStr
+end
+
+function formatted_value(v :: Array{T1}) where T1 <: AbstractFloat
+    vStr = formatted_value(v[1]) * " ... " * formatted_value(v[end])
+end
 
 
 # -----------

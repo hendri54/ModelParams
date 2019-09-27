@@ -1,9 +1,3 @@
-import Base.length, Base.append!
-export ParamVector
-export param_exists, make_dict, make_vector
-export param_value, retrieve, vector_to_dict
-
-
 """
 	$(SIGNATURES)
 
@@ -30,17 +24,39 @@ function length(pvec :: ParamVector)
     return Base.length(pvec.pv)
 end
 
+"""
+	$(SIGNATURES)
+"""
+function isempty(pvec :: ParamVector)
+    return Base.isempty(pvec.pv)
+end
+
+
+
 # Check that param vector matches model object
 function check_match(pvec :: ParamVector, objId :: ObjectId)
     return isequal(pvec.objId, objId)
 end
 
 
+## ----------  Retrieve
+
+"""
+	$(SIGNATURES)
+"""
+function getindex(pvec :: ParamVector, j :: Integer)
+    @argcheck j <= Base.length(pvec.pv)
+    return pvec.pv[j]
+end
+
+
+
 """
     retrieve
 
-Returns the index of a named parameter
-First occurrence. Returns 0 if not found
+Returns the index of a named parameter.
+
+First occurrence. Returns 0 if not found.
 """
 function retrieve(pvec :: ParamVector, pName :: Symbol)
     idxOut = 0;
@@ -76,6 +92,24 @@ function param_value(pvec :: ParamVector, pName :: Symbol)
         return nothing
     end
 end
+
+
+"""
+	$(SIGNATURES)
+
+Return indices of all parameters with a given calibration status.
+"""
+function indices_calibrated(pvec :: ParamVector, isCalibrated :: Bool)
+    n = length(pvec);
+    if n > 0
+        isCalV = [pvec.pv[j].isCalibrated  for j in 1 : n];
+        idxV = findall(isCalV .== isCalibrated);
+    else
+        idxV = Vector{Int}();
+    end
+    return idxV
+end
+
 
 
 ## ------------  Modify
@@ -131,16 +165,33 @@ Reports calibrated (or fixed) parameters for one ParamVector
 """
 function report_params(pvec :: ParamVector, isCalibrated :: Bool)
     objId = make_string(pvec.objId);
-    println("Object id:  $objId")
-    n = length(pvec);
-    if n < 1
-        return nothing
-    end
-    for i1 = 1 : n
-        if pvec.pv[i1].isCalibrated == isCalibrated
-            report_param(pvec.pv[i1])
+    # println("Object id:  $objId");
+
+    idxV = indices_calibrated(pvec, isCalibrated);
+
+    if isempty(idxV)
+        println("\t$objId:  Nothing to report");
+    else
+        n = length(idxV);
+        dataM = Matrix{Any}(undef, n, 3);
+        for j = 1 : n
+            p = pvec[idxV[j]];
+            dataM[j,2] = p.name;
+            dataM[j,1] = p.description;
+            dataM[j,3] = formatted_value(p.value);
         end
+        pretty_table(dataM, [objId, " ", " "]);
+            # ["Name", "Description", "Value"]);
     end
+    # n = length(pvec);
+    # if n < 1
+    #     return nothing
+    # end
+    # for i1 = 1 : n
+    #     if pvec.pv[i1].isCalibrated == isCalibrated
+    #         report_param(pvec.pv[i1])
+    #     end
+    # end
     return nothing
 end
 
@@ -206,7 +257,7 @@ end
 
 
 """
-    make_vector
+    $(SIGNATURES)
 
 Make vector of values, lb, ub for optimization algorithm.
 
@@ -215,8 +266,6 @@ Vectors are transformed using the `ParameterTransformation` specified in the `Pa
 function make_vector(pvec :: ParamVector, isCalibrated :: Bool)
     T1 = ValueType;
     valueV = Vector{T1}();
-    # lbV = Vector{T1}();
-    # ubV = Vector{T1}();
 
     n = length(pvec);
     if n > 0
@@ -228,8 +277,6 @@ function make_vector(pvec :: ParamVector, isCalibrated :: Bool)
                 # Need to qualify - otherwise local append! is called
                 pValue = transform_param(pvec.pTransform,  p);
                 Base.append!(valueV, pValue);
-                # Base.append!(lbV, p.lb);
-                # Base.append!(ubV, p.ub);
             end
         end
     end
@@ -242,7 +289,7 @@ end
 
 
 """
-    make_vector
+    $(SIGNATURES)
 
 Make vector from a list of param vectors
 """

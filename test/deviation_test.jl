@@ -107,20 +107,20 @@ function regression_dev_test()
     @test isempty(d1);
 
     d = make_regression_deviation(1);
-    dNameV, dCoeffV, dSeV = get_data_values(d);
+    dNameV, dCoeffV, dSeV = get_unpacked_data_values(d);
     @test length(dCoeffV) == length(dSeV) > 1
     @test all(dSeV .> 0.0)
 
     show_deviation(d);
     show_deviation(d, showModel = false);
 
-    mNameV, mCoeffV, mSeV = get_model_values(d);
+    mNameV, mCoeffV, mSeV = get_unpacked_model_values(d);
     @test length(mCoeffV) == length(mSeV) == length(dCoeffV)
 
     nameV = get_names(d.dataV);
     mRegr = RegressionTable(nameV, mCoeffV .+ 1.0, mSeV .+ 1.0)
     set_model_values(d, mRegr);
-    mName2V, mCoeff2V, mSe2V = get_model_values(d);
+    mName2V, mCoeff2V, mSe2V = get_unpacked_model_values(d);
     @test mCoeff2V ≈ mCoeffV .+ 1.0
 
     scalarDev, scalarStr = scalar_dev(d);

@@ -29,4 +29,14 @@ function untransform_param(tr :: LinearTransformation, p :: Param, value)
     return outV
 end
 
+
+"""
+	$(SIGNATURES)
+
+Bounds on transformed parameters.
+"""
+function transform_bounds(tr :: LinearTransformation)
+    return tr.lb, tr.ub
+end
+
 # -------

@@ -41,7 +41,9 @@ end
 
 
 """
-	set_model_values
+    $(SIGNATURES)
+    
+Set model values for one deviation in a `DevVector` specified by `name`
 """
 function set_model_values(d :: DevVector, name :: Symbol, modelV)
     dev = retrieve(d, name);
@@ -57,6 +59,7 @@ end
 function set_weights!(d :: DevVector, name :: Symbol, wtV)
     dev = retrieve(d, name);
     @assert !isempty(dev)
+    @assert size(wtV) == size(dev.dataV)  "Size mismatch: $(size(wtV)) vs $(size(dev.dataV))"
     set_weights!(dev, wtV);
     return nothing
 end
@@ -128,12 +131,12 @@ Return vector of scalar deviations.
 
 Returns empty vector if `DevVector` is empty.
 """
-function scalar_devs(d :: DevVector)
+function scalar_devs(d :: DevVector; inclScalarWt :: Bool = true)
     n = length(d);
     if n > 0
         devV = Vector{DevType}(undef, n);
         for i1 in 1 : n
-            dev,_ = scalar_dev(d.dv[i1]);
+            dev,_ = scalar_dev(d.dv[i1],  inclScalarWt = inclScalarWt);
             devV[i1] = dev;
         end
     else
@@ -151,9 +154,9 @@ Overall scalar deviation. Weighted sum of the scalar deviations returned by all 
 function scalar_deviation(d :: DevVector)
     scalarDev = 0.0;
     for dev in d.dv
-        sDev, _ = scalar_dev(dev);
+        sDev, _ = scalar_dev(dev,  inclScalarWt = true);
         @assert sDev >= 0.0
-        scalarDev += sDev * dev.scalarWt;
+        scalarDev += sDev;
     end
     return scalarDev
 end

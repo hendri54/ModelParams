@@ -12,9 +12,9 @@ Change:
 module ModelParams
 
 import Base.show, Base.isempty, Base.isequal
-import Base.length, Base.getindex
+import Base.append!, Base.length, Base.getindex
 
-using DocStringExtensions, Formatting, Parameters, PrettyTables, Printf
+using ArgCheck, DocStringExtensions, Formatting, Parameters, PrettyTables, Printf
 using EconometricsLH
 
 # Model objects
@@ -22,12 +22,20 @@ export ModelObject
 export collect_model_objects, collect_pvectors, validate
 # Deviations
 export AbstractDeviation, ScalarDeviation, Deviation, RegressionDeviation
-export get_data_values, get_model_values, set_model_values
+export get_data_values, get_unpacked_data_values, get_model_values, get_unpacked_model_values, get_weights
+export set_model_values, set_weights!
 export scalar_dev, short_display, show_deviation
 # Deviation vectors
 export DevVector, append!, length, retrieve, scalar_deviation, scalar_devs, show
 # Transformations
-export LinearTransformation, transform_param, untransform_param
+export LinearTransformation, transform_bounds, transform_param, untransform_param
+
+# ParamVector
+export ParamVector
+export param_exists, make_dict, make_vector
+export param_value, retrieve, vector_to_dict
+
+
 
 const ValueType = Float64
 

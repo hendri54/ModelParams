@@ -67,12 +67,15 @@ end
 
 
 """
-	ScalarDeviation
+    ScalarDeviation
+    
+Here the `wtV` field is intended to hold 1 / std error of the moment.
 """
 @with_kw mutable struct ScalarDeviation <: AbstractDeviation
     name  :: Symbol     # eg 'fracEnterIq'
     modelV  :: DevType = DevType(0.0)  # model values
     dataV  :: DevType = DevType(0.0)   # data values
+    wtV :: DevType = DevType(1.0)
     scalarWt :: DevType = 1.0
     shortStr  :: String = String(name)      # eg 'enter/iq'
     longStr  :: String = shortStr
@@ -131,17 +134,18 @@ end
 
 
 """
-	get_data_values(d :: RegressionDeviation)
+	$(SIGNATURES)
 
 Returns vector of names, coefficients and std errors
 """
-function get_data_values(d :: RegressionDeviation)
-    return get_all_coeff_se(d.dataV)
+function get_unpacked_data_values(d :: RegressionDeviation)
+    dataRt = get_data_values(d);
+    return get_all_coeff_se(dataRt)
 end
 
 
 """
-	get_model_values
+    $(SIGNATURES)
 
 Retrieve model values
 """
@@ -150,7 +154,7 @@ function get_model_values(d :: AbstractDeviation)
 end
 
 # Return coefficients and std errors in same order as for data
-function get_model_values(d :: RegressionDeviation)
+function get_unpacked_model_values(d :: RegressionDeviation)
     nameV = get_names(d.dataV);
     coeffV, seV = get_coeff_se_multiple(d.modelV, nameV);
     return nameV, coeffV, seV
@@ -160,29 +164,62 @@ end
 """
 	set_model_values
 
-Set model values in an existing deviation
-Does not ensure that order matches between model and data for RegressionDeviation.
+Set model values in an existing deviation.
 """
 function set_model_values(d :: AbstractDeviation, modelV)
-    @assert typeof(modelV) == typeof(d.dataV)  "Type mismatch: $(typeof(modelV)) vs $(typeof(d.dataV))"
+    if typeof(modelV) != typeof(d.dataV)  
+        println(modelV);
+        println(d.dataV);
+        error("Type mismatch in $(d.name): $(typeof(modelV)) vs $(typeof(d.dataV))");
+    end
     @assert size(modelV) == size(d.dataV)  "Size mismatch: $(size(modelV)) vs $(size(d.dataV))"
     d.modelV = modelV;
     return nothing
 end
 
-function set_model_values(d :: RegressionDeviation, modelV :: RegressionTable)
+
+"""
+	$(SIGNATURES)
+
+Set model values for a RegressionDeviation.
+
+If model regression is missing regressors, the option of setting these regressors to 0 is provided (e.g. for dummies without occurrences).
+"""
+function set_model_values(d :: RegressionDeviation, modelV :: RegressionTable);
+    # setMissingRegressors :: Bool = false)
+
+    # if setMissingRegressors
+    #     set_missing_regressors!(modelV, get_names(d.dataV));
+    # end
+
     if !have_same_regressors([d.dataV, modelV])  
         rModelV = get_names(modelV);
         rDataV = get_names(d.dataV);
-        @warn """Regressors do not match
+        error("""Regressors do not match
             $rModelV
-            $rDataV"""
-        error("Fatal.")
+            $rDataV""")
     end
     d.modelV = modelV;
     return nothing
 end
 
+
+"""
+	$(SIGNATURES)
+
+Retrieve weights. Returns scalar 1 for scalar deviations.
+"""
+function get_weights(d :: AbstractDeviation)
+    return d.wtV
+end
+
+function get_weights(d :: ScalarDeviation)
+    return 1.0
+end
+
+function get_weights(d :: RegressionDeviation)
+    return 1.0
+end
 
 
 """
@@ -202,44 +239,57 @@ end
 
 
 """
-    scalar_dev
+    $(SIGNATURES)
 
 Scalar deviation from one Deviation object.
+
+Optionally includes `scalarWt` factor.
 """
-function scalar_dev(d :: Deviation)
+function scalar_dev(d :: Deviation; inclScalarWt :: Bool = true)
     @assert size(d.modelV) == size(d.dataV)
 
     devV = d.wtV .* abs.(d.modelV .- d.dataV);
     scalarDev = sum(devV);
+    if inclScalarWt
+        scalarDev *= d.scalarWt;
+    end
     scalarStr = sprintf1(d.fmtStr, scalarDev);
 
     return scalarDev :: DevType, scalarStr
 end
 
-function scalar_dev(d :: ScalarDeviation)
-    scalarDev = abs(d.modelV - d.dataV);
+function scalar_dev(d :: ScalarDeviation; inclScalarWt :: Bool = true)
+    scalarDev = abs(d.modelV - d.dataV) * d.wtV;
+    if inclScalarWt
+        scalarDev *= d.scalarWt;
+    end
     scalarStr = sprintf1(d.fmtStr, scalarDev);
     return scalarDev, scalarStr
 end
 
+# For RegressionDeviation: sum of (model - data) / se
 # se2coeffLb governs the scaling of the std errors. s.e./beta >= se2coeffLb
-function scalar_dev(d :: RegressionDeviation; se2coeffLb :: Float64 = 0.1)
-    nameV, coeffV, seV = get_data_values(d);
-    mNameV, mCoeffV, _ = get_model_values(d);
+function scalar_dev(d :: RegressionDeviation; se2coeffLb :: Float64 = 0.1,
+    inclScalarWt :: Bool = true)
+    nameV, coeffV, seV = get_unpacked_data_values(d);
+    mNameV, mCoeffV, _ = get_unpacked_model_values(d);
     @assert isequal(nameV, mNameV);
 
     seV = max.(seV, se2coeffLb .* abs.(coeffV));
     devV = abs.(coeffV - mCoeffV) ./ seV;
 
     scalarDev = sum(devV);
+    if inclScalarWt
+        scalarDev *= d.scalarWt;
+    end
     scalarStr = sprintf1(d.fmtStr, scalarDev);
     return scalarDev, scalarStr
 end
 
 
 ## Formatted short deviation for display
-function short_display(d :: AbstractDeviation)
-   _, scalarStr = scalar_dev(d);
+function short_display(d :: AbstractDeviation; inclScalarWt :: Bool = true)
+   _, scalarStr = scalar_dev(d, inclScalarWt = inclScalarWt);
    return d.shortStr * ": " * scalarStr;
 end
 
@@ -331,12 +381,12 @@ Show a RegressionDeviation
 function regression_show_fct(d :: RegressionDeviation; 
     showModel :: Bool = true, fPath :: String = "")
 
-    nameV, coeffV, seV = get_data_values(d);
+    nameV, coeffV, seV = get_unpacked_data_values(d);
     dataM = hcat(nameV, round.(coeffV, digits = 3), round.(seV, digits = 3));
     headerV = ["Regressor", "Data", "s.e."];
 
     if showModel
-        _, mCoeffV, mSeV = get_model_values(d);
+        _, mCoeffV, mSeV = get_unpacked_model_values(d);
         dataM = hcat(dataM,  round.(mCoeffV, digits = 3), round.(mSeV, digits = 3));
         headerV = vcat(headerV, ["Model", "s.e."])
     end
@@ -352,6 +402,8 @@ function open_show_path(d :: AbstractDeviation;
 
     if isempty(fPath)
         showPath = d.showPath;
+    else
+        showPath = fPath;
     end
     if isempty(showPath)
         io = stdout;

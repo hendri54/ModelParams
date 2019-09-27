@@ -26,7 +26,7 @@ function param_test()
     set_value!(p2, newValue)
     @test p2.value ≈ newValue
     str1 = ModelParams.short_string(p2)
-    @test str1 == "p2: 9.27"
+    @test str1 == "p2: 9.270"
 
     update!(p2, value = 98.2)
     @test p2.value == 98.2
