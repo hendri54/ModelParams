@@ -75,6 +75,7 @@ Here the `wtV` field is intended to hold 1 / std error of the moment.
     name  :: Symbol     # eg 'fracEnterIq'
     modelV  :: DevType = DevType(0.0)  # model values
     dataV  :: DevType = DevType(0.0)   # data values
+    # Used when a std error of the data moment is known
     wtV :: DevType = DevType(1.0)
     scalarWt :: DevType = 1.0
     shortStr  :: String = String(name)      # eg 'enter/iq'
