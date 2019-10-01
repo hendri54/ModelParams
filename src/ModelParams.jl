@@ -106,11 +106,23 @@ function report_params(o :: T1, isCalibrated :: Bool) where T1 <: ModelObject
     # objV, nameV = collect_model_objects(o, :self);
     pvecV = collect_pvectors(o);
 
-    for i1 = 1 : length(pvecV)
-        # objType = typeof(objV[i1]);
-        # println("----  $(nameV[i1])  of type  $objType")
-        report_params(pvecV[i1], isCalibrated);
+    dataM = nothing;
+    for pvec in pvecV
+        tbM = param_table(pvec, isCalibrated);
+        if !isnothing(tbM)
+            objId = make_string(pvec.objId);
+            if isnothing(dataM)
+                dataM = [objId  ""  ""];
+            else
+                dataM = vcat(dataM, [objId   ""  ""])
+            end
+            dataM = vcat(dataM, tbM);
+        end
     end
+    if !isempty(dataM)
+        pretty_table(dataM, noheader = true);
+    end
+    return nothing
 end
 
 

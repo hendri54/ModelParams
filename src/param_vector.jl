@@ -165,34 +165,38 @@ Reports calibrated (or fixed) parameters for one ParamVector
 """
 function report_params(pvec :: ParamVector, isCalibrated :: Bool)
     objId = make_string(pvec.objId);
-    # println("Object id:  $objId");
+    dataM = param_table(pvec, isCalibrated);
 
-    idxV = indices_calibrated(pvec, isCalibrated);
-
-    if isempty(idxV)
+    if isnothing(dataM)
         println("\t$objId:  Nothing to report");
     else
-        n = length(idxV);
-        dataM = Matrix{Any}(undef, n, 3);
+        pretty_table(dataM, [objId, " ", " "]);
+    end
+    return nothing
+end
+
+
+"""
+	$(SIGNATURES)
+
+Table with calibrated parameters
+"""
+function param_table(pvec :: ParamVector, isCalibrated :: Bool)
+    idxV = indices_calibrated(pvec, isCalibrated);
+    n = length(idxV);
+
+    if isempty(idxV)
+        dataM = nothing;
+    else
+        dataM = Matrix{String}(undef, n, 3);
         for j = 1 : n
             p = pvec[idxV[j]];
-            dataM[j,2] = p.name;
+            dataM[j,2] = string(p.name);
             dataM[j,1] = p.description;
             dataM[j,3] = formatted_value(p.value);
         end
-        pretty_table(dataM, [objId, " ", " "]);
-            # ["Name", "Description", "Value"]);
     end
-    # n = length(pvec);
-    # if n < 1
-    #     return nothing
-    # end
-    # for i1 = 1 : n
-    #     if pvec.pv[i1].isCalibrated == isCalibrated
-    #         report_param(pvec.pv[i1])
-    #     end
-    # end
-    return nothing
+    return dataM
 end
 
 
