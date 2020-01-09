@@ -370,7 +370,9 @@ end
 """
 	$(SIGNATURES)
 
-Set values in `pvecOld` from another `ParamVector` `pvecNew`. Only for values that are in both `ParamVector`s and that are `isCalibrated` in both.
+Set values in `pvecOld` from another `ParamVector` `pvecNew`. 
+Only for values that are in both `ParamVector`s and that are `isCalibrated` in both.
+Only if the size matches.
 """
 function set_values_from_pvec!(pvecOld :: ParamVector,  pvecNew :: ParamVector,
     isCalibrated :: Bool)

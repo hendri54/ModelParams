@@ -52,6 +52,7 @@ end
 Set parameter value. Used during calibration.
 """
 function set_value!(p :: Param, vIn)
+    @assert size(p.defaultValue) == size(vIn)  "Size invalid for $(p.name): $(size(vIn))"
     p.value = vIn
 end
 
