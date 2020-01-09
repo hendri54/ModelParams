@@ -22,7 +22,7 @@ Undo parameter transformation.
 """
 function untransform_param(tr :: LinearTransformation, p :: Param, value)
     @assert size(value) == size(p.value)  "Size mismatch: $(size(value)) vs $(size(p.value))"
-    @assert all(value .<= tr.ub)
+    @assert all(value .<= tr.ub)  "Values to high: $value  vs  $(tr.ub)"
     @assert all(value .>= tr.lb)
     outV = p.lb .+ (p.ub .- p.lb) .* (value .- tr.lb) ./ (tr.ub .- tr.lb);
     @assert size(outV) == size(value)

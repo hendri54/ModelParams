@@ -13,8 +13,8 @@ end
 #     return Obj1(x, y, z, ParamVector(ObjectId(:pv1)))
 # end
 
-function init_obj1()
-    objId = ObjectId(:obj1);
+function init_obj1(objId)
+    # objId = ObjectId(:obj1);
     px = Param(:x, "x obj1", "x1", 11.1, 9.9, 1.1, 99.9, true);
     valueY = [1.1, 2.2];
     py = Param(:y, "y obj1", "y1", valueY, valueY .+ 1.0,
@@ -40,8 +40,8 @@ end
 #     return Obj2(a, y, b, ParamVector(ObjectId(:pv1)))
 # end
 
-function init_obj2()
-    objId = ObjectId(:obj2);
+function init_obj2(objId)
+    # objId = ObjectId(:obj2);
     pa = Param(:a, "a obj2", "a2", 12.1, 7.9, -1.1, 49.9, true);
     valueY = 9.4;
     py = Param(:y, "y obj2", "y2", valueY, valueY .+ 1.0,
@@ -66,9 +66,10 @@ mutable struct TestModel <: ModelObject
 end
 
 function init_test_model()
-    o1 = init_obj1();
-    o2 = init_obj2();
-    return TestModel(ObjectId(:testModel), o1, o2, 9.87, 87.73)
+    objName = ObjectId(:testModel);
+    o1 = init_obj1(ModelParams.make_child_id(objName, :o1));
+    o2 = init_obj2(ModelParams.make_child_id(objName, :o2));
+    return TestModel(objName, o1, o2, 9.87, 87.73)
 end
 
 
@@ -79,6 +80,17 @@ end
 function model_test()
     @testset "Model" begin
         m = init_test_model()
+
+        childId1 = ModelParams.make_child_id(m, :child)
+        @test isnothing(ModelParams.find_object(m, childId1))
+        childId2 = ModelParams.make_child_id(m, :o1);
+        # show(childId2)
+        child2 = ModelParams.find_object(m, childId2);
+        # show(child2)
+        @test isa(child2, ModelObject)
+        # Find the object itself. Does not return anything b/c object has no `pvector`
+        m2 = ModelParams.find_object(m, m.objId);
+        @test isnothing(m2)
 
         println("-----  Model parameters: calibrated")
         ModelParams.report_params(m, true);
@@ -179,6 +191,26 @@ function model_test()
         ModelParams.set_values_from_dict!(m.o2.pvec, d22);
         ModelParams.set_values_from_pvec!(m.o2, m.o2.pvec, isCalibrated);
         @test m.o2.b ≈ d22[:b]
+    end
+end
+
+
+function set_values_test()
+    @testset "set values" begin
+        m = init_test_model();
+        pvecV = collect_pvectors(m);
+        guessV, _ = make_guess(m);
+
+        # Change values arbitrarily. Need a copy of the model object; otherwise `pvec` is changed
+        m2 = init_test_model();
+        guess2V = ModelParams.perturb_guess(m2, guessV, 1 : length(guessV), 0.1);
+        ModelParams.set_params_from_guess!(m2, guess2V);
+
+        # Restore values from pvectors
+        ModelParams.set_values_from_pvectors!(m2, pvecV, true);
+        # Check that we get the same guessV
+        guess3V, _ = make_guess(m);
+        @test all(abs.(guess3V .- guessV) .< 0.001)
     end
 end
 

@@ -12,15 +12,15 @@ function show_string_vector(sV :: Vector{T1},  width :: T2 = 80) where
         len1 = length(s);
         if len1 > 0
             if iCol + len1 > width
-                println(" ")
+                Core.println(" ")
                 iCol = 0;
             end
-            print(s);
+            Core.print(s);
             iCol = iCol + len1;
-            print("    ");
+            Core.print("    ");
             iCol = iCol + 4;
         end
     end
-    println(" ")
+    Core.println(" ")
 end
 

@@ -19,7 +19,7 @@ using EconometricsLH
 
 # Model objects
 export ModelObject
-export collect_model_objects, collect_pvectors, validate
+export collect_model_objects, collect_pvectors, find_object, make_guess, validate
 # Deviations
 export AbstractDeviation, ScalarDeviation, Deviation, RegressionDeviation
 export get_data_values, get_unpacked_data_values, get_model_values, get_unpacked_model_values, get_weights
@@ -78,16 +78,31 @@ end
 
 
 """
+	$(SIGNATURES)
+
+Perturb guesses at indices `dIdx` by amount `dGuess`.
+Ensure that guesses stay in bounds.
+"""
+function perturb_guess(m :: ModelObject, guessV :: Vector, dIdx, dGuess :: Float64)
+    _, lbV, ubV = make_guess(m);
+    guess2V = copy(guessV);
+    guess2V[dIdx] = guessV[dIdx] .+ dGuess;
+    guess2V = min.(max.(guess2V, lbV .+ 0.0001),  ubV .- 0.0001);
+    return guess2V
+end
+
+
+
+"""
     set_params_from_guess!(m :: ModelObject, guessV :: Vector)
 
-Make vector of guesses into model parameters
-
-# Todo: how to deal with guess transformations +++++
+Make vector of guesses into model parameters.
+This changes the values in `m` and in its `pvector`.
 """
 function set_params_from_guess!(m :: ModelObject, guessV :: Vector{Float64})
     # Copy guesses into model objects
     pvecV = collect_pvectors(m);
-    objV, _ = collect_model_objects(m, :self);
+    objV = collect_model_objects(m);
     # Copy param vectors into model
     vOut = sync_from_vector!(objV, pvecV, guessV);
     # Make sure all parameters have been used up
@@ -119,7 +134,7 @@ function report_params(o :: T1, isCalibrated :: Bool) where T1 <: ModelObject
             dataM = vcat(dataM, tbM);
         end
     end
-    if !isempty(dataM)
+    if !isnothing(dataM)
         pretty_table(dataM, noheader = true);
     end
     return nothing
@@ -158,30 +173,30 @@ end
 
 
 """
-    get_child_objects
+    $(SIGNATURES)
 
-Find the child objects inside a model object
+Find the child objects inside a model object.
 """
 function get_child_objects(o :: T1) where T1 <: ModelObject
     childV = Vector{Any}();
-    nameV = Vector{Symbol}();
+    # nameV = Vector{Symbol}();
     for pn in propertynames(o)
         obj = getproperty(o, pn);
         if isa(obj, Vector)
             if eltype(obj) <: ModelObject
                 append!(childV, obj);
-                for i1 = 1 : length(obj)
-                    push!(nameV, Symbol("$pn$i1"));
-                end
+                # for i1 = 1 : length(obj)
+                #     push!(nameV, Symbol("$pn$i1"));
+                # end
             end
         else
             if typeof(obj) <: ModelObject
                 push!(childV, obj);
-                push!(nameV, pn);
+                # push!(nameV, pn);
             end
         end
     end
-    return childV :: Vector, nameV
+    return childV :: Vector  # , nameV
 end
 
 
@@ -219,34 +234,55 @@ end
 
 
 """
-    collect_model_objects
+    $(SIGNATURES)
 
-Collect all model objects inside an object
+Collect all model objects inside an object. Only those that have a `pvector`.
 Recursive. Also collects objects inside child objects and so on.
 """
-function collect_model_objects(o :: T1, objName :: Symbol) where T1 <: ModelObject
+function collect_model_objects(o :: T1) where T1 <: ModelObject
     outV = Vector{Any}();
-    nameV = Vector{Symbol}();
+    # nameV = Vector{Symbol}();
     if has_pvector(o)
         push!(outV, o);
-        push!(nameV, objName);
+        # push!(nameV, objName);
     end
 
     # Objects directly contained in `o`
-    childObjV, childNameV = get_child_objects(o);
+    childObjV = get_child_objects(o);
     if !Base.isempty(childObjV)
         for i1 = 1 : length(childObjV)
-            nestedObjV, nestedNameV = collect_model_objects(childObjV[i1], childNameV[i1]);
+            nestedObjV = collect_model_objects(childObjV[i1]);
             append!(outV, nestedObjV);
-            append!(nameV, nestedNameV);
+            # append!(nameV, nestedNameV);
         end
     end
-    return outV :: Vector, nameV :: Vector{Symbol}
+    return outV :: Vector  # , nameV :: Vector{Symbol}
+end
+
+
+"""
+	$(SIGNATURES)
+
+Find child object with a given `ObjectId`.
+Returns `nothing` if not found.
+"""
+function find_object(o :: ModelObject, id :: ObjectId)
+    objV = collect_model_objects(o);
+    oOut = nothing;
+    if !isempty(objV)
+        for obj in objV
+            if isequal(obj.objId, id)
+                oOut = obj;
+                break;
+            end
+        end
+    end
+    return oOut
 end
 
 
 function collect_pvectors(o :: T1) where T1 <: ModelObject
-    objV, _ = collect_model_objects(o, :self);
+    objV = collect_model_objects(o);
     pvecV = Vector{ParamVector}();
     for i1 = 1 : length(objV)
         push!(pvecV, get_pvector(objV[i1]));

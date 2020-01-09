@@ -14,19 +14,21 @@ struct SingleId
     index :: Array{Int}
 end
 
+
 """
     ObjectId
 
 Complete, unique ID of a `ModelObject`
 
 Contains own id and a vector of parent ids, so one knows exactly where the object
-is placed in the model tree
+is placed in the model tree.
 """
 struct ObjectId
     # Store IDs as vector, not tuple (b/c empty tuples are tricky)
     # "Youngest" member is positioned last in vector
     ids :: Vector{SingleId}
 end
+
 
 """
     ParentId
