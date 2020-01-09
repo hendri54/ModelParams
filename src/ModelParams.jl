@@ -1,7 +1,9 @@
 """
     ModelParams
 
-Support for calibrating models
+Support for calibrating models.
+
+A `ModelObject` contains a `ParamVector` and the corresponding parameters. It is key to always keep those in sync.
 
 Change:
     Reporting parameters
@@ -60,6 +62,7 @@ include("parameters.jl")
 include("param_vector.jl")
 include("deviation.jl")
 include("devvector.jl")
+include("m_objects.jl")
 
 
 ## ------------  Main user interface functions
@@ -94,17 +97,17 @@ end
 
 
 """
-    set_params_from_guess!(m :: ModelObject, guessV :: Vector)
+    $(SIGNATURES)
 
-Make vector of guesses into model parameters.
+Make vector of guesses into model parameters. For object and children.
 This changes the values in `m` and in its `pvector`.
 """
 function set_params_from_guess!(m :: ModelObject, guessV :: Vector{Float64})
     # Copy guesses into model objects
-    pvecV = collect_pvectors(m);
+    # pvecV = collect_pvectors(m);
     objV = collect_model_objects(m);
     # Copy param vectors into model
-    vOut = sync_from_vector!(objV, pvecV, guessV);
+    vOut = sync_from_vector!(objV, guessV);
     # Make sure all parameters have been used up
     @assert isempty(vOut)
     return nothing
@@ -144,7 +147,7 @@ end
 """
     n_calibrated_params(o, isCalibrated)
 
-Number of calibrated parameters
+Number of calibrated parameters in object and its children.
 """
 function n_calibrated_params(o :: T1, isCalibrated :: Bool) where T1 <: ModelObject
     pvecV = collect_pvectors(o);
@@ -158,137 +161,6 @@ function n_calibrated_params(o :: T1, isCalibrated :: Bool) where T1 <: ModelObj
     return nParam, nElem
 end
 
-
-## -------------  Internals
-
-
-# There is currently nothing to validate
-# Code permits objects without ParamVector or child objects
-function validate(m :: T1) where T1 <: ModelObject
-    # @assert isa(m.hasParamVector, Bool)
-    # @assert isa(get_child_objects(m), Vector)
-    @assert isdefined(m, :objId)
-    return nothing
-end
-
-
-"""
-    $(SIGNATURES)
-
-Find the child objects inside a model object.
-"""
-function get_child_objects(o :: T1) where T1 <: ModelObject
-    childV = Vector{Any}();
-    # nameV = Vector{Symbol}();
-    for pn in propertynames(o)
-        obj = getproperty(o, pn);
-        if isa(obj, Vector)
-            if eltype(obj) <: ModelObject
-                append!(childV, obj);
-                # for i1 = 1 : length(obj)
-                #     push!(nameV, Symbol("$pn$i1"));
-                # end
-            end
-        else
-            if typeof(obj) <: ModelObject
-                push!(childV, obj);
-                # push!(nameV, pn);
-            end
-        end
-    end
-    return childV :: Vector  # , nameV
-end
-
-
-## Find the ParamVector
-function get_pvector(o :: T1) where T1 <: ModelObject
-    found = false;
-    pvec = ParamVector(o.objId);
-
-    # Try the default field
-    if isdefined(o, :pvec)
-        if isa(o.pvec, ParamVector)
-            pvec = o.pvec;
-            found = true;
-        end
-    end
-
-    if !found
-        for pn = propertynames(o)
-            obj = getproperty(o, pn);
-            if isa(obj, ParamVector)
-                pvec = obj;
-                found = true;
-                break;
-            end
-        end
-    end
-    return pvec :: ParamVector
-end
-
-
-## Does object contain ParamVector
-function has_pvector(o :: T1) where T1 <: ModelObject
-    return length(get_pvector(o)) > 0
-end
-
-
-"""
-    $(SIGNATURES)
-
-Collect all model objects inside an object. Only those that have a `pvector`.
-Recursive. Also collects objects inside child objects and so on.
-"""
-function collect_model_objects(o :: T1) where T1 <: ModelObject
-    outV = Vector{Any}();
-    # nameV = Vector{Symbol}();
-    if has_pvector(o)
-        push!(outV, o);
-        # push!(nameV, objName);
-    end
-
-    # Objects directly contained in `o`
-    childObjV = get_child_objects(o);
-    if !Base.isempty(childObjV)
-        for i1 = 1 : length(childObjV)
-            nestedObjV = collect_model_objects(childObjV[i1]);
-            append!(outV, nestedObjV);
-            # append!(nameV, nestedNameV);
-        end
-    end
-    return outV :: Vector  # , nameV :: Vector{Symbol}
-end
-
-
-"""
-	$(SIGNATURES)
-
-Find child object with a given `ObjectId`.
-Returns `nothing` if not found.
-"""
-function find_object(o :: ModelObject, id :: ObjectId)
-    objV = collect_model_objects(o);
-    oOut = nothing;
-    if !isempty(objV)
-        for obj in objV
-            if isequal(obj.objId, id)
-                oOut = obj;
-                break;
-            end
-        end
-    end
-    return oOut
-end
-
-
-function collect_pvectors(o :: T1) where T1 <: ModelObject
-    objV = collect_model_objects(o);
-    pvecV = Vector{ParamVector}();
-    for i1 = 1 : length(objV)
-        push!(pvecV, get_pvector(objV[i1]));
-    end
-    return pvecV :: Vector{ParamVector}
-end
 
 
 

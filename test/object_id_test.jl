@@ -57,6 +57,9 @@ function object_id_test()
     @test isequal(childId.ids[end],  SingleId(:child))
     @test isequal(pId4, ModelParams.get_parent_id(childId))
 
+    # Check `isequal` when "depth" of `ObjectId`s is different
+    @test !isequal(obj4.objId, childId)
+
     return true
 end
 

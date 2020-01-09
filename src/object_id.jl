@@ -114,8 +114,14 @@ function make_child_id(parentId :: ObjectId, name :: Symbol,
     return ObjectId(name, index, convert_to_parent_id(parentId))
 end
 
+
+"""
+	$(SIGNATURES)
+
+Checks whether two `ObjectId`s are the same.
+"""
 function isequal(id1 :: Union{ObjectId, ParentId},  id2 :: Union{ObjectId, ParentId})
-    outVal = all(isequal.(id1.ids, id2.ids))
+    outVal = (length(id1.ids) == length(id2.ids))  &&  all(isequal.(id1.ids, id2.ids))
     # outVal = isequal(id1.ownId, id2.ownId);
     # if length(id1.parentIds) != length(id2.parentIds)
     #     outVal = false;

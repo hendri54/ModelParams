@@ -24,7 +24,7 @@ function init_obj1(objId)
         valueZ .- 5.0, valueZ .+ 5.0, false);
     pvector = ParamVector(objId, [px, py, pz])
     o1 = Obj1(objId, px.value, py.value, pz.value, pvector);
-    ModelParams.set_values_from_pvec!(o1, pvector, true);
+    ModelParams.set_values_from_pvec!(o1, true);
     return o1
 end
 
@@ -51,7 +51,7 @@ function init_obj2(objId)
         valueB .- 5.0, valueB .+ 5.0, true);
     pvector = ParamVector(objId, [pa, py, pb]);
     o2 = Obj2(objId, pa.value, py.value, pb.value, pvector);
-    ModelParams.set_values_from_pvec!(o2, pvector, true);
+    ModelParams.set_values_from_pvec!(o2, true);
     return o2
 end
 
@@ -106,14 +106,14 @@ function model_test()
         isCalibrated = true;
 
         # Sync calibrated model values with param vector
-        ModelParams.set_values_from_pvec!(m.o1, m.o1.pvec, isCalibrated);
+        ModelParams.set_values_from_pvec!(m.o1, isCalibrated);
         # also sync the non-calibrated default values
-        ModelParams.set_default_values!(m.o1, m.o1.pvec, false);
+        ModelParams.set_default_values!(m.o1, false);
         @test ModelParams.check_calibrated_params(m.o1, m.o1.pvec);
         @test ModelParams.check_fixed_params(m.o1, m.o1.pvec);
 
         # The same in one step
-        ModelParams.sync_values!(m.o2, m.o2.pvec);
+        ModelParams.sync_values!(m.o2);
         @test ModelParams.check_calibrated_params(m.o2, m.o2.pvec);
         @test ModelParams.check_fixed_params(m.o2, m.o2.pvec);
 
@@ -147,7 +147,7 @@ function model_test()
         # into dicts which are then put into the objects
 
         # Using in a single convenience method
-        vOut = ModelParams.sync_from_vector!([m.o1, m.o2], [m.o1.pvec, m.o2.pvec], vAll);
+        vOut = ModelParams.sync_from_vector!([m.o1, m.o2], vAll);
         @test isempty(vOut);
         @test ModelParams.check_calibrated_params(m.o1, m.o1.pvec);
         @test ModelParams.check_fixed_params(m.o1, m.o1.pvec);
@@ -160,13 +160,13 @@ function model_test()
         @test d11[:y] ≈ d1[:y]
         # copy into param vector; then sync with model object
         ModelParams.set_values_from_dict!(m.o1.pvec, d11);
-        ModelParams.set_values_from_pvec!(m.o1, m.o1.pvec, isCalibrated);
+        ModelParams.set_values_from_pvec!(m.o1, isCalibrated);
         @test m.o1.x ≈ d1[:x]
         @test m.o1.y ≈ d1[:y]
 
         # The same in a single convenience function, one object at a time
         # Just for testing
-        nUsed11 = ModelParams.sync_from_vector!(m.o1, m.o1.pvec, vAll);
+        nUsed11 = ModelParams.sync_from_vector!(m.o1, vAll);
         @test nUsed11 == nUsed1
         @test m.o1.x ≈ d1[:x]
         @test m.o1.y ≈ d1[:y]
@@ -176,7 +176,7 @@ function model_test()
         @test d22[:a] == d2[:a]
         @test d22[:b] == d2[:b]
         ModelParams.set_values_from_dict!(m.o2.pvec, d22);
-        ModelParams.set_values_from_pvec!(m.o2, m.o2.pvec, isCalibrated);
+        ModelParams.set_values_from_pvec!(m.o2, isCalibrated);
         @test m.o2.a ≈ d2[:a]
         @test m.o2.b ≈ d2[:b]
         # Last object: everything should be used up
@@ -189,7 +189,7 @@ function model_test()
 
         d22[:b] .+= 3.8;
         ModelParams.set_values_from_dict!(m.o2.pvec, d22);
-        ModelParams.set_values_from_pvec!(m.o2, m.o2.pvec, isCalibrated);
+        ModelParams.set_values_from_pvec!(m.o2, isCalibrated);
         @test m.o2.b ≈ d22[:b]
     end
 end

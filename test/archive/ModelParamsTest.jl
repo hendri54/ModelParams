@@ -108,7 +108,7 @@ function modelTest()
     # Sync calibrated model values with param vector
     ModelParams.set_values_from_pvec!(m.o1, m.o1.pvec, isCalibrated);
     # also sync the non-calibrated default values
-    ModelParams.set_default_values!(m.o1, m.o1.pvec, false);
+    ModelParams.set_default_values!(m.o1, false);
     @test ModelParams.check_calibrated_params(m.o1, m.o1.pvec);
     @test ModelParams.check_fixed_params(m.o1, m.o1.pvec);
 
@@ -147,7 +147,7 @@ function modelTest()
     # into dicts which are then put into the objects
 
     # Using in a single convenience method
-    vOut = ModelParams.sync_from_vector!([m.o1, m.o2], [m.o1.pvec, m.o2.pvec], vAll);
+    vOut = ModelParams.sync_from_vector!([m.o1, m.o2], vAll);
     @test isempty(vOut);
     @test ModelParams.check_calibrated_params(m.o1, m.o1.pvec);
     @test ModelParams.check_fixed_params(m.o1, m.o1.pvec);
@@ -166,7 +166,7 @@ function modelTest()
 
     # The same in a single convenience function, one object at a time
     # Just for testing
-    nUsed11 = ModelParams.sync_from_vector!(m.o1, m.o1.pvec, vAll);
+    nUsed11 = ModelParams.sync_from_vector!(m.o1, vAll);
     @test nUsed11 == nUsed1
     @test m.o1.x ≈ d1[:x]
     @test m.o1.y ≈ d1[:y]
