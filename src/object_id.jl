@@ -139,6 +139,20 @@ function own_index(oId :: ObjectId)
 end
 
 
+"""
+	$(SIGNATURES)
+
+Return object's own name as `Symbol`.
+"""
+function own_name(oId :: ObjectId)
+    return oId.ids[end].name
+end
+
+function own_name(o :: ModelObject)
+    return own_name(o.objId)
+end
+
+
 function make_string(id :: ObjectId)
     outStr = "";
     for i1 = 1 : length(id.ids)
@@ -148,6 +162,16 @@ function make_string(id :: ObjectId)
         outStr = outStr * make_string(id.ids[i1]);
     end
     return outStr
+end
+
+
+"""
+	$(SIGNATURES)
+
+Show an object id.
+"""
+function show(id :: ObjectId)
+    println("ObjectId: " * make_string(id));
 end
 
 # ----------

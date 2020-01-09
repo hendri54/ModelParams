@@ -12,6 +12,20 @@ end
 
 
 """
+	$(SIGNATURES)
+
+Show structure of a `ModelObject`.
+"""
+function show(o :: ModelObject)
+    objV = collect_model_objects(o);
+    for obj in objV
+        println(make_string(obj.objId) * " \t $(typeof(obj))");
+    end
+    return nothing
+end
+
+
+"""
     $(SIGNATURES)
 
 Collect all model objects inside an object. Only those that have a `pvector`.
@@ -88,6 +102,23 @@ function find_object(o :: ModelObject, id :: ObjectId)
 end
 
 
+"""
+	$(SIGNATURES)
+
+Find child objects that have a name given by a `Symbol`. Easier than having to specify an entire `ObjectId`.
+"""
+function find_object(o :: ModelObject, oName :: Symbol)
+    objV = collect_model_objects(o);
+    outV = Vector{Any}();
+    for obj in objV
+        if own_name(obj) == oName
+            push!(outV, obj);
+        end
+    end
+    return outV
+end
+
+
 ## Find the ParamVector
 function get_pvector(o :: T1) where T1 <: ModelObject
     found = false;
@@ -132,6 +163,36 @@ end
 
 
 ## -------------  Setting values
+
+
+"""
+	$(SIGNATURES)
+
+Change value of a field in a `ModelObject` and its `ParamVector`.
+"""
+function change_value!(x :: ModelObject, oName :: Symbol, pName :: Symbol,  newValue)
+    objV = find_object(x, oName);
+    @assert length(objV) == 1  "Found $(length(objV)) matches for $oName / $pName"
+    pvec = get_pvector(objV[1]);
+    @assert length(pvec) > 0  "No ParamVector in $oName / $pName"
+    oldValue = change_value!(pvec, pName, newValue);
+    # Set value in object as well
+    setfield!(objV[1], pName, newValue);
+    return oldValue
+end
+
+
+"""
+	$(SIGNATURES)
+
+Retrieve the value of a field in a `ModelObject` or its children.
+Object name `oName` must be unique.
+"""
+function get_value(x :: ModelObject, oName :: Symbol, pName :: Symbol)
+    objV = find_object(x, oName);
+    @assert length(objV) == 1  "Found $(length(objV)) matches for $oName / $pName"
+    return getfield(objV[1], pName)
+end
 
 
 ## Set fields in struct from param vector (using values, not defaults)

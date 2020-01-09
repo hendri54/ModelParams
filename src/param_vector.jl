@@ -151,8 +151,8 @@ end
 function change_value!(pvec :: ParamVector, pName :: Symbol, newValue)
     _, idx = retrieve(pvec, pName);
     @assert (idx > 0)  "$pName does not exist"
-    set_value!(pvec.pv[idx], newValue);
-    return nothing
+    oldValue = set_value!(pvec.pv[idx], newValue);
+    return oldValue
 end
 
 
@@ -254,7 +254,7 @@ function make_dict(pvec :: ParamVector, isCalibrated :: Bool)
     else
         useValues = false;
     end
-    make_dict(pvec, isCalibrated, useValues)
+    return make_dict(pvec, isCalibrated, useValues)
 end
 
 
@@ -373,13 +373,15 @@ end
 Set values in `pvecOld` from another `ParamVector` `pvecNew`. 
 Only for values that are in both `ParamVector`s and that are `isCalibrated` in both.
 Only if the size matches.
+
+    Needs more testing +++++
 """
 function set_values_from_pvec!(pvecOld :: ParamVector,  pvecNew :: ParamVector,
     isCalibrated :: Bool)
 
     dOld = make_dict(pvecOld, isCalibrated, true);
     dNew = make_dict(pvecNew, isCalibrated, true);
-    pNameV = intersect(dOld, dNew);
+    pNameV = intersect(keys(dOld), keys(dNew));
     for pName in pNameV
         change_value!(pvecOld, pName, dNew[pName]);
     end

@@ -82,12 +82,17 @@ function model_test()
         m = init_test_model()
 
         childId1 = ModelParams.make_child_id(m, :child)
+
+        # Find objects by name
         @test isnothing(ModelParams.find_object(m, childId1))
+        @test isempty(ModelParams.find_object(m, :child))
+
         childId2 = ModelParams.make_child_id(m, :o1);
-        # show(childId2)
         child2 = ModelParams.find_object(m, childId2);
-        # show(child2)
         @test isa(child2, ModelObject)
+        child2 = ModelParams.find_object(m, :o1);
+        @test length(child2) == 1
+        @test isequal(child2[1].objId, childId2)
         # Find the object itself. Does not return anything b/c object has no `pvector`
         m2 = ModelParams.find_object(m, m.objId);
         @test isnothing(m2)
@@ -211,6 +216,17 @@ function set_values_test()
         # Check that we get the same guessV
         guess3V, _ = make_guess(m);
         @test all(abs.(guess3V .- guessV) .< 0.001)
+    end
+end
+
+
+function change_values_test()
+    @testset "Change values by hand" begin
+        m = init_test_model();
+        yNew = m.o2.y .+ 0.5;
+        ModelParams.change_value!(m, :o2, :y, yNew);
+        @test ModelParams.get_value(m, :o2, :y) .≈ yNew
+        @test m.o2.y .≈ yNew
     end
 end
 

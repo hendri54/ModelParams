@@ -39,6 +39,7 @@ function object_id_test()
     @test ModelParams.own_index(o2) == [2]
     pId = ModelParams.convert_to_parent_id(o2);
     @test isa(pId, ModelParams.ParentId)
+    @test ModelParams.own_name(o2) == :id2
 
     # Has id1 as parent
     o3 = ObjectId(:id3, 2, o1);
@@ -56,6 +57,7 @@ function object_id_test()
     childId = ModelParams.make_child_id(obj4, :child);
     @test isequal(childId.ids[end],  SingleId(:child))
     @test isequal(pId4, ModelParams.get_parent_id(childId))
+    @test isequal(ModelParams.own_name(obj4), :id4)
 
     # Check `isequal` when "depth" of `ObjectId`s is different
     @test !isequal(obj4.objId, childId)
@@ -63,7 +65,7 @@ function object_id_test()
     return true
 end
 
-@testset "OjbectId" begin
+@testset "ObjectId" begin
     @test single_id_test()
     @test object_id_test()
 end
