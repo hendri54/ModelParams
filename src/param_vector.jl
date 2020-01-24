@@ -13,6 +13,19 @@ function ParamVector(id :: ObjectId, pv :: Vector)
 end
 
 
+function show(io :: IO,  pvec :: ParamVector)
+    n = length(pvec);
+    idStr = make_string(pvec.objId);
+    println(io,  "ParamVector $idStr of length $n");
+    if n > 0
+        for j = 1 : n
+            show(io, pvec[j]);
+        end
+    end
+    return nothing
+end
+
+
 """
     length
 
@@ -161,14 +174,16 @@ end
 
 Reports calibrated (or fixed) parameters for one ParamVector
 """
-function report_params(pvec :: ParamVector, isCalibrated :: Bool)
+function report_params(pvec :: ParamVector, isCalibrated :: Bool;
+    io :: IO = stdout)
+
     objId = make_string(pvec.objId);
     dataM = param_table(pvec, isCalibrated);
 
     if isnothing(dataM)
-        Core.println("\t$objId:  Nothing to report");
+        println(io, "\t$objId:  Nothing to report");
     else
-        pretty_table(dataM, [objId, " ", " "]);
+        pretty_table(io, dataM, [objId, " ", " "]);
     end
     return nothing
 end

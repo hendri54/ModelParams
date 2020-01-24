@@ -110,9 +110,9 @@ end
 
 Show all deviations. Each gets a short display with name and scalar deviation.
 """
-function show(d :: DevVector)
+function show(io :: IO,  d :: DevVector)
     if length(d) < 1
-        println("No deviations");
+        println(io, "No deviations");
     else
         lineV = Vector{String}();
         for i1 in 1 : length(d)
@@ -120,7 +120,7 @@ function show(d :: DevVector)
             push!(lineV, dStr);
         end
     end
-    show_string_vector(lineV, 80);
+    show_string_vector(lineV, 80, io = io);
 end
 
 

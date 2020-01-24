@@ -30,12 +30,14 @@ end
 function object_id_test()
     # Simplest case
     id1 = SingleId(:id1);
+    show(id1);
     o1 = ObjectId(id1);
     @test !ModelParams.has_parent(o1)
     @test isequal(ModelParams.make_string(id1), "id1")
 
     # Index, no parents
     o2 = ObjectId(:id2, 2)
+    show(o2);
     @test ModelParams.own_index(o2) == [2]
     pId = ModelParams.convert_to_parent_id(o2);
     @test isa(pId, ModelParams.ParentId)
@@ -43,6 +45,7 @@ function object_id_test()
 
     # Has id1 as parent
     o3 = ObjectId(:id3, 2, o1);
+    show(o3)
     p3 = ModelParams.get_parent_id(o3);
     @test ModelParams.is_parent_of(p3, o3)
     pId = ModelParams.convert_to_parent_id(o3);

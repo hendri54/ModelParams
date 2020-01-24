@@ -16,10 +16,10 @@ end
 
 Show structure of a `ModelObject`.
 """
-function show(o :: ModelObject)
+function show(io :: IO,  o :: ModelObject)
     objV = collect_model_objects(o);
     for obj in objV
-        println(make_string(obj.objId) * " \t $(typeof(obj))");
+        println(io,  make_string(obj.objId) * " \t $(typeof(obj))");
     end
     return nothing
 end

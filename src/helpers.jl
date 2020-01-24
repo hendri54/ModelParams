@@ -1,6 +1,6 @@
 ## Display string vector on fixed with screen
-function show_string_vector(sV :: Vector{T1},  width :: T2 = 80) where
-    {T1 <: AbstractString,  T2 <: Integer}
+function show_string_vector(sV :: Vector{T1},  width :: T2 = 80;
+    io :: IO = stdout)  where {T1 <: AbstractString,  T2 <: Integer}
 
     n = length(sV);
     if n < 1
@@ -12,15 +12,15 @@ function show_string_vector(sV :: Vector{T1},  width :: T2 = 80) where
         len1 = length(s);
         if len1 > 0
             if iCol + len1 > width
-                Core.println(" ")
+                println(io, " ")
                 iCol = 0;
             end
-            Core.print(s);
+            print(io, s);
             iCol = iCol + len1;
-            Core.print("    ");
+            print(io, "    ");
             iCol = iCol + 4;
         end
     end
-    Core.println(" ")
+    println(io, " ")
 end
 

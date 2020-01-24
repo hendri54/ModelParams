@@ -170,8 +170,8 @@ end
 
 Show an object id.
 """
-function show(id :: ObjectId)
-    println("ObjectId: " * make_string(id));
+function show(io :: IO,  id :: ObjectId)
+    println(io,  "ObjectId: " * make_string(id));
 end
 
 # ----------

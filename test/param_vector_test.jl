@@ -32,6 +32,7 @@ end
 function pvectorTest()
     @testset "Pvector" begin
         pv = ParamVector(ObjectId(:pv1));
+        show(pv);
         @test length(pv) == 0
 
         p = Param(:p1, "param1", "sym1", [1.2 3.4; 4.5 5.6])
@@ -51,6 +52,7 @@ function pvectorTest()
 
         p = Param(:p2, "param2", "sym2", [2.2 4.4; 4.5 5.6])
         ModelParams.append!(pv, p)
+        show(pv)
         ModelParams.remove!(pv, :p1)
         @test length(pv) == 1
         @test param_exists(pv, :p2)

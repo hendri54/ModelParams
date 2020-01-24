@@ -14,6 +14,19 @@ struct SingleId
     index :: Array{Int}
 end
 
+function show_string(s :: SingleId)
+    outStr = string(s.name);
+    if !isempty(s.index)
+        outStr = outStr * "$(s.index)";
+    end
+    return outStr
+end
+
+function show(io :: IO,  s :: SingleId)
+    println(io,  "SingleId:  $(show_string(s))");
+    return nothing
+end
+
 
 """
     ObjectId
@@ -27,6 +40,20 @@ struct ObjectId
     # Store IDs as vector, not tuple (b/c empty tuples are tricky)
     # "Youngest" member is positioned last in vector
     ids :: Vector{SingleId}
+end
+
+function show_string(o :: ObjectId)
+    outStr = show_string(o.ids[1]);
+    if length(o.ids) > 1
+        for j = 1 : length(o.ids)
+            outStr = outStr * " > " * show_string(o.ids[j]);
+        end
+    end
+    return outStr
+end
+
+function show(io :: IO,  o :: ObjectId)
+    println(io,  "ObjectId:  " * show_string(o));
 end
 
 
@@ -62,6 +89,33 @@ mutable struct Param{T1 <: Any, T2 <: AbstractString}
     ub :: T1
     isCalibrated :: Bool
 end
+
+function show_string(p :: Param)
+    if p.isCalibrated
+        calStr = "calibrated";
+    else
+        calStr = "fixed";
+    end
+    return string(p.name) * ": " * value_string(p) * "  ($calStr)"
+end
+
+function value_string(p :: Param)
+    pType = eltype(p.value);
+    if isa(p.value, Real)
+        outStr = string(round(p.value, digits = 3));
+    elseif isa(p.value, Array)
+        outStr = "Array{$pType} of size $(size(p.value))";
+    else
+        outStr = "of type $pType";
+    end
+    return outStr
+end
+
+function show(io :: IO,  p :: Param)
+    println(io, "Param:  " * show_string(p));
+    return nothing
+end
+
 
 
 ## ----------  Parameter Transformations
@@ -122,7 +176,7 @@ Going from a vector of Dicts to a vector of Floats and back:
     Currently, the user has to ensure that the ordering of ParamVectors and model
     objects never changes.
 """
-@with_kw mutable struct ParamVector
+@with_kw_noshow mutable struct ParamVector
     "ObjectId of the ModelObject. To ensure that no mismatches occur."
     objId :: ObjectId
     # A Dict would be natural, but it helps to preserve the order of the params
