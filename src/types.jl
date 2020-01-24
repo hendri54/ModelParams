@@ -42,20 +42,6 @@ struct ObjectId
     ids :: Vector{SingleId}
 end
 
-function show_string(o :: ObjectId)
-    outStr = show_string(o.ids[1]);
-    if length(o.ids) > 1
-        for j = 1 : length(o.ids)
-            outStr = outStr * " > " * show_string(o.ids[j]);
-        end
-    end
-    return outStr
-end
-
-function show(io :: IO,  o :: ObjectId)
-    println(io,  "ObjectId:  " * show_string(o));
-end
-
 
 """
     ParentId
