@@ -53,8 +53,6 @@ struct ParentId
 end
 
 
-
-
 ## ----------  Parameters
 
 """
@@ -169,6 +167,27 @@ Going from a vector of Dicts to a vector of Floats and back:
     pv :: Vector{Param} = Vector{Param}()
     "Governs scaling of parameters into guess vectors for optimization"
     pTransform :: ParamTransformation = LinearTransformation(lb = 1.0, ub = 2.0)
+end
+
+
+"""
+	IncreasingVector
+
+Encodes an increasing vector of fixed length. Its values are calibrated.
+"""
+mutable struct IncreasingVector{T1} <: ModelObject
+	objId :: ObjectId
+	pvec :: ParamVector
+	x0 :: T1
+	dxV :: Vector{T1}
+end
+
+function values(iv :: IncreasingVector)
+	return iv.x0 .+ cumsum(vcat(zero(iv.x0), iv.dxV))
+end
+
+function length(iv :: IncreasingVector)
+	return Base.length(iv.dxV) + 1
 end
 
 

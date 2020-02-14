@@ -5,7 +5,7 @@ include("object_id_test.jl")
 include("parameters_test.jl")
 include("deviation_test.jl")
 include("model_test.jl")
-
+include("increasing_vector_test.jl")
 
 @testset "ModelParams" begin
     println("Testing ModelParams")
@@ -19,6 +19,7 @@ include("model_test.jl")
     scalar_dev_test()
     regression_dev_test()
     dev_vector_test()
+    increasing_vector_test()
 end
 
 

@@ -14,7 +14,7 @@ Change:
 module ModelParams
 
 import Base.show, Base.isempty, Base.isequal
-import Base.append!, Base.length, Base.getindex
+import Base.append!, Base.length, Base.getindex, Base.values
 
 using ArgCheck, DocStringExtensions, Formatting, Parameters, PrettyTables, Printf
 using EconometricsLH
@@ -22,6 +22,8 @@ using EconometricsLH
 # Model objects
 export ModelObject
 export collect_model_objects, collect_pvectors, find_object, make_guess, validate
+export IncreasingVector, values
+
 # Deviations
 export AbstractDeviation, ScalarDeviation, Deviation, RegressionDeviation
 export get_data_values, get_unpacked_data_values, get_model_values, get_unpacked_model_values, get_weights
@@ -63,6 +65,7 @@ include("param_vector.jl")
 include("deviation.jl")
 include("devvector.jl")
 include("m_objects.jl")
+
 
 
 ## ------------  Main user interface functions
