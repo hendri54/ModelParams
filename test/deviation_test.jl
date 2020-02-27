@@ -1,7 +1,21 @@
-using EconometricsLH
+using EconometricsLH, ModelParams
 
 ## -----------  Make deviations for testing
 # Names are :d1 etc
+
+function make_matrix_deviation(devNo :: Integer)
+    sizeV = (5, 4);
+    modelV = devNo .+ (1 : sizeV[1]) .+ (1 : sizeV[2])' .+ 0.1;
+    idxV = [2:4, 2:3];
+    dataV = modelV[idxV...] .+ 0.7;
+    wtV = dataV .+ 0.9;
+    name, shortStr, longStr, fmtStr = dev_info(devNo);
+    d = Deviation(name = name, 
+        modelV = modelV, dataV = dataV, wtV = wtV, idxV = idxV,
+        shortStr = shortStr, longStr = longStr);
+    return d;
+
+end
 
 function make_deviation(devNo :: Integer)
     dataV = devNo .+ collect(range(2.1, 3.4, length = 5));
@@ -52,28 +66,34 @@ function deviation_test()
         d1 = ModelParams.empty_deviation();
         @test isempty(d1);
 
-        d = make_deviation(1);
-        @test !isempty(d)
-        sDev, devStr = scalar_dev(d);
-        @test isa(sDev, Float64);
-        @test isa(devStr, AbstractString)
-        dStr = ModelParams.short_display(d);
-        @test dStr[1:4] == "dev1"
-        println("--- Showing deviation")
-        show_deviation(d);
-        show_deviation(d, showModel = false);
+        dV = [make_deviation(1), make_matrix_deviation(1)];
 
-        wtV = d.dataV .+ 0.1;
-        ModelParams.set_weights!(d, wtV);
-        @test d.wtV ≈ wtV
+        for d in dV
+            mSizeV = size(get_model_values(d));
+            println("Model size:  $mSizeV");
+            @test !isempty(d)
 
-        modelV = d.dataV .+ 0.2;
-        ModelParams.set_model_values(d, modelV);
-        @test d.modelV ≈ modelV;
+            sDev, devStr = scalar_dev(d);
+            @test isa(sDev, Float64);
+            @test isa(devStr, AbstractString)
+            
+            dStr = ModelParams.short_display(d);
+            @test dStr[1:4] == "dev1"
+            println("--- Showing deviation")
+            show_deviation(d);
+            show_deviation(d, showModel = false);
 
-        d2 = Deviation(name = :d2, modelV = rand(4,3), dataV = rand(4,3));
-        show_deviation(d2);
-        show_deviation(d2, showModel = false);
+            wtV = get_data_values(d) .+ 0.1;
+            ModelParams.set_weights!(d, wtV);
+            @test get_weights(d) ≈ wtV
+
+            modelV = get_model_values(d; matchData = true);
+            @test size(modelV) == size(get_data_values(d))
+
+            modelV = get_model_values(d) .+ 0.2;
+            ModelParams.set_model_values(d, modelV);
+            @test get_model_values(d) ≈ modelV;
+        end
     end 
 end
 
@@ -179,3 +199,13 @@ function dev_vector_test()
         @test dev.name == :d1
     end
 end
+
+
+@testset "Deviations" begin
+    deviation_test()
+    scalar_dev_test()
+    regression_dev_test()
+    dev_vector_test()
+end
+
+# -------------

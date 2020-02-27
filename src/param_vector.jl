@@ -90,11 +90,24 @@ function retrieve(pvec :: ParamVector, pName :: Symbol)
     end
 end
 
+
+"""
+	$(SIGNATURES)
+
+Does a `Param` named `pName` exist in `ParamVector pvec`?
+"""
 function param_exists(pvec :: ParamVector, pName :: Symbol)
     _, idx = retrieve(pvec, pName);
     return idx > 0
 end
 
+
+"""
+	$(SIGNATURES)
+
+Return the value of a parameter from a `ParamVector`. 
+Returns `nothing` if not found.
+"""
 function param_value(pvec :: ParamVector, pName :: Symbol)
     p, idx = retrieve(pvec, pName);
     if idx > 0
@@ -286,13 +299,12 @@ function make_vector(pvec :: ParamVector, isCalibrated :: Bool)
 
     n = length(pvec);
     if n > 0
-        # p = pvec.pv[1];
         for i1 in 1 : n
             p = pvec.pv[i1];
             if p.isCalibrated == isCalibrated
+                pValue = transform_param(pvec.pTransform,  p);
                 # Append works for scalars, vectors, and matrices (that get flattened)
                 # Need to qualify - otherwise local append! is called
-                pValue = transform_param(pvec.pTransform,  p);
                 Base.append!(valueV, pValue);
             end
         end
@@ -301,7 +313,8 @@ function make_vector(pvec :: ParamVector, isCalibrated :: Bool)
     # Transformation bounds (these are returned b/c the parameters are transformed)
     lbV = fill(pvec.pTransform.lb, size(valueV));
     ubV = fill(pvec.pTransform.ub, size(valueV));
-    return valueV :: Vector{T1}, lbV :: Vector{T1}, ubV :: Vector{T1}
+    vv = ValueVector(valueV, lbV, ubV);
+    return vv
 end
 
 
@@ -309,18 +322,20 @@ end
     $(SIGNATURES)
 
 Make vector from a list of param vectors.
+Output contains values, lower bounds, upper bounds.
 """
 function make_vector(pvv :: Vector{ParamVector}, isCalibrated :: Bool)
     outV = Vector{ValueType}();
     lbV = Vector{ValueType}();
     ubV = Vector{ValueType}();
     for i1 = 1 : length(pvv)
-        v, lb, ub = make_vector(pvv[i1], isCalibrated);
-        append!(outV, v);
-        append!(lbV, lb);
-        append!(ubV, ub);
+        vVec = make_vector(pvv[i1], isCalibrated);
+        append!(outV, values(vVec));
+        append!(lbV, lb(vVec));
+        append!(ubV, ub(vVec));
     end
-    return outV :: Vector{ValueType}, lbV :: Vector{ValueType}, ubV :: Vector{ValueType}
+    vv = ValueVector(outV, lbV, ubV);
+    return vv
 end
 
 

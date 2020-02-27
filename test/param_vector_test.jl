@@ -1,5 +1,5 @@
 ## Parameter vector test
-
+import ModelParams.get_pvector
 
 ## --------------  Setup
 
@@ -91,14 +91,14 @@ function pvectorDictTest()
         # Make vector and its inverse (make Dict from vector)
         isCalibrated = true;
         # Vector contains transformed parameters
-        valV, lbV, ubV = make_vector(pv, isCalibrated);
-        @test isa(valV,  Vector{Float64})
+        vv = make_vector(pv, isCalibrated);
+        @test isa(ModelParams.values(vv),  Vector{Float64})
         p1Value = transform_param(pv.pTransform, p1);
         p3Value = transform_param(pv.pTransform, p3);
-        @test valV == vcat(vec(p1Value), vec(p3Value))
-        @test all(lbV .≈ pv.pTransform.lb)
+        @test ModelParams.values(vv) == vcat(vec(p1Value), vec(p3Value))
+        @test all(ModelParams.lb(vv) .≈ pv.pTransform.lb)
 
-        pDict, _ = vector_to_dict(pv, valV, isCalibrated);
+        pDict, _ = vector_to_dict(pv, ModelParams.values(vv), isCalibrated);
         @test length(pDict) == 2
         @test pDict[:p1] == p1.value
         @test pDict[:p3] == p3.value
@@ -117,6 +117,8 @@ mutable struct M2 <: ModelObject
     x :: ParamVector
     y :: Float64
 end
+
+get_pvector(m :: M2) = m.x;
 
 mutable struct M3 <: ModelObject
     objId :: ObjectId

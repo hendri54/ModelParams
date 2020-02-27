@@ -12,7 +12,7 @@ function make_increasing_vector()
 end
 
 
-function increasing_vector_test()
+# function increasing_vector_test()
 	@testset "IncreasingVector" begin
 		iv = make_increasing_vector();
 		xV = values(iv);
@@ -20,7 +20,7 @@ function increasing_vector_test()
 		@test xV[1] ≈ iv.x0
 		@test xV[end] ≈ iv.x0 + sum(iv.dxV)
 	end
-end
+# end
 
 
 # ------------------

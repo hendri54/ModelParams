@@ -124,20 +124,20 @@ function modelTest()
 
 
     # For each model object: make vector of param values
-    v1, lb1, ub1 = make_vector(m.o1.pvec, isCalibrated);
-    @test isa(v1, Vector{Float64})
-    v2, lb2, ub2 = make_vector(m.o2.pvec, isCalibrated);
-    @test isa(v2, Vector{Float64})
+    vv1 = make_vector(m.o1.pvec, isCalibrated);
+    @test isa(ModelParams.values(vv1), Vector{Float64})
+    vv2 = make_vector(m.o2.pvec, isCalibrated);
+    @test isa(ModelParams.values(vv2), Vector{Float64})
 
     # This is passed to optimizer as guess
-    vAll = [v1; v2];
+    vAll = [ModelParams.values(vv1); ModelParams.values(vv2)];
     @test isa(vAll, Vector{Float64})
 
     # Same in one step for all param vectors
-    vAll2, lbAllV, ubAllV = ModelParams.make_vector([m.o1.pvec, m.o2.pvec], isCalibrated);
-    @test vAll ≈ vAll2
-    @test lbAllV ≈ [lb1; lb2]
-    @test ubAllV ≈ [ub1; ub2]
+    vv = ModelParams.make_vector([m.o1.pvec, m.o2.pvec], isCalibrated);
+    @test vAll ≈ ModelParams.values(vv)
+    @test ModelParams.lb(vv) ≈ [ModelParams.lb(vv1); ModelParams.lb(vv2)]
+    @test ModelParams.ub(vv) ≈ [ModelParams.ub(vv1); ModelParams.ub(vv2)]
 
     # Now we run the optimizer, which changes `vAll`
 

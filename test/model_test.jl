@@ -1,5 +1,9 @@
+using ModelParams, Test
+
 ## -------------  Test model
 # More extensive testing in `SampleModel`
+
+import ModelParams.has_pvector
 
 mutable struct Obj1 <: ModelObject
     objId :: ObjectId
@@ -65,6 +69,8 @@ mutable struct TestModel <: ModelObject
     y :: Float64
 end
 
+has_pvector(o :: TestModel) = false;
+
 function init_test_model()
     objName = ObjectId(:testModel);
     o1 = init_obj1(ModelParams.make_child_id(objName, :o1));
@@ -73,12 +79,8 @@ function init_test_model()
 end
 
 
-
-## -----------  Simulates the workflow for calibration
-# More extensive testing in `SampleModel`
-
-function model_test()
-    @testset "Model" begin
+function find_test()
+    @testset "Find" begin
         m = init_test_model()
 
         childId1 = ModelParams.make_child_id(m, :child)
@@ -90,12 +92,24 @@ function model_test()
         childId2 = ModelParams.make_child_id(m, :o1);
         child2 = ModelParams.find_object(m, childId2);
         @test isa(child2, ModelObject)
+
         child2 = ModelParams.find_object(m, :o1);
         @test length(child2) == 1
         @test isequal(child2[1].objId, childId2)
+
         # Find the object itself. Does not return anything b/c object has no `pvector`
         m2 = ModelParams.find_object(m, m.objId);
         @test isnothing(m2)
+    end
+end
+
+
+## -----------  Simulates the workflow for calibration
+# More extensive testing in `SampleModel`
+
+function model_test()
+    @testset "Model" begin
+        m = init_test_model()
 
         println("-----  Model parameters: calibrated")
         ModelParams.report_params(m, true);
@@ -129,20 +143,20 @@ function model_test()
 
 
         # For each model object: make vector of param values
-        v1, lb1, ub1 = make_vector(m.o1.pvec, isCalibrated);
-        @test isa(v1, Vector{Float64})
-        v2, lb2, ub2 = make_vector(m.o2.pvec, isCalibrated);
-        @test isa(v2, Vector{Float64})
+        vv1 = make_vector(m.o1.pvec, isCalibrated);
+        @test isa(ModelParams.values(vv1), Vector{Float64})
+        vv2 = make_vector(m.o2.pvec, isCalibrated);
+        @test isa(ModelParams.values(vv2), Vector{Float64})
 
         # This is passed to optimizer as guess
-        vAll = [v1; v2];
+        vAll = [ModelParams.values(vv1); ModelParams.values(vv2)];
         @test isa(vAll, Vector{Float64})
 
         # Same in one step for all param vectors
-        vAll2, lbAllV, ubAllV = ModelParams.make_vector([m.o1.pvec, m.o2.pvec], isCalibrated);
-        @test vAll ≈ vAll2
-        @test lbAllV ≈ [lb1; lb2]
-        @test ubAllV ≈ [ub1; ub2]
+        vv = ModelParams.make_vector([m.o1.pvec, m.o2.pvec], isCalibrated);
+        @test vAll ≈ ModelParams.values(vv)
+        @test ModelParams.lb(vv) ≈ [ModelParams.lb(vv1); ModelParams.lb(vv2)]
+        @test ModelParams.ub(vv) ≈ [ModelParams.ub(vv1); ModelParams.ub(vv2)]
 
         # Now we run the optimizer, which changes `vAll`
 
@@ -204,18 +218,27 @@ function set_values_test()
     @testset "set values" begin
         m = init_test_model();
         pvecV = collect_pvectors(m);
-        guessV, _ = make_guess(m);
+        vv = make_guess(m);
+        guessV = ModelParams.values(vv);
 
         # Change values arbitrarily. Need a copy of the model object; otherwise `pvec` is changed
         m2 = init_test_model();
         guess2V = ModelParams.perturb_guess(m2, guessV, 1 : length(guessV), 0.1);
+        guess2 = perturb_guess(m2, vv, 1 : length(guessV), 0.1);
+        @test isapprox(values(guess2), guess2V, atol = 1e-6)
+        
+        # Two interfaces for setting parameters
         ModelParams.set_params_from_guess!(m2, guess2V);
+        guess3 = make_guess(m2);
+        ModelParams.set_params_from_guess!(m2, guess2);
+        guess4 = make_guess(m2);
+        @test isapprox(guess3, guess4)
 
         # Restore values from pvectors
         ModelParams.set_values_from_pvectors!(m2, pvecV, true);
         # Check that we get the same guessV
-        guess3V, _ = make_guess(m);
-        @test all(abs.(guess3V .- guessV) .< 0.001)
+        vv3 = make_guess(m);
+        @test isapprox(vv, vv3)
     end
 end
 
@@ -228,6 +251,14 @@ function change_values_test()
         @test ModelParams.get_value(m, :o2, :y) .≈ yNew
         @test m.o2.y .≈ yNew
     end
+end
+
+
+@testset "Model" begin
+    find_test();
+    model_test();
+    set_values_test();
+    change_values_test();
 end
 
 

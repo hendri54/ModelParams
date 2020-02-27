@@ -21,7 +21,9 @@ using EconometricsLH
 
 # Model objects
 export ModelObject
-export collect_model_objects, collect_pvectors, find_object, make_guess, validate
+export collect_model_objects, collect_pvectors, find_object, make_guess, perturb_guess, validate
+export get_object_id
+export has_pvector, get_pvector
 export IncreasingVector, values
 
 # Deviations
@@ -38,6 +40,9 @@ export LinearTransformation, transform_bounds, transform_param, untransform_para
 export ParamVector
 export param_exists, make_dict, make_vector
 export param_value, retrieve, vector_to_dict
+
+# ValueVector
+export ValueVector, values, lb, ub
 
 
 
@@ -63,6 +68,9 @@ include("transformations.jl")
 include("parameters.jl")
 include("param_vector.jl")
 include("deviation.jl")
+include("regression_deviation.jl")
+include("scalar_deviation.jl")
+include("matrix_deviation.jl")
 include("devvector.jl")
 include("m_objects.jl")
 
@@ -71,15 +79,15 @@ include("m_objects.jl")
 ## ------------  Main user interface functions
 
 """
-    make_guess(m :: ModelObject)
+    $(SIGNATURES)
 
 Make vector of parameters and bounds for an object
 Including nested objects
 """
 function make_guess(m :: ModelObject)
     pvecV = collect_pvectors(m);
-    guessV, lbV, ubV = make_vector(pvecV, true);
-    return guessV :: Vector{Float64}, lbV :: Vector{Float64}, ubV :: Vector{Float64}
+    vv = make_vector(pvecV, true);
+    return vv :: ValueVector
 end
 
 
@@ -89,12 +97,22 @@ end
 Perturb guesses at indices `dIdx` by amount `dGuess`.
 Ensure that guesses stay in bounds.
 """
-function perturb_guess(m :: ModelObject, guessV :: Vector, dIdx, dGuess :: Float64)
-    _, lbV, ubV = make_guess(m);
+function perturb_guess(m :: ModelObject, guessV :: Vector, dIdx, dGuess)
+    vv = make_guess(m);
     guess2V = copy(guessV);
     guess2V[dIdx] = guessV[dIdx] .+ dGuess;
-    guess2V = min.(max.(guess2V, lbV .+ 0.0001),  ubV .- 0.0001);
+    guess2V = min.(max.(guess2V, lb(vv) .+ 0.0001),  ub(vv) .- 0.0001);
     return guess2V
+end
+
+"""
+	$(SIGNATURES)
+
+Perturb a guess, provided as a `ValueVector`. Return a new `ValueVector`.
+"""
+function perturb_guess(m :: ModelObject, guess :: ValueVector, dIdx, dGuess)
+    guessV = perturb_guess(m, values(guess), dIdx, dGuess);
+    return ValueVector(guessV, lb(guess), ub(guess))
 end
 
 
@@ -115,6 +133,9 @@ function set_params_from_guess!(m :: ModelObject, guessV :: Vector{Float64})
     @assert isempty(vOut)
     return nothing
 end
+
+set_params_from_guess!(m :: ModelObject, guess :: ValueVector) = 
+    set_params_from_guess!(m, values(guess));
 
 
 """

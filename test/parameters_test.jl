@@ -37,3 +37,9 @@ function param_test()
         @test p2.value == 98.2
     end
 end
+
+@testset "Parameters" begin
+    param_test()
+end
+
+# ------------

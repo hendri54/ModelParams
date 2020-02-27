@@ -191,4 +191,27 @@ function length(iv :: IncreasingVector)
 end
 
 
+"""
+	$(SIGNATURES)
+
+Object that holds vectorized version of calibrated parameter values.
+"""
+mutable struct ValueVector{T <: AbstractFloat}
+    valueV :: Vector{T}
+    lbV :: Vector{T}
+    ubV :: Vector{T}
+end
+
+values(vv :: ValueVector) = vv.valueV;
+lb(vv :: ValueVector) = vv.lbV;
+ub(vv :: ValueVector) = vv.ubV;
+
+function Base.isapprox(vv1 :: ValueVector, vv2 :: ValueVector;
+    atol :: Real = 1e-8)
+
+    return isapprox(values(vv1), values(vv2), atol = atol)  &&
+        isapprox(lb(vv1), lb(vv2), atol = atol)  &&
+        isapprox(ub(vv1), ub(vv2), atol = atol);
+end
+
 # -----------

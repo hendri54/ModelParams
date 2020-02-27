@@ -1,13 +1,75 @@
-## -------------  Info about `ModelObject`
+"""
+	$(SIGNATURES)
+
+Is `o` a `ModelObject`?
+"""
+is_model_object(o :: ModelObject) = true;
+is_model_object(o) = false;
 
 
-# There is currently nothing to validate
+"""
+	$(SIGNATURES)
+
+Retrieve an objects ObjectId. Return `nothing` if not found.
+"""
+get_object_id(o :: ModelObject) = o.objId :: ObjectId
+get_object_id(o) = nothing;
+
+
+"""
+	$(SIGNATURES)
+
+Does object contain a `ParamVector`. Override for user defined types.
+By default, ModelObjects are assumed to have `ParamVector`s.
+"""
+has_pvector(o :: ModelObject) = true;
+has_pvector(o) = false;
+
+
+"""
+	$(SIGNATURES)
+
+Find the ParamVector. Return empty if not found.
+Override for user types.
+"""
+function get_pvector(o)
+    # Try the default field
+    if has_pvector(o)  &&  isdefined(o, :pvec)
+        pvec = o.pvec;
+    else
+        pvec = ParamVector(o.objId);
+    end
+    return pvec :: ParamVector
+end
+
+#     if !found
+#         for pn = propertynames(o)
+#             obj = getproperty(o, pn);
+#             if isa(obj, ParamVector)
+#                 pvec = obj;
+#                 found = true;
+#                 break;
+#             end
+#         end
+#     end
+#     return pvec :: ParamVector
+# end
+
+
 # Code permits objects without ParamVector or child objects
-function validate(m :: T1) where T1 <: ModelObject
-    # @assert isa(m.hasParamVector, Bool)
-    # @assert isa(get_child_objects(m), Vector)
-    @assert isdefined(m, :objId)
-    return nothing
+function validate(o :: T1) where T1 <: ModelObject
+    isValid = true;
+    if !isa(get_object_id(o), ObjectId)
+        @warn "Invalid ObjectId"
+        isValid = false;
+    end
+    if has_pvector(o)
+        if !isa(get_pvector(o), ParamVector)
+            @warn "Invalid ParamVector"
+            isValid = false;
+        end
+    end
+    return isValid
 end
 
 
@@ -17,9 +79,15 @@ end
 Show structure of a `ModelObject`.
 """
 function show(io :: IO,  o :: ModelObject)
+    show_object_structure(io, o);
+end
+
+function show_object_structure(io :: IO, o)
     objV = collect_model_objects(o);
-    for obj in objV
-        println(io,  make_string(obj.objId) * " \t $(typeof(obj))");
+    if !isempty(objV)
+        for obj in objV
+            println(io,  make_string(get_object_id(obj)) * " \t $(typeof(obj))");
+        end
     end
     return nothing
 end
@@ -30,13 +98,12 @@ end
 
 Collect all model objects inside an object. Only those that have a `pvector`.
 Recursive. Also collects objects inside child objects and so on.
+Returns empty `Vector` if no objects found.
 """
-function collect_model_objects(o :: T1) where T1 <: ModelObject
+function collect_model_objects(o :: ModelObject)
     outV = Vector{Any}();
-    # nameV = Vector{Symbol}();
     if has_pvector(o)
         push!(outV, o);
-        # push!(nameV, objName);
     end
 
     # Objects directly contained in `o`
@@ -45,40 +112,39 @@ function collect_model_objects(o :: T1) where T1 <: ModelObject
         for i1 = 1 : length(childObjV)
             nestedObjV = collect_model_objects(childObjV[i1]);
             append!(outV, nestedObjV);
-            # append!(nameV, nestedNameV);
         end
     end
-    return outV :: Vector  # , nameV :: Vector{Symbol}
+    return outV :: Vector
 end
+
+collect_model_objects(o) = Vector{Any}();
 
 
 """
     $(SIGNATURES)
 
 Find the child objects inside a model object.
+Returns empty Vector if no objects found.
 """
-function get_child_objects(o :: T1) where T1 <: ModelObject
+function get_child_objects(o :: ModelObject)
     childV = Vector{Any}();
-    # nameV = Vector{Symbol}();
     for pn in propertynames(o)
         obj = getproperty(o, pn);
         if isa(obj, Vector)
-            if eltype(obj) <: ModelObject
+            # This check is not quite right. But objects should all be the same type.
+            if is_model_object(obj[1])
                 append!(childV, obj);
-                # for i1 = 1 : length(obj)
-                #     push!(nameV, Symbol("$pn$i1"));
-                # end
             end
         else
-            if typeof(obj) <: ModelObject
+            if is_model_object(obj)
                 push!(childV, obj);
-                # push!(nameV, pn);
             end
         end
     end
-    return childV :: Vector  # , nameV
+    return childV :: Vector
 end
 
+get_child_objects(o) = Vector{Any}();
 
 
 """
@@ -88,11 +154,11 @@ Find child object with a given `ObjectId`.
 Returns `nothing` if not found.
 """
 function find_object(o :: ModelObject, id :: ObjectId)
-    objV = collect_model_objects(o);
     oOut = nothing;
+    objV = collect_model_objects(o);
     if !isempty(objV)
         for obj in objV
-            if isequal(obj.objId, id)
+            if isequal(get_object_id(obj), id)
                 oOut = obj;
                 break;
             end
@@ -101,62 +167,42 @@ function find_object(o :: ModelObject, id :: ObjectId)
     return oOut
 end
 
+find_object(o, id :: ObjectId) = nothing;
+
 
 """
 	$(SIGNATURES)
 
-Find child objects that have a name given by a `Symbol`. Easier than having to specify an entire `ObjectId`.
+Find all child objects that have a name given by a `Symbol`. Easier than having to specify an entire `ObjectId`.
 """
 function find_object(o :: ModelObject, oName :: Symbol)
-    objV = collect_model_objects(o);
     outV = Vector{Any}();
-    for obj in objV
-        if own_name(obj) == oName
-            push!(outV, obj);
+    objV = collect_model_objects(o);
+    if !isempty(objV)
+        for obj in objV
+            if own_name(obj) == oName
+                push!(outV, obj);
+            end
         end
     end
     return outV
 end
 
-
-## Find the ParamVector
-function get_pvector(o :: T1) where T1 <: ModelObject
-    found = false;
-    pvec = ParamVector(o.objId);
-
-    # Try the default field
-    if isdefined(o, :pvec)
-        if isa(o.pvec, ParamVector)
-            pvec = o.pvec;
-            found = true;
-        end
-    end
-
-    if !found
-        for pn = propertynames(o)
-            obj = getproperty(o, pn);
-            if isa(obj, ParamVector)
-                pvec = obj;
-                found = true;
-                break;
-            end
-        end
-    end
-    return pvec :: ParamVector
-end
+find_object(o, oName :: Symbol) = Vector{Any}();
 
 
-## Does object contain ParamVector
-function has_pvector(o :: T1) where T1 <: ModelObject
-    return length(get_pvector(o)) > 0
-end
+"""
+	$(SIGNATURES)
 
-
-function collect_pvectors(o :: T1) where T1 <: ModelObject
-    objV = collect_model_objects(o);
+Collect all `ParamVector`s in an object.
+"""
+function collect_pvectors(o :: ModelObject)
     pvecV = Vector{ParamVector}();
-    for i1 = 1 : length(objV)
-        push!(pvecV, get_pvector(objV[i1]));
+    objV = collect_model_objects(o);
+    if !isempty(objV)
+        for i1 = 1 : length(objV)
+            push!(pvecV, get_pvector(objV[i1]));
+        end
     end
     return pvecV :: Vector{ParamVector}
 end
@@ -206,7 +252,7 @@ end
 
 ## Set default values from param vector
 #Typically for non-calibrated parameters
-function set_default_values!(x, isCalibrated :: Bool)
+function set_default_values!(x :: ModelObject, isCalibrated :: Bool)
     pvec = get_pvector(x);
     # Last arg: use default values
     d = make_dict(pvec, isCalibrated, false);
@@ -217,7 +263,7 @@ end
 
 ## Set fields in a struct from a Dict{Symbol, Any}.
 # Does not change `ParamVector` inside `x` (if any)
-function set_values_from_dict!(x,  d :: Dict{Symbol, Any})
+function set_values_from_dict!(x :: ModelObject,  d :: Dict{Symbol, Any})
     for (k, val) in d
         if k ∈ propertynames(x)
             setfield!(x, k, val);
@@ -234,7 +280,7 @@ end
 Copy all values from a vector of `ParamVector` into an object, including child objects.
 Only changes values that are `isCalibrated` in object and `v`.
 """
-function set_values_from_pvectors!(x, v :: Vector{ParamVector}, isCalibrated :: Bool)
+function set_values_from_pvectors!(x :: ModelObject, v :: Vector{ParamVector}, isCalibrated :: Bool)
     # Collect all model objects
     mObjV = collect_model_objects(x);
 
@@ -261,7 +307,7 @@ end
 
 Sync all values from object's param vector into object.
 """
-function sync_values!(x)
+function sync_values!(x :: ModelObject)
     set_values_from_pvec!(x, true);
     set_default_values!(x, false);
 end
@@ -272,7 +318,7 @@ end
 
 Check that param vector values are consistent with object values
 """
-function check_calibrated_params(x, pvec)
+function check_calibrated_params(x :: ModelObject, pvec)
     d = make_dict(pvec, true);
     valid = true;
     for (pName, pValue) in d
@@ -291,7 +337,7 @@ end
 
 Check that all fixed parameters have the correct values
 """
-function check_fixed_params(x, pvec)
+function check_fixed_params(x :: ModelObject, pvec)
     # Make dict of default values for non-calibrated params
     d = make_dict(pvec, false);
     valid = true;
@@ -314,7 +360,7 @@ Calibrated parameters.
 Uses the first `nUsed` values in `vAll`.
 Order in `vAll` must match order in `pvec`. E.g., because `vAll` is generated by `make_vector`.
 """
-function sync_from_vector!(x, vAll :: Vector{ValueType})
+function sync_from_vector!(x :: ModelObject, vAll :: Vector{ValueType})
     pvec = get_pvector(x);
     d11, nUsed1 = vector_to_dict(pvec, vAll, true);
     set_values_from_dict!(pvec, d11);
