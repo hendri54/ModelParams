@@ -108,6 +108,8 @@ end
 
 ## -----------  General functions
 
+name(d :: AbstractDeviation) = d.name;
+
 """
 	get_data_values(d :: AbstractDeviation)
 

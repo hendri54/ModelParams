@@ -187,8 +187,16 @@ function dev_vector_test()
 
         devV = scalar_devs(d);
         @test length(devV) == 3;
+        # Not sorted, so the following test does not work
         scalarDev1, _ = scalar_dev(dev1);
-        @test devV[1] == scalarDev1
+        # @test devV[1] == scalarDev1
+
+        sds = scalar_dev_dict(d);
+        @test isa(sds, Dict{Symbol, ModelParams.ValueType})
+        @test length(sds) == 3
+        @test sds[ModelParams.name(dev1)] ≈ scalarDev1
+        @test sort(devV) ≈ sort(collect(values(sds)))
+
 
         scalarDev = scalar_deviation(d);
         @test isa(scalarDev, Float64)

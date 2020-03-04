@@ -29,6 +29,12 @@ function isequal(id1V :: Vector{SingleId},  id2V :: Vector{SingleId})
     return outVal
 end
 
+
+"""
+	$(SIGNATURES)
+
+Make a string from o `SingleId`. Such as "x[2, 1]".
+"""
 function make_string(id :: SingleId)
     if !has_index(id)
         outStr = "$(id.name)"
@@ -38,6 +44,24 @@ function make_string(id :: SingleId)
         outStr = "$(id.name)$(id.index)"
     end
     return outStr
+end
+
+
+"""
+	$(SIGNATURES)
+
+The inverse of [`make_string`](@ref).
+"""
+function make_single_id(s :: T1) where T1 <: AbstractString
+    if occursin('[', s)
+        # Pattern "id1[4, 3]"
+        m = match(r"(.+)\[([0-9, ]+)+\]", s);
+        idxV = parse.(Int, split(m[2], ","));
+        sId = SingleId(Symbol(m[1]),  idxV);
+    else
+        sId = SingleId(Symbol(s));
+    end
+    return sId
 end
 
 
@@ -153,15 +177,39 @@ function own_name(o :: ModelObject)
 end
 
 
+"""
+	$(SIGNATURES)
+
+Make string from ObjectId. Such as "p > q > r[4, 2]".
+"""
 function make_string(id :: ObjectId)
     outStr = "";
     for i1 = 1 : length(id.ids)
         if i1 > 1
-            outStr = outStr  * " > ";
+            outStr = outStr  * ObjIdSeparator;
         end
         outStr = outStr * make_string(id.ids[i1]);
     end
     return outStr
+end
+
+
+"""
+	$(SIGNATURES)
+
+The inverse of `make_string`.
+"""
+function make_object_id(s :: T1) where T1 <: AbstractString
+    if occursin(ObjIdSeparator, s)
+        strV = split(s, ObjIdSeparator);
+        singleIdV = similar(strV, SingleId);
+        for (j, str) in enumerate(strV)
+            singleIdV[j] = make_single_id(str);
+        end
+        return ObjectId(singleIdV)
+    else
+        return ObjectId(Symbol(s));
+    end
 end
 
 

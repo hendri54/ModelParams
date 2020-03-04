@@ -132,19 +132,28 @@ Return vector of scalar deviations.
 Returns empty vector if `DevVector` is empty.
 """
 function scalar_devs(d :: DevVector; inclScalarWt :: Bool = true)
-    n = length(d);
-    if n > 0
-        devV = Vector{DevType}(undef, n);
-        for i1 in 1 : n
-            dev,_ = scalar_dev(d.dv[i1],  inclScalarWt = inclScalarWt);
-            devV[i1] = dev;
-        end
-    else
-        devV = Vector{DevType}();
-    end
-    return devV
+    sds = scalar_dev_dict(d; inclScalarWt = inclScalarWt);
+    return collect(values(sds));
 end
 
+
+"""
+	$(SIGNATURES)
+
+Make a `Dict{Symbol, DevType}` that maps deviation names into scalar deviations.
+Useful for saving to disk.
+"""
+function scalar_dev_dict(d :: DevVector; inclScalarWt :: Bool = true)
+    sds = Dict{Symbol, DevType}();
+    n = length(d);
+    if n > 0
+        for i1 in 1 : n
+            dev,_ = scalar_dev(d.dv[i1],  inclScalarWt = inclScalarWt);
+            sds[name(d.dv[i1])] = dev;
+        end
+    end
+    return sds
+end
 
 """
 	$(SIGNATURES)

@@ -19,6 +19,9 @@ import Base.append!, Base.length, Base.getindex, Base.values
 using ArgCheck, DocStringExtensions, Formatting, Parameters, PrettyTables, Printf
 using EconometricsLH
 
+# ObjectId
+export ObjectId, make_string, make_single_id, make_object_id
+
 # Model objects
 export ModelObject
 export collect_model_objects, collect_pvectors, find_object, make_guess, perturb_guess, validate
@@ -30,7 +33,7 @@ export IncreasingVector, values
 export AbstractDeviation, ScalarDeviation, Deviation, RegressionDeviation
 export get_data_values, get_unpacked_data_values, get_model_values, get_unpacked_model_values, get_weights
 export set_model_values, set_weights!
-export scalar_dev, short_display, show_deviation
+export scalar_dev, scalar_devs, scalar_dev_dict, short_display, show_deviation
 # Deviation vectors
 export DevVector, append!, length, retrieve, scalar_deviation, scalar_devs, show
 # Transformations
@@ -46,7 +49,8 @@ export ValueVector, values, lb, ub
 
 
 
-const ValueType = Float64
+const ValueType = Float64;
+const ObjIdSeparator = " > "
 
 """
     ModelObject
@@ -73,7 +77,7 @@ include("scalar_deviation.jl")
 include("matrix_deviation.jl")
 include("devvector.jl")
 include("m_objects.jl")
-
+include("obj_pvectors.jl")
 
 
 ## ------------  Main user interface functions

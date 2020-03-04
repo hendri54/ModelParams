@@ -205,6 +205,7 @@ end
 values(vv :: ValueVector) = vv.valueV;
 lb(vv :: ValueVector) = vv.lbV;
 ub(vv :: ValueVector) = vv.ubV;
+Base.length(vv :: ValueVector) = Base.length(vv.valueV);
 
 function Base.isapprox(vv1 :: ValueVector, vv2 :: ValueVector;
     atol :: Real = 1e-8)

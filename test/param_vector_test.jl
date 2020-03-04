@@ -1,3 +1,5 @@
+using Test, ModelParams
+
 ## Parameter vector test
 import ModelParams.get_pvector
 
@@ -5,8 +7,8 @@ import ModelParams.get_pvector
 
 # Make a ParamVector for testing
 # Alternates between calibrated and fixed parameters
-function init_pvector(n :: Integer)
-    pv = ParamVector(ObjectId(:obj1));
+function init_pvector(n :: Integer; objId :: Symbol = :obj1)
+    pv = ParamVector(ObjectId(objId));
     for i1 = 1 : n
         p = init_parameter(i1);
         if isodd(i1)
@@ -169,11 +171,31 @@ function report_test()
 end
 
 
+function pv_vector_test()
+    @testset "Vector of ParamVector" begin
+        n = 3;
+        pvv = Vector{ParamVector}(undef, n);
+        for j = 1 : n
+            pvv[j] = init_pvector(j + 2; objId = Symbol("obj$j"));
+        end
+
+        d = ModelParams.make_dict(pvv);
+        @test length(d) == n
+        for j = 1 : n
+            objId = make_string(get_object_id(pvv[j]));
+            @test haskey(d, objId)
+            @test isequal(d[objId],  make_dict(pvv[j], true))
+        end
+    end
+end
+
+
 @testset "ParamVector" begin
     pvectorTest()
     get_pvector_test()
     pvectorDictTest()
     report_test()
+    pv_vector_test()
 end
 
 # -------------

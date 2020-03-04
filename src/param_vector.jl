@@ -25,6 +25,8 @@ function show(io :: IO,  pvec :: ParamVector)
     return nothing
 end
 
+get_object_id(pv :: ParamVector) = pv.objId;
+has_object_id(pv :: ParamVector) = true;
 
 """
     length
@@ -248,10 +250,10 @@ end
 
 
 """
-    make_dict
+    $(SIGNATURES)
 
-Collect values or default values into Dict
-Used to go back and forth between guess and model parameters
+Collect values or default values into Dict.
+Used to go back and forth between guess and model parameters.
 """
 function make_dict(pvec :: ParamVector, isCalibrated :: Bool,
     useValues :: Bool)

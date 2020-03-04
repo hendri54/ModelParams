@@ -1,6 +1,6 @@
 using ModelParams, Test
 
-## -------------  Test model
+## -------------  Test `ModelObject`
 # More extensive testing in `SampleModel`
 
 import ModelParams.has_pvector
@@ -78,6 +78,8 @@ function init_test_model()
     return TestModel(objName, o1, o2, 9.87, 87.73)
 end
 
+
+## --------------  Tests
 
 function find_test()
     @testset "Find" begin
@@ -254,11 +256,33 @@ function change_values_test()
 end
 
 
+## Model object -> Dict and back
+function dict_test()
+    @testset "Dict" begin
+        m = init_test_model();
+        guessV = make_guess(m);
+        pvecV = collect_pvectors(m);
+        d = make_dict(pvecV; isCalibrated = true);
+
+        # Change parameters
+        guess3V = perturb_guess(m, guessV, 1 : length(guessV), 0.1);
+        ModelParams.set_params_from_guess!(m, guess3V);
+        @test isapprox(make_guess(m), guess3V)
+
+        # Restore the original parameters from Dict
+        ModelParams.set_values_from_dicts!(m, d; isCalibrated = true);
+        guess4V = make_guess(m)
+        @test isapprox(guess4V, guessV)
+    end
+end
+
+
 @testset "Model" begin
     find_test();
     model_test();
     set_values_test();
     change_values_test();
+    dict_test()
 end
 
 
