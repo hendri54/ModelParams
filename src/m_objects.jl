@@ -230,5 +230,18 @@ function check_fixed_params(x :: ModelObject, pvec)
 end
 
 
+"""
+	$(SIGNATURES)
+
+Do two model objects have the same calibrated parameters?
+Includes child objects.
+This is mainly useful for testing (e.g., loading parameters).
+"""
+function params_equal(x1 :: ModelObject, x2 :: ModelObject)
+    guess1 = make_guess(x1);
+    guess2 = make_guess(x2);
+    return isapprox(guess1, guess2; atol = 1e-6)
+end
+
 
 # -----------------

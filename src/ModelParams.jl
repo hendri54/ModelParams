@@ -24,9 +24,9 @@ export ObjectId, make_string, make_single_id, make_object_id
 
 # Model objects
 export ModelObject
-export collect_model_objects, collect_pvectors, find_object, make_guess, perturb_guess, validate
-export get_object_id
-export has_pvector, get_pvector
+export collect_model_objects, collect_pvectors, find_object, make_guess, perturb_guess, perturb_params, params_equal, validate
+export get_object_id, has_pvector, get_pvector
+export set_values_from_dicts!
 export IncreasingVector, values
 
 # Deviations
@@ -101,10 +101,14 @@ end
 Perturb guesses at indices `dIdx` by amount `dGuess`.
 Ensure that guesses stay in bounds.
 """
-function perturb_guess(m :: ModelObject, guessV :: Vector, dIdx, dGuess)
+function perturb_guess(m :: ModelObject, guessV :: Vector, dGuess; dIdx = nothing)
     vv = make_guess(m);
-    guess2V = copy(guessV);
-    guess2V[dIdx] = guessV[dIdx] .+ dGuess;
+    if isnothing(dIdx)
+        guess2V = guessV .+ dGuess;
+    else
+        guess2V = copy(guessV);
+        guess2V[dIdx] = guessV[dIdx] .+ dGuess;
+    end
     guess2V = min.(max.(guess2V, lb(vv) .+ 0.0001),  ub(vv) .- 0.0001);
     return guess2V
 end
@@ -114,11 +118,25 @@ end
 
 Perturb a guess, provided as a `ValueVector`. Return a new `ValueVector`.
 """
-function perturb_guess(m :: ModelObject, guess :: ValueVector, dIdx, dGuess)
-    guessV = perturb_guess(m, values(guess), dIdx, dGuess);
+function perturb_guess(m :: ModelObject, guess :: ValueVector, dGuess;
+    dIdx = nothing)
+
+    guessV = perturb_guess(m, values(guess), dGuess; dIdx = dIdx);
     return ValueVector(guessV, lb(guess), ub(guess))
 end
 
+
+"""
+	$(SIGNATURES)
+
+Perturb calibrated model parameters. Including child objects.
+"""
+function perturb_params(m :: ModelObject, dGuess; dIdx = nothing)
+    guess = make_guess(m);
+    guess2 = perturb_guess(m, guess, dGuess; dIdx = dIdx);
+    set_params_from_guess!(m, guess2);
+    return nothing
+end
 
 
 """

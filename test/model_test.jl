@@ -225,8 +225,15 @@ function set_values_test()
 
         # Change values arbitrarily. Need a copy of the model object; otherwise `pvec` is changed
         m2 = init_test_model();
-        guess2V = ModelParams.perturb_guess(m2, guessV, 1 : length(guessV), 0.1);
-        guess2 = perturb_guess(m2, vv, 1 : length(guessV), 0.1);
+        @test ModelParams.params_equal(m, m2)
+        guess2V = ModelParams.perturb_guess(m2, guessV, 0.1; dIdx = 4);
+        guess2 = perturb_guess(m2, vv, 0.1; dIdx = 4);
+        @test isapprox(values(guess2), guess2V, atol = 1e-6)
+
+        m2 = init_test_model();
+        @test ModelParams.params_equal(m, m2)
+        guess2V = ModelParams.perturb_guess(m2, guessV, 0.1);
+        guess2 = perturb_guess(m2, vv, 0.1);
         @test isapprox(values(guess2), guess2V, atol = 1e-6)
         
         # Two interfaces for setting parameters
@@ -235,12 +242,19 @@ function set_values_test()
         ModelParams.set_params_from_guess!(m2, guess2);
         guess4 = make_guess(m2);
         @test isapprox(guess3, guess4)
+        @test !ModelParams.params_equal(m, m2)
 
         # Restore values from pvectors
         ModelParams.set_values_from_pvectors!(m2, pvecV, true);
         # Check that we get the same guessV
         vv3 = make_guess(m);
         @test isapprox(vv, vv3)
+
+        m3 = init_test_model();
+        perturb_params(m3, 0.1);
+        @test !params_equal(m, m3)
+        guess5 = make_guess(m3)
+        @test !isapprox(vv, guess5; atol = 1e-5)
     end
 end
 
@@ -265,7 +279,7 @@ function dict_test()
         d = make_dict(pvecV; isCalibrated = true);
 
         # Change parameters
-        guess3V = perturb_guess(m, guessV, 1 : length(guessV), 0.1);
+        guess3V = perturb_guess(m, guessV, 0.1);
         ModelParams.set_params_from_guess!(m, guess3V);
         @test isapprox(make_guess(m), guess3V)
 
