@@ -390,7 +390,7 @@ end
 
 Set values in param vector from dictionary.
 """
-function set_values_from_dict!(pvec :: ParamVector, d :: Dict{Symbol,Any})
+function set_values_from_dict!(pvec :: ParamVector, d :: D1) where D1 <: AbstractDict
     for (pName, newValue) in d
         change_value!(pvec, pName :: Symbol, newValue);
     end

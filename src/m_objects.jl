@@ -182,7 +182,7 @@ find_object(o, oName :: Symbol) = Vector{Any}();
 	$(SIGNATURES)
 
 Retrieve the value of a field in a `ModelObject` or its children.
-Object name `oName` must be unique.
+Object name `oName` must be unique. This is the name in the `ObjectId`, not what the object is called as a field in the model object.
 """
 function get_value(x :: ModelObject, oName :: Symbol, pName :: Symbol)
     objV = find_object(x, oName);
