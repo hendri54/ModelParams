@@ -51,6 +51,8 @@ function object_id_test()
         id1 = SingleId(:id1);
         o1 = ObjectId(id1);
         @test !ModelParams.has_parent(o1)
+
+        # Roundtrip between objectId and String
         s1 = make_string(id1);
         @test isequal(s1, "id1")
         o1a = make_object_id(s1)
@@ -60,8 +62,6 @@ function object_id_test()
         o2 = ObjectId(:id2, 2)
         show(o2);
         @test ModelParams.own_index(o2) == [2]
-        pId = ModelParams.convert_to_parent_id(o2);
-        @test isa(pId, ModelParams.ParentId)
         @test ModelParams.own_name(o2) == :id2
 
         # Has id1 as parent
@@ -69,21 +69,17 @@ function object_id_test()
         show(o3)
         p3 = ModelParams.get_parent_id(o3);
         @test ModelParams.is_parent_of(p3, o3)
-        pId = ModelParams.convert_to_parent_id(o3);
-        @test length(pId.ids) == 2
         s3 = ModelParams.make_string(o3);
         @test isequal(s3, "id1 > id3[2]")
         o3a = make_object_id(s3)
         @test isequal(o3, o3a)
 
-        o4 = ObjectId(:id4, pId);
-        pId4 = ModelParams.convert_to_parent_id(o4);
-        @test isequal(pId4.ids, [id1, SingleId(:id3, 2), SingleId(:id4)])
-
+        # Make child id
+        o4 = ObjectId(:id4, p3);
         obj4 = TestObj4(o4);
         childId = ModelParams.make_child_id(obj4, :child);
-        @test isequal(childId.ids[end],  SingleId(:child))
-        @test isequal(pId4, ModelParams.get_parent_id(childId))
+        @test isequal(ModelParams.own_id(childId),  SingleId(:child))
+        @test isequal(o4, ModelParams.get_parent_id(childId))
         @test isequal(ModelParams.own_name(obj4), :id4)
 
         # Check `isequal` when "depth" of `ObjectId`s is different

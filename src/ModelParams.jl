@@ -16,15 +16,30 @@ module ModelParams
 import Base.show, Base.isempty, Base.isequal
 import Base.append!, Base.length, Base.getindex, Base.values
 
-using ArgCheck, DocStringExtensions, Formatting, Parameters, PrettyTables, Printf
+using ArgCheck, DocStringExtensions, Formatting, Parameters, PrettyTables
 using EconometricsLH
 
+# SingleId
+export SingleId, make_single_id
+
 # ObjectId
-export ObjectId, make_string, make_single_id, make_object_id
+export ObjectId, make_string, make_object_id
+
+# Transformations
+export LinearTransformation, transform_bounds, transform_param, untransform_param
+
+# Parameters
+export Param
+export calibrate!, fix!, set_value!, update!, validate
+
+# ParamVector
+export ParamVector
+export param_exists, make_dict, make_vector
+export param_value, retrieve, vector_to_dict
 
 # Model objects
 export ModelObject
-export collect_model_objects, collect_pvectors, find_object, make_guess, perturb_guess, perturb_params, params_equal, validate
+export check_fixed_params, check_calibrated_params, collect_model_objects, collect_pvectors, find_object, make_guess, perturb_guess, perturb_params, params_equal, validate
 export get_object_id, has_pvector, get_pvector
 export set_values_from_dicts!
 export IncreasingVector, values
@@ -36,13 +51,6 @@ export set_model_values, set_weights!
 export scalar_dev, scalar_devs, scalar_dev_dict, short_display, show_deviation
 # Deviation vectors
 export DevVector, append!, length, retrieve, scalar_deviation, scalar_devs, show
-# Transformations
-export LinearTransformation, transform_bounds, transform_param, untransform_param
-
-# ParamVector
-export ParamVector
-export param_exists, make_dict, make_vector
-export param_value, retrieve, vector_to_dict
 
 # ValueVector
 export ValueVector, values, lb, ub
@@ -52,21 +60,11 @@ export ValueVector, values, lb, ub
 const ValueType = Float64;
 const ObjIdSeparator = " > "
 
-"""
-    ModelObject
-
-Abstract model object
-Must have field `objId :: ObjectId` that uniquely identifies it
-May contain a ParamVector, but need not.
-
-Child objects may be vectors. Then the vector must have a fixed element type that is
-a subtype of `ModelObject`
-"""
-abstract type ModelObject end
 
 include("types.jl")
 # General purpose code copied from `CommonLH`
 include("helpers.jl")
+include("single_id.jl")
 include("object_id.jl")
 include("transformations.jl")
 include("parameters.jl")
@@ -122,7 +120,7 @@ function perturb_guess(m :: ModelObject, guess :: ValueVector, dGuess;
     dIdx = nothing)
 
     guessV = perturb_guess(m, values(guess), dGuess; dIdx = dIdx);
-    return ValueVector(guessV, lb(guess), ub(guess))
+    return ValueVector(guessV, lb(guess), ub(guess), pnames(guess))
 end
 
 
@@ -145,19 +143,12 @@ end
 Make vector of guesses into model parameters. For object and children.
 This changes the values in `m` and in its `pvector`.
 """
-function set_params_from_guess!(m :: ModelObject, guessV :: Vector{Float64})
-    # Copy guesses into model objects
-    # pvecV = collect_pvectors(m);
+function set_params_from_guess!(m :: ModelObject, guess :: ValueVector)
     objV = collect_model_objects(m);
     # Copy param vectors into model
-    vOut = sync_from_vector!(objV, guessV);
-    # Make sure all parameters have been used up
-    @assert isempty(vOut)
-    return nothing
+    return sync_from_vector!(objV, guess);
 end
-
-set_params_from_guess!(m :: ModelObject, guess :: ValueVector) = 
-    set_params_from_guess!(m, values(guess));
+    
 
 
 """

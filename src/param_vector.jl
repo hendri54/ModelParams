@@ -27,23 +27,8 @@ end
 
 get_object_id(pv :: ParamVector) = pv.objId;
 has_object_id(pv :: ParamVector) = true;
-
-"""
-    length
-
-Returns number of parameters
-"""
-function length(pvec :: ParamVector)
-    return Base.length(pvec.pv)
-end
-
-"""
-	$(SIGNATURES)
-"""
-function isempty(pvec :: ParamVector)
-    return Base.isempty(pvec.pv)
-end
-
+Base.length(pvec :: ParamVector) = Base.length(pvec.pv);
+Base.isempty(pvec :: ParamVector) = Base.isempty(pvec.pv);
 
 
 # Check that param vector matches model object
@@ -54,43 +39,48 @@ end
 
 ## ----------  Retrieve
 
-"""
-	$(SIGNATURES)
-"""
+# Allows to access values simply as `p[j]`
 function getindex(pvec :: ParamVector, j :: Integer)
     @argcheck j <= Base.length(pvec.pv)
     return pvec.pv[j]
 end
 
+function Base.iterate(pvec :: ParamVector)
+    if isempty(pvec) 
+        return nothing
+    else
+        return pvec.pv[1], 1
+    end
+end
+
+function Base.iterate(pvec :: ParamVector, s)
+    if s >= length(pvec)
+        return nothing
+    else
+        return pvec.pv[s+1], s+1
+    end
+end
+
+Base.eltype(pvec :: ParamVector) = Param;
 
 
 """
     retrieve
 
 Returns the index of a named parameter.
-
 First occurrence. Returns 0 if not found.
 """
 function retrieve(pvec :: ParamVector, pName :: Symbol)
-    idxOut = 0;
-    n = length(pvec);
-    if n > 0
-        for idx = 1 : n
-            p = pvec.pv[idx];
-            if p.name == pName
-                idxOut = idx;
-                found = true;
-                break
-            end
-        end
-    end
-    if idxOut > 0
-        p = pvec.pv[idxOut]
-        return p, idxOut
-    else
+    idxOut = param_index(pvec, pName);
+    if isnothing(idxOut)
         return nothing, 0
+    else
+        return pvec.pv[idxOut], idxOut
     end
 end
+
+param_index(pvec :: ParamVector, pName :: Symbol) = 
+    findfirst(x -> isequal(x.name, pName),  pvec.pv);
 
 
 """
@@ -98,10 +88,8 @@ end
 
 Does a `Param` named `pName` exist in `ParamVector pvec`?
 """
-function param_exists(pvec :: ParamVector, pName :: Symbol)
-    _, idx = retrieve(pvec, pName);
-    return idx > 0
-end
+param_exists(pvec :: ParamVector, pName :: Symbol) =
+    !isnothing(param_index(pvec, pName))
 
 
 """
@@ -136,6 +124,21 @@ function indices_calibrated(pvec :: ParamVector, isCalibrated :: Bool)
     return idxV
 end
 
+
+"""
+    n_calibrated_params
+
+Number of calibrated parameters and their total element count.
+"""
+function n_calibrated_params(pvec :: ParamVector, isCalibrated :: Bool)
+    idxV = indices_calibrated(pvec, isCalibrated);
+    nParams = length(idxV);
+    nElem = 0;
+    for i1 in idxV
+        nElem += length(pvec.pv[i1].value);
+    end
+    return nParams, nElem
+end
 
 
 ## ------------  Modify
@@ -184,6 +187,8 @@ function change_value!(pvec :: ParamVector, pName :: Symbol, newValue)
 end
 
 
+## ------------------  Reporting
+
 """
     $(SIGNATURES)
 
@@ -228,26 +233,7 @@ function param_table(pvec :: ParamVector, isCalibrated :: Bool)
 end
 
 
-"""
-    n_calibrated_params
-
-Number of calibrated parameters
-"""
-function n_calibrated_params(pvec :: ParamVector, isCalibrated :: Bool)
-    nParams = 0;
-    nElem = 0;
-    n = length(pvec);
-    if n > 0
-        for i1 = 1 : n
-            if pvec.pv[i1].isCalibrated == isCalibrated
-                nParams += 1;
-                nElem += length(pvec.pv[i1].value);
-            end
-        end
-    end
-    return nParams, nElem
-end
-
+## --------------  Dicts and Vectors
 
 """
     $(SIGNATURES)
@@ -258,64 +244,61 @@ Used to go back and forth between guess and model parameters.
 function make_dict(pvec :: ParamVector, isCalibrated :: Bool,
     useValues :: Bool)
 
-    n = length(pvec);
-    if n < 1
-        pd = nothing
-    else
-        pd = Dict{Symbol, Any}()
-        for i1 in 1 : n
-            p = pvec.pv[i1];
-            if p.isCalibrated == isCalibrated
-                if useValues
-                    pd[p.name] = p.value;
-                else
-                    pd[p.name] = p.defaultValue;
-                end
-            end
+    pd = Dict{Symbol, Any}()
+    idxV = indices_calibrated(pvec, isCalibrated);
+    for i1 in idxV
+        p = pvec.pv[i1];
+        if useValues
+            pd[p.name] = p.value;
+        else
+            pd[p.name] = p.defaultValue;
         end
     end
     return pd
 end
 
+
 # Typically, useValues when calibrated; defaults otherwise
-function make_dict(pvec :: ParamVector, isCalibrated :: Bool)
-    if isCalibrated
-        useValues = true;
-    else
-        useValues = false;
-    end
-    return make_dict(pvec, isCalibrated, useValues)
-end
+make_dict(pvec :: ParamVector, isCalibrated :: Bool) = 
+    make_dict(pvec, isCalibrated, isCalibrated)
 
 
 """
     $(SIGNATURES)
 
 Make vector of values, lb, ub for optimization algorithm.
-
 Vectors are transformed using the `ParameterTransformation` specified in the `ParamVector`.
+Returns a `ValueVector`.
 """
 function make_vector(pvec :: ParamVector, isCalibrated :: Bool)
     T1 = ValueType;
-    valueV = Vector{T1}();
+    idxV = indices_calibrated(pvec, isCalibrated);
+    n, nElem = n_calibrated_params(pvec, isCalibrated);
+    valueV = Vector{T1}(undef, nElem);
+    pNameV = Vector{Symbol}(undef, nElem);
 
-    n = length(pvec);
-    if n > 0
-        for i1 in 1 : n
-            p = pvec.pv[i1];
-            if p.isCalibrated == isCalibrated
-                pValue = transform_param(pvec.pTransform,  p);
-                # Append works for scalars, vectors, and matrices (that get flattened)
-                # Need to qualify - otherwise local append! is called
-                Base.append!(valueV, pValue);
-            end
+    idxLast = 0;
+    for i1 in idxV
+        pValue = transform_param(pvec.pTransform,  pvec.pv[i1]);
+        pLen = length(pValue);
+        pIdxV = idxLast .+ (1 : pLen);
+        idxLast += pLen;
+        if pLen == 1
+            valueV[pIdxV] .= pValue;
+        else
+            valueV[pIdxV] .= vec(pValue);
         end
+        pNameV[pIdxV] .= name(pvec.pv[i1]);
+        # # Append works for scalars, vectors, and matrices (that get flattened)
+        # # Need to qualify - otherwise local append! is called
+        # Base.append!(valueV, pValue);
     end
+    @assert idxLast == nElem;
 
     # Transformation bounds (these are returned b/c the parameters are transformed)
     lbV = fill(pvec.pTransform.lb, size(valueV));
     ubV = fill(pvec.pTransform.ub, size(valueV));
-    vv = ValueVector(valueV, lbV, ubV);
+    vv = ValueVector(valueV, lbV, ubV, pNameV);
     return vv
 end
 
@@ -323,63 +306,50 @@ end
 """
     $(SIGNATURES)
 
-Make vector from a list of param vectors.
-Output contains values, lower bounds, upper bounds.
+    Make a vector of values into a Dict
+
+    The inverse of `make_vector`.
+    Used to go back from vector to model parameters.
+    
+    Undoes the parameter transformation from `make_vector`.
+    
+    OUT
+        pd :: Dict
+            maps param names (symbols) to values
+        iEnd :: Integer
+            last element of `v` used up
 """
-function make_vector(pvv :: Vector{ParamVector}, isCalibrated :: Bool)
-    outV = Vector{ValueType}();
-    lbV = Vector{ValueType}();
-    ubV = Vector{ValueType}();
-    for i1 = 1 : length(pvv)
-        vVec = make_vector(pvv[i1], isCalibrated);
-        append!(outV, values(vVec));
-        append!(lbV, lb(vVec));
-        append!(ubV, ub(vVec));
-    end
-    vv = ValueVector(outV, lbV, ubV);
-    return vv
-end
-
-
-"""
-    $(SIGNATURES)
-
-Make a vector of values into a Dict
-
-The inverse of `make_vector`.
-Used to go back from vector to model parameters.
-
-Undoes the parameter transformation from `make_vector`.
-
-OUT
-    pd :: Dict
-        maps param names (symbols) to values
-    iEnd :: Integer
-        number of elements of `v` used up
-"""
-function vector_to_dict(pvec :: ParamVector, v :: Vector{T1},
-    isCalibrated :: Bool) where T1 <: AbstractFloat
+function vector_to_dict(pvec :: ParamVector, vVec :: ValueVector,
+    isCalibrated :: Bool; startIdx = 1)
 
     n = length(pvec);
     @assert n > 0  "Parameter vector is empty"
+    idxV = indices_calibrated(pvec, isCalibrated);
+    v = values(vVec);
+    pNameV = pnames(vVec);
 
     pd = Dict{Symbol, Any}();
     # Last index of `v` used so far
-    iEnd = 0;
-    for i1 in 1 : n
+    iEnd = startIdx - 1;
+    for i1 in idxV
         p = pvec.pv[i1];
-        if p.isCalibrated == isCalibrated
-            nElem = length(p.defaultValue);
-            if nElem == 1
-                pValue = v[iEnd + 1];
-            else
-                idxV = (iEnd + 1) : (iEnd + nElem);
-                pValue = reshape(v[idxV], size(p.defaultValue));
-            end
-            pValue = untransform_param(pvec.pTransform, p, pValue);
-            pd[p.name] = pValue;
-            iEnd += nElem;
+        nElem = length(p.defaultValue);
+        if nElem == 1
+            vIdxV = iEnd + 1;
+            pValue = v[vIdxV];
+        else
+            vIdxV = iEnd .+ (1 : nElem);
+            pValue = reshape(v[vIdxV], size(p.defaultValue));
         end
+        iEnd += nElem;
+        pd[name(p)] = untransform_param(pvec.pTransform, p, pValue);
+        @assert all(isequal.(name(p),  pNameV[vIdxV]))  """
+            Name mismatch:  $(get_object_id(pvec)) $(name(p))
+            Values: $pValue
+            Indices: $vIdxV
+            Names expected: $(pNameV[vIdxV])
+            $startIdx
+            """
     end
     return pd, iEnd
 end
@@ -405,10 +375,8 @@ end
 Set values in `pvecOld` from another `ParamVector` `pvecNew`. 
 Only for values that are in both `ParamVector`s and that are `isCalibrated` in both.
 Only if the size matches.
-
-    Needs more testing +++++
 """
-function set_values_from_pvec!(pvecOld :: ParamVector,  pvecNew :: ParamVector,
+function set_own_values_from_pvec!(pvecOld :: ParamVector,  pvecNew :: ParamVector,
     isCalibrated :: Bool)
 
     dOld = make_dict(pvecOld, isCalibrated, true);

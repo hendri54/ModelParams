@@ -7,10 +7,12 @@ import ModelParams.get_pvector
 
 # Make a ParamVector for testing
 # Alternates between calibrated and fixed parameters
-function init_pvector(n :: Integer; objId :: Symbol = :obj1)
+function init_pvector(n :: Integer; objId :: Symbol = :obj1,
+    offset :: Float64 = 0.0)
+
     pv = ParamVector(ObjectId(objId));
     for i1 = 1 : n
-        p = init_parameter(i1);
+        p = init_parameter(i1; offset = offset);
         if isodd(i1)
             calibrate!(p);
         end
@@ -19,11 +21,11 @@ function init_pvector(n :: Integer; objId :: Symbol = :obj1)
     return pv
 end
 
-function init_parameter(i1 :: Integer)
+function init_parameter(i1 :: Integer;  offset :: Float64 = 0.0)
     pSym = Symbol("p$i1");
     pName = "param$i1";
     pDescr = "sym$i1";
-    valueM = i1 .+ collect(1 : i1) * [1.0 2.0];
+    valueM = (offset + i1) .+ collect(1 : i1) * [1.0 2.0];
     return Param(pSym, pName, pDescr, valueM)
 end
 
@@ -79,6 +81,20 @@ function pvectorTest()
 end
 
 
+function iter_test()
+    @testset "Iteration" begin
+        n = 5;
+        pv = init_pvector(n);
+        j = 0;
+        for p in pv
+            j += 1;
+            @test isa(p, Param);
+        end
+        @test j == n
+	end
+end
+
+
 ## Vector to Dict and back
 function pvectorDictTest()
     @testset "Pvector Dict" begin
@@ -100,11 +116,30 @@ function pvectorDictTest()
         @test ModelParams.values(vv) == vcat(vec(p1Value), vec(p3Value))
         @test all(ModelParams.lb(vv) .≈ pv.pTransform.lb)
 
-        pDict, _ = vector_to_dict(pv, ModelParams.values(vv), isCalibrated);
+        pDict, _ = vector_to_dict(pv, vv, isCalibrated);
         @test length(pDict) == 2
         @test pDict[:p1] == p1.value
         @test pDict[:p3] == p3.value
     end
+end
+
+
+function set_values_test()
+    @testset "Set values" begin
+        isCalibrated = true;
+        pv = init_pvector(7);
+        d = make_dict(pv, isCalibrated);
+        # Change values in `pv`
+        pv2 = init_pvector(7; offset = 1.0);
+        # d2 = make_dict(pv2, isCalibrated);
+        ModelParams.set_own_values_from_pvec!(pv, pv2, true);
+        # Check that values are now higher using a `Dict`
+        d3 = make_dict(pv, isCalibrated);
+        @test isequal(keys(d), keys(d3))
+        for key in keys(d)
+            @test all(d3[key] .> d[key])
+        end
+	end
 end
 
 
@@ -171,6 +206,7 @@ function report_test()
 end
 
 
+# wrong place +++
 function pv_vector_test()
     @testset "Vector of ParamVector" begin
         n = 3;
@@ -192,8 +228,10 @@ end
 
 @testset "ParamVector" begin
     pvectorTest()
+    iter_test()
     get_pvector_test()
     pvectorDictTest()
+    set_values_test()
     report_test()
     pv_vector_test()
 end

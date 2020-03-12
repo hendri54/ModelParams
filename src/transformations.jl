@@ -26,7 +26,7 @@ Undo parameter transformation.
 `value` must be the same size as `p.value`.
 """
 function untransform_param(tr :: LinearTransformation, p :: Param, value)
-    @assert size(value) == size(p.value)  "Size mismatch: $(size(value)) vs $(size(p.value))"
+    @assert size(value) == size(p.value)  "Size mismatch: $(size(value)) vs $(size(p.value)) for $p"
     @assert all(value .<= tr.ub)  "Values to high: $value  vs  $(tr.ub)"
     @assert all(value .>= tr.lb)
     outV = p.lb .+ (p.ub .- p.lb) .* (value .- tr.lb) ./ (tr.ub .- tr.lb);

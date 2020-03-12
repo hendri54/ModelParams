@@ -24,3 +24,26 @@ function show_string_vector(sV :: Vector{T1},  width :: T2 = 80;
     println(io, " ")
 end
 
+
+function formatted_value(v :: AbstractFloat)
+    return string(round(v, digits = 3))
+end
+
+
+function formatted_value(v :: Vector{T1}) where T1 <: AbstractFloat
+    vStr = "";
+    for j = 1 : length(v)
+        vStr = vStr * formatted_value(v[j]);
+        if j < length(v)
+            vStr = vStr * " | ";
+        end
+    end
+    return vStr
+end
+
+
+function formatted_value(v :: Array{T1}) where T1 <: AbstractFloat
+    vStr = formatted_value(v[1]) * " ... " * formatted_value(v[end])
+end
+
+# ----------------------

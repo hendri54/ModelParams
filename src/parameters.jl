@@ -1,8 +1,3 @@
-export Param
-export calibrate!, fix!, set_value!, update!, validate
-
-
-
 ## Constructor when not calibrated
 function Param(name :: Symbol, description :: T2, symbol :: T2, defaultValue :: T1) where {T1 <: Any,  T2 <: AbstractString}
 
@@ -23,11 +18,65 @@ function validate(p :: Param)
     return nothing
 end
 
+name(p :: Param) = p.name;
+
+
+## ------------  Show
+
+# Short string that summarizes the `Param`
+# For reporting parameters in a table
+function show_string(p :: Param)
+    if p.isCalibrated
+        calStr = "calibrated";
+    else
+        calStr = "fixed";
+    end
+    return string(p.name) * ": " * value_string(p) * "  ($calStr)"
+end
+
+# Summary of the value
+function value_string(p :: Param)
+    pType = eltype(p.value);
+    if isa(p.value, Real)
+        outStr = string(round(p.value, digits = 3));
+    elseif isa(p.value, Array)
+        outStr = "Array{$pType} of size $(size(p.value))";
+    else
+        outStr = "of type $pType";
+    end
+    return outStr
+end
+
+
+function show(io :: IO,  p :: Param)
+    println(io, "Param:  " * show_string(p));
+    return nothing
+end
+
+
+function short_string(p :: Param)
+    vStr = formatted_value(p.value);
+    return "$(p.name): $vStr"
+end
+
+
+"""
+    report_param
+
+Short summary of parameter and its value. 
+Can be used to generate a simple table of calibrated parameters.
+"""
+function report_param(p :: Param)
+    vStr = formatted_value(p.value);
+    println("\t$(p.description):\t$(p.name) = $vStr")
+end
+
+
 
 ## ----------  Change / update
 
 """
-    calibrate!
+    $(SIGNATURES)
 
 Change calibration status to `true`
 """
@@ -36,8 +85,9 @@ function calibrate!(p :: Param)
     return nothing
 end
 
+
 """
-    fix!
+    $(SIGNATURES)
 
 Change calibration status to `false`
 """
@@ -46,9 +96,10 @@ function fix!(p :: Param)
     return nothing
 end
 
-"""
-    set_value!
 
+"""
+    $(SIGNATURES)
+    
 Set parameter value. Used during calibration.
 """
 function set_value!(p :: Param, vIn)
@@ -58,8 +109,9 @@ function set_value!(p :: Param, vIn)
     return oldValue
 end
 
+
 """
-    update!
+    $(SIGNATURES)
 
 Update a parameter with optional arguments.
 """
@@ -81,44 +133,6 @@ function update!(p :: Param; value = nothing, defaultValue = nothing,
         p.isCalibrated = isCalibrated;
     end
     return nothing
-end
-
-
-## ------------- Show
-
-function short_string(p :: Param)
-    vStr = formatted_value(p.value);
-    return "$(p.name): $vStr"
-end
-
-"""
-    report_param
-
-Short summary of parameter and its value. 
-Can be used to generate a simple table of calibrated parameters.
-"""
-function report_param(p :: Param)
-    vStr = formatted_value(p.value);
-    println("\t$(p.description):\t$(p.name) = $vStr")
-end
-
-function formatted_value(v :: AbstractFloat)
-    return sprintf1("%.3f", v)
-end
-
-function formatted_value(v :: Vector{T1}) where T1 <: AbstractFloat
-    vStr = "";
-    for j = 1 : length(v)
-        vStr = vStr * formatted_value(v[j]);
-        if j < length(v)
-            vStr = vStr * " | ";
-        end
-    end
-    return vStr
-end
-
-function formatted_value(v :: Array{T1}) where T1 <: AbstractFloat
-    vStr = formatted_value(v[1]) * " ... " * formatted_value(v[end])
 end
 
 

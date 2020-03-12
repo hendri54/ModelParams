@@ -1,3 +1,16 @@
+"""
+    ModelObject
+
+Abstract model object
+Must have field `objId :: ObjectId` that uniquely identifies it
+May contain a ParamVector, but need not.
+
+Child objects may be vectors. Then the vector must have a fixed element type that is
+a subtype of `ModelObject`
+"""
+abstract type ModelObject end
+
+
 ## ----------  ObjectId
 
 """
@@ -14,19 +27,6 @@ struct SingleId
     index :: Array{Int}
 end
 
-function show_string(s :: SingleId)
-    outStr = string(s.name);
-    if !isempty(s.index)
-        outStr = outStr * "$(s.index)";
-    end
-    return outStr
-end
-
-function show(io :: IO,  s :: SingleId)
-    println(io,  "SingleId:  $(show_string(s))");
-    return nothing
-end
-
 
 """
     ObjectId
@@ -39,16 +39,6 @@ is placed in the model tree.
 struct ObjectId
     # Store IDs as vector, not tuple (b/c empty tuples are tricky)
     # "Youngest" member is positioned last in vector
-    ids :: Vector{SingleId}
-end
-
-
-"""
-    ParentId
-
-This is actually identical to `ObjectId` but avoid recursive definitions
-"""
-struct ParentId
     ids :: Vector{SingleId}
 end
 
@@ -73,33 +63,6 @@ mutable struct Param{T1 <: Any, T2 <: AbstractString}
     ub :: T1
     isCalibrated :: Bool
 end
-
-function show_string(p :: Param)
-    if p.isCalibrated
-        calStr = "calibrated";
-    else
-        calStr = "fixed";
-    end
-    return string(p.name) * ": " * value_string(p) * "  ($calStr)"
-end
-
-function value_string(p :: Param)
-    pType = eltype(p.value);
-    if isa(p.value, Real)
-        outStr = string(round(p.value, digits = 3));
-    elseif isa(p.value, Array)
-        outStr = "Array{$pType} of size $(size(p.value))";
-    else
-        outStr = "of type $pType";
-    end
-    return outStr
-end
-
-function show(io :: IO,  p :: Param)
-    println(io, "Param:  " * show_string(p));
-    return nothing
-end
-
 
 
 ## ----------  Parameter Transformations
@@ -195,16 +158,20 @@ end
 	$(SIGNATURES)
 
 Object that holds vectorized version of calibrated parameter values.
+This can be passed into numerical optimizers.
+Also stores the name of the `Param` for each entry. This ensures that going back from vector to `Dict` is correct.
 """
 mutable struct ValueVector{T <: AbstractFloat}
     valueV :: Vector{T}
     lbV :: Vector{T}
     ubV :: Vector{T}
+    pNameV :: Vector{Symbol}
 end
 
 values(vv :: ValueVector) = vv.valueV;
 lb(vv :: ValueVector) = vv.lbV;
 ub(vv :: ValueVector) = vv.ubV;
+pnames(vv :: ValueVector) = vv.pNameV;
 Base.length(vv :: ValueVector) = Base.length(vv.valueV);
 
 function Base.isapprox(vv1 :: ValueVector, vv2 :: ValueVector;
@@ -212,7 +179,8 @@ function Base.isapprox(vv1 :: ValueVector, vv2 :: ValueVector;
 
     return isapprox(values(vv1), values(vv2), atol = atol)  &&
         isapprox(lb(vv1), lb(vv2), atol = atol)  &&
-        isapprox(ub(vv1), ub(vv2), atol = atol);
+        isapprox(ub(vv1), ub(vv2), atol = atol)  &&
+        isequal(pnames(vv1), pnames(vv2));
 end
 
 # -----------
