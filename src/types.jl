@@ -183,4 +183,17 @@ function Base.isapprox(vv1 :: ValueVector, vv2 :: ValueVector;
         isequal(pnames(vv1), pnames(vv2));
 end
 
+
+"""
+	$(SIGNATURES)
+
+Set values.
+"""
+function set_values(vv :: ValueVector, valueV)
+    @assert size(valueV) == size(lb(vv))  "Size mismatch"
+    vv.valueV = valueV;
+    return nothing
+end
+
+
 # -----------

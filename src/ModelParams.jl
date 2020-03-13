@@ -53,7 +53,7 @@ export scalar_dev, scalar_devs, scalar_dev_dict, short_display, show_deviation
 export DevVector, append!, length, retrieve, scalar_deviation, scalar_devs, show
 
 # ValueVector
-export ValueVector, values, lb, ub
+export ValueVector, set_values, values, lb, ub
 
 
 
@@ -98,6 +98,7 @@ end
 
 Perturb guesses at indices `dIdx` by amount `dGuess`.
 Ensure that guesses stay in bounds.
+The user typically calls the method that accepts a `ValueVector` instead.
 """
 function perturb_guess(m :: ModelObject, guessV :: Vector, dGuess; dIdx = nothing)
     vv = make_guess(m);
