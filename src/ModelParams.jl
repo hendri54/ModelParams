@@ -23,7 +23,7 @@ using EconometricsLH
 export SingleId, make_single_id
 
 # ObjectId
-export ObjectId, make_string, make_object_id
+export ObjectId, make_string, make_object_id, make_child_id
 
 # Transformations
 export LinearTransformation, transform_bounds, transform_param, untransform_param
