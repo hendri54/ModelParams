@@ -19,6 +19,19 @@ function validate(p :: Param)
 end
 
 name(p :: Param) = p.name;
+value(p :: Param) = p.value;
+lb(p :: Param) = p.lb;
+ub(p :: Param) = p.ub;
+
+# Is a parameter value close to lower or upper bounds?
+close_to_lb(p :: Param; rtol = 0.01) = 
+    any((value(p) .- lb(p)) ./ (ub(p) .- lb(p)) .< rtol);
+
+close_to_ub(p :: Param; rtol = 0.01) = 
+    any((ub(p) .- value(p)) ./ (ub(p) .- lb(p)) .< rtol);
+
+close_to_bounds(p :: Param; rtol = 0.01) = 
+    close_to_lb(p; rtol = rtol) || close_to_ub(p; rtol = rtol);
 
 
 ## ------------  Show

@@ -35,7 +35,7 @@ export calibrate!, fix!, set_value!, update!, validate
 # ParamVector
 export ParamVector
 export param_exists, make_dict, make_vector
-export param_value, retrieve, vector_to_dict
+export param_table, param_value, report_params, retrieve, vector_to_dict
 
 # Model objects
 export ModelObject
@@ -158,12 +158,14 @@ end
 Report all parameters by calibration status
 For all ModelObjects contained in `o`
 """
-function report_params(o :: ModelObject, isCalibrated :: Bool; io :: IO = stdout) 
+function report_params(o :: ModelObject, isCalibrated :: Bool; io :: IO = stdout,
+    closeToBounds :: Bool = false)
+
     pvecV = collect_pvectors(o);
 
     dataM = nothing;
     for pvec in pvecV
-        tbM = param_table(pvec, isCalibrated);
+        tbM = param_table(pvec, isCalibrated; closeToBounds = closeToBounds);
         if !isnothing(tbM)
             objId = make_string(pvec.objId);
             if isnothing(dataM)

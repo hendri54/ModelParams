@@ -195,10 +195,10 @@ end
 Reports calibrated (or fixed) parameters for one ParamVector
 """
 function report_params(pvec :: ParamVector, isCalibrated :: Bool;
-    io :: IO = stdout)
+    io :: IO = stdout,  closeToBounds :: Bool = false)
 
     objId = make_string(pvec.objId);
-    dataM = param_table(pvec, isCalibrated);
+    dataM = param_table(pvec, isCalibrated;  closeToBounds = closeToBounds);
 
     if isnothing(dataM)
         println(io, "\t$objId:  Nothing to report");
@@ -212,10 +212,17 @@ end
 """
 	$(SIGNATURES)
 
-Table with calibrated parameters
+Table with calibrated parameters.
+Optionally reports params that are close to bounds.
 """
-function param_table(pvec :: ParamVector, isCalibrated :: Bool)
-    idxV = indices_calibrated(pvec, isCalibrated);
+function param_table(pvec :: ParamVector, isCalibrated :: Bool;
+    closeToBounds :: Bool = false)
+
+    if closeToBounds
+        idxV = find_close_to_bounds(pvec);
+    else
+        idxV = indices_calibrated(pvec, isCalibrated);
+    end
     n = length(idxV);
 
     if isempty(idxV)
@@ -230,6 +237,19 @@ function param_table(pvec :: ParamVector, isCalibrated :: Bool)
         end
     end
     return dataM
+end
+
+
+# Find parameters that are close to bounds
+function find_close_to_bounds(pvec :: ParamVector; rtol = 0.01)
+    idxV = indices_calibrated(pvec, true);
+    idxCloseV = Vector{Int}();
+    for j in idxV
+        if close_to_bounds(pvec[j]; rtol = rtol)
+            push!(idxCloseV, j);
+        end
+    end
+    return idxCloseV
 end
 
 

@@ -202,6 +202,9 @@ function report_test()
         nParam, nElem = ModelParams.n_calibrated_params(pv, false);
         @test nParam == 4
         @test nElem > 8
+
+        println("-----  Close to bounds");
+        report_params(pv, true; closeToBounds = true);
     end
 end
 
