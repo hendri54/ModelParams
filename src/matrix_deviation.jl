@@ -27,7 +27,7 @@ end
 Set model values in an existing deviation.
 """
 function set_model_values(d :: Deviation, modelV)
-    dataV = get_model_values(d);
+    dataV = get_data_values(d);
     if typeof(modelV) != typeof(dataV)  
         println(modelV);
         println(dataV);

@@ -45,7 +45,7 @@ export set_values_from_dicts!
 export IncreasingVector, values
 
 # Deviations
-export AbstractDeviation, ScalarDeviation, Deviation, RegressionDeviation
+export AbstractDeviation, ScalarDeviation, Deviation, RegressionDeviation, PenaltyDeviation
 export get_data_values, get_unpacked_data_values, get_model_values, get_unpacked_model_values, get_weights
 export set_model_values, set_weights!
 export scalar_dev, scalar_devs, scalar_dev_dict, short_display, show_deviation
@@ -55,6 +55,8 @@ export DevVector, append!, length, retrieve, scalar_deviation, scalar_devs, show
 # ValueVector
 export ValueVector, set_values, values, lb, ub
 
+# ChangeTable
+export ChangeTable, set_param_values!, show_table
 
 
 const ValueType = Float64;
@@ -62,6 +64,7 @@ const ObjIdSeparator = " > "
 
 
 include("types.jl")
+include("deviation_types.jl")
 # General purpose code copied from `CommonLH`
 include("helpers.jl")
 include("single_id.jl")
@@ -73,7 +76,9 @@ include("deviation.jl")
 include("regression_deviation.jl")
 include("scalar_deviation.jl")
 include("matrix_deviation.jl")
+include("penalty_deviation.jl")
 include("devvector.jl")
+include("change_table.jl")
 include("m_objects.jl")
 include("obj_pvectors.jl")
 

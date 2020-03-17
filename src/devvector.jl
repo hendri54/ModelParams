@@ -21,12 +21,8 @@ function DevVector()
 end
 
 
-"""
-    length(d :: DevVector)
-"""
-function length(d :: DevVector)
-    return Base.length(d.dv)
-end
+Base.length(d :: DevVector) = Base.length(d.dv)
+Base.getindex(d :: DevVector, j) = d.dv[j]
 
 
 """
@@ -62,14 +58,6 @@ function set_weights!(d :: DevVector, name :: Symbol, wtV)
     @assert size(wtV) == size(dev.dataV)  "Size mismatch: $(size(wtV)) vs $(size(dev.dataV))"
     set_weights!(dev, wtV);
     return nothing
-end
-
-
-"""
-	getindex(d :: DevVector, j)
-"""
-function getindex(d :: DevVector, j)
-    return d.dv[j]
 end
 
 
@@ -169,6 +157,8 @@ function scalar_deviation(d :: DevVector)
     end
     return scalarDev
 end
+
+
 
 
 # ---------------

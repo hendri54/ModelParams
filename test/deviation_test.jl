@@ -1,66 +1,5 @@
 using EconometricsLH, ModelParams
 
-## -----------  Make deviations for testing
-# Names are :d1 etc
-
-function make_matrix_deviation(devNo :: Integer)
-    sizeV = (5, 4);
-    modelV = devNo .+ (1 : sizeV[1]) .+ (1 : sizeV[2])' .+ 0.1;
-    idxV = [2:4, 2:3];
-    dataV = modelV[idxV...] .+ 0.7;
-    wtV = dataV .+ 0.9;
-    name, shortStr, longStr, fmtStr = dev_info(devNo);
-    d = Deviation(name = name, 
-        modelV = modelV, dataV = dataV, wtV = wtV, idxV = idxV,
-        shortStr = shortStr, longStr = longStr);
-    return d;
-
-end
-
-function make_deviation(devNo :: Integer)
-    dataV = devNo .+ collect(range(2.1, 3.4, length = 5));
-    modelV = dataV .+ 0.7;
-    wtV = dataV .+ 0.9;
-    name, shortStr, longStr, fmtStr = dev_info(devNo);
-    d = Deviation(name = name, 
-        modelV = modelV, dataV = dataV, wtV = wtV,
-        shortStr = shortStr, longStr = longStr);
-    return d;
-end
-
-function make_scalar_deviation(devNo :: Integer)
-    name, shortStr, longStr, fmtStr = dev_info(devNo);
-    modelV = devNo * 1.1;
-    dataV = devNo * 2.2;
-    return ScalarDeviation(name = name, modelV = modelV, 
-        dataV = dataV, shortStr = shortStr, 
-        longStr = longStr)
-end
-
-function make_regression_deviation(devNo :: Integer)
-    name, shortStr, longStr, fmtStr = dev_info(devNo);
-    nc = devNo + 2;
-    coeffNameV = Symbol.("beta" .* string.(1 : nc));
-    mCoeffV = collect(range(0.1, 0.9, length = nc));
-    mSeV = collect(range(0.3, 0.1, length = nc));
-    rModel = RegressionTable(coeffNameV, mCoeffV, mSeV);
-    rData = RegressionTable(coeffNameV, mCoeffV .+ 0.1, mSeV .+ 0.2);
-    return RegressionDeviation(name = name,
-        shortStr = shortStr, longStr = longStr,
-        modelV = rModel, dataV = rData)
-end
-
-function dev_info(devNo :: Integer)
-    name = Symbol("d$devNo");
-    shortStr = "dev$devNo";
-    longStr = "Deviation $devNo"
-    fmtStr = "%.2f";
-    return name, shortStr, longStr, fmtStr
-end
-
-
-## ------------  Test deviations
-
 function deviation_test()
     @testset "Deviation" begin
         d1 = ModelParams.empty_deviation();
@@ -93,6 +32,31 @@ function deviation_test()
             modelV = get_model_values(d) .+ 0.2;
             ModelParams.set_model_values(d, modelV);
             @test get_model_values(d) ≈ modelV;
+        end
+    end 
+end
+
+
+function penalty_test()
+    @testset "Penalty Deviation" begin
+        for insideBounds = [true, false]
+            d = make_penalty_deviation(1, insideBounds);
+            @test !isempty(d)
+
+            scalarDev, devStr = scalar_dev(d);
+            @test isa(scalarDev, Float64);
+            @test isa(devStr, AbstractString)
+            if insideBounds
+                @test scalarDev == 0.0
+            else
+                @test scalarDev > 0.0
+            end
+            
+            dStr = ModelParams.short_display(d);
+            @test dStr[1:4] == "dev1"
+            println("--- Showing deviation")
+            show_deviation(d);
+            show_deviation(d, showModel = false);
         end
     end 
 end
@@ -210,6 +174,7 @@ end
 
 
 @testset "Deviations" begin
+    penalty_test()
     deviation_test()
     scalar_dev_test()
     regression_dev_test()

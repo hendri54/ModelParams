@@ -196,4 +196,25 @@ function set_values(vv :: ValueVector, valueV)
 end
 
 
+"""
+	$(SIGNATURES)
+
+Table that shows how each parameter affects each deviation.
+Rows are deviations. Columns are parameters.
+"""
+mutable struct ChangeTable{T1 <: AbstractFloat}
+    # Name of each parameter
+    paramNameV 
+    # Name of each deviation
+    devNameV
+    # Vector of intial deviations
+    dev0V :: Vector{T1}
+    # Matrix of deviations by [parameter, deviation]
+    devM :: Matrix{T1}
+    # Scalar deviations for all parameters
+    scalarDevV :: Vector{T1}
+    scalarDev0 :: T1
+end
+
+
 # -----------

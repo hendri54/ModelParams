@@ -1,6 +1,8 @@
 using ModelParams
 using Random, Test
 
+
+include("deviation_test_setup.jl")
 include("model_test_setup.jl")
 
 @testset "ModelParams" begin
@@ -12,6 +14,7 @@ include("model_test_setup.jl")
     include("m_objects_test.jl")
     include("model_test.jl")
     include("deviation_test.jl")
+    include("change_table_test.jl")
     include("increasing_vector_test.jl")
 end
 
