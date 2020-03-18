@@ -38,7 +38,7 @@ function set_model_values(d :: Deviation, modelV)
         @assert size(modelV) == size(dataV)  "Size mismatch $(d.name): $(size(modelV)) vs $(size(dataV))"
     end
     @assert ndims(modelV) == ndims(dataV)  "Dimension mismatch $(d.name):  $(ndims(modelV)) vs $(ndims(dataV))"
-    d.modelV = modelV;
+    d.modelV = deepcopy(modelV);
     return nothing
 end
 

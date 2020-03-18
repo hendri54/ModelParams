@@ -109,9 +109,9 @@ end
 """
 	$(SIGNATURES)
 
-Penalty deviation. Returns zero scalar deviation until model values get out of bounds.
+Bounds deviation. Returns zero scalar deviation until model values get out of bounds.
 """
-@with_kw mutable struct PenaltyDeviation <: AbstractDeviation
+@with_kw mutable struct BoundsDeviation <: AbstractDeviation
     name  :: Symbol 
     modelV  :: Array{DevType} = DevType[0.0] 
     # Bounds
@@ -126,6 +126,23 @@ Penalty deviation. Returns zero scalar deviation until model values get out of b
     # For displaying the deviation. Compatible with `Formatting.sprintf1`
     # E.g. "%.2f"
     fmtStr  :: String = "%.2f"
+    showFct = bounds_show_fct
+    showPath :: String = ""
+end
+
+
+"""
+	$(SIGNATURES)
+
+Penalty deviation. Calls a function on model values to return scalar deviation.
+"""
+@with_kw mutable struct PenaltyDeviation <: AbstractDeviation
+    name  :: Symbol 
+    modelV  :: Array{DevType} = DevType[0.0] 
+    scalarDevFct :: Function
+    scalarWt :: DevType = 1.0
+    shortStr  :: String = String(name)  
+    longStr  :: String = shortStr
     showFct = penalty_show_fct
     showPath :: String = ""
 end

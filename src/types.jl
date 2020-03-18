@@ -191,7 +191,7 @@ Set values.
 """
 function set_values(vv :: ValueVector, valueV)
     @assert size(valueV) == size(lb(vv))  "Size mismatch"
-    vv.valueV = valueV;
+    vv.valueV = deepcopy(valueV);
     return nothing
 end
 

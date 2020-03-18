@@ -32,15 +32,22 @@ function deviation_test()
             modelV = get_model_values(d) .+ 0.2;
             ModelParams.set_model_values(d, modelV);
             @test get_model_values(d) ≈ modelV;
+
+            # Set model values and check that values were copied
+            modelV = get_model_values(d);
+            model2V = modelV .+ 1.0;
+            set_model_values(d, model2V);
+            model2V = nothing;
+            @test all(get_model_values(d) .> modelV)
         end
     end 
 end
 
 
-function penalty_test()
-    @testset "Penalty Deviation" begin
+function bounds_test()
+    @testset "Bounds Deviation" begin
         for insideBounds = [true, false]
-            d = make_penalty_deviation(1, insideBounds);
+            d = make_bounds_deviation(1, insideBounds);
             @test !isempty(d)
 
             scalarDev, devStr = scalar_dev(d);
@@ -57,7 +64,40 @@ function penalty_test()
             println("--- Showing deviation")
             show_deviation(d);
             show_deviation(d, showModel = false);
+
+            # Set model values and check that values were copied
+            modelV = get_model_values(d);
+            model2V = modelV .+ 1.0;
+            set_model_values(d, model2V);
+            model2V = nothing;
+            @test all(get_model_values(d) .> modelV)
         end
+    end 
+end
+
+
+function penalty_test()
+    @testset "Penalty Deviation" begin
+        d = make_penalty_deviation(1);
+        @test !isempty(d)
+
+        scalarDev, devStr = scalar_dev(d);
+        @test isa(scalarDev, Float64);
+        @test isa(devStr, AbstractString)
+        @test scalarDev > 0.0
+        
+        dStr = ModelParams.short_display(d);
+        @test dStr[1:4] == "dev1"
+        println("--- Showing deviation")
+        show_deviation(d);
+        show_deviation(d, showModel = false);
+
+        # Set model values and check that values were copied
+        modelV = get_model_values(d);
+        model2V = modelV .+ 1.0;
+        set_model_values(d, model2V);
+        model2V = nothing;
+        @test all(get_model_values(d) .> modelV)
     end 
 end
 
@@ -104,6 +144,7 @@ function regression_dev_test()
     nameV = get_names(d.dataV);
     mRegr = RegressionTable(nameV, mCoeffV .+ 1.0, mSeV .+ 1.0)
     set_model_values(d, mRegr);
+    mRegr = nothing;
     mName2V, mCoeff2V, mSe2V = get_unpacked_model_values(d);
     @test mCoeff2V ≈ mCoeffV .+ 1.0
 
@@ -113,6 +154,7 @@ function regression_dev_test()
 
     mRegr = RegressionTable(nameV, dCoeffV, dSeV .+ 0.1);
     set_model_values(d, mRegr);
+    mRegr = nothing;
     scalarDev, _ = scalar_dev(d);
     @test scalarDev ≈ 0.0
 end
@@ -174,6 +216,7 @@ end
 
 
 @testset "Deviations" begin
+    bounds_test()
     penalty_test()
     deviation_test()
     scalar_dev_test()

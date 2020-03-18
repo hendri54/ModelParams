@@ -21,19 +21,19 @@ get_model_values(d :: AbstractDeviation) = d.modelV;
 
 
 """
-	set_model_values
+    $(SIGNATURES)
 
 Set model values in an existing deviation.
 """
 function set_model_values(d :: AbstractDeviation, modelV)
-    dataV = get_model_values(d);
+    dataV = get_data_values(d);
     if typeof(modelV) != typeof(dataV)  
         println(modelV);
         println(dataV);
         error("Type mismatch in $(d.name): $(typeof(modelV)) vs $(typeof(dataV))");
     end
     @assert size(modelV) == size(dataV)  "Size mismatch: $(size(modelV)) vs $(size(dataV))"
-    d.modelV = modelV;
+    d.modelV = deepcopy(modelV);
     return nothing
 end
 
@@ -57,7 +57,7 @@ function set_weights!(d :: AbstractDeviation, wtV)
         @assert typeof(wtV) == typeof(get_data_values(d))
         @assert size(wtV) == size(get_data_values(d))
         @assert all(wtV .> 0.0)
-        d.wtV = wtV;
+        d.wtV = deepcopy(wtV);
     end
     return nothing
 end

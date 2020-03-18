@@ -45,7 +45,7 @@ export set_values_from_dicts!
 export IncreasingVector, values
 
 # Deviations
-export AbstractDeviation, ScalarDeviation, Deviation, RegressionDeviation, PenaltyDeviation
+export AbstractDeviation, ScalarDeviation, Deviation, RegressionDeviation, BoundsDeviation, PenaltyDeviation
 export get_data_values, get_unpacked_data_values, get_model_values, get_unpacked_model_values, get_weights
 export set_model_values, set_weights!
 export scalar_dev, scalar_devs, scalar_dev_dict, short_display, show_deviation
@@ -76,6 +76,7 @@ include("deviation.jl")
 include("regression_deviation.jl")
 include("scalar_deviation.jl")
 include("matrix_deviation.jl")
+include("bounds_deviation.jl")
 include("penalty_deviation.jl")
 include("devvector.jl")
 include("change_table.jl")

@@ -25,7 +25,7 @@ function make_deviation(devNo :: Integer; offset :: Float64 = 0.0)
     return d;
 end
 
-function make_penalty_deviation(devNo :: Integer, insideBounds :: Bool)
+function make_bounds_deviation(devNo :: Integer, insideBounds :: Bool)
     modelM = collect(1 : 5) .+ collect(2 : 4)' .+ 0.5;
     lbM = modelM .- 0.1;
     ubM = modelM .+ 0.1;
@@ -35,10 +35,25 @@ function make_penalty_deviation(devNo :: Integer, insideBounds :: Bool)
     end
 
     name, shortStr, longStr, fmtStr = dev_info(devNo);
-    d = PenaltyDeviation(name = name,  modelV = modelM,  lbV = lbM,  ubV = ubM,
+    d = BoundsDeviation(name = name,  modelV = modelM,  lbV = lbM,  ubV = ubM,
         wtV = wtM,  shortStr = shortStr, longStr = longStr, fmtStr = fmtStr);
     return d;
 end
+
+function make_penalty_deviation(devNo :: Integer)
+    modelM = collect(1 : 5) .+ collect(2 : 4)' .+ 0.5;
+    name, shortStr, longStr, fmtStr = dev_info(devNo);
+    d = PenaltyDeviation(name = name,  modelV = modelM,  
+        scalarDevFct = penalty_dev_fct,
+        shortStr = shortStr, longStr = longStr);
+    return d;
+
+end
+
+function penalty_dev_fct(modelM)
+    return sum(modelM) .- 3.0
+end
+
 
 function make_scalar_deviation(devNo :: Integer)
     name, shortStr, longStr, fmtStr = dev_info(devNo);

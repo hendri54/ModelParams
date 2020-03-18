@@ -43,7 +43,7 @@ function set_model_values(d :: RegressionDeviation, modelV :: RegressionTable);
             $rModelV
             $rDataV""")
     end
-    d.modelV = modelV;
+    d.modelV = deepcopy(modelV);
     return nothing
 end
 
@@ -74,7 +74,7 @@ end
 
 
 """
-	regression_show_fct
+	$(SIGNATURES)
 
 Show a RegressionDeviation
 """
@@ -95,9 +95,6 @@ function regression_show_fct(d :: RegressionDeviation;
     pretty_table(io, dataM,  headerV);
     close_show_path(d, io);
 end
-
-
-
 
 
 # -----------------

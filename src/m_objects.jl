@@ -266,7 +266,7 @@ function change_value!(x :: ModelObject, oName :: Symbol, pName :: Symbol,  newV
     @assert length(pvec) > 0  "No ParamVector in $oName / $pName"
     oldValue = change_value!(pvec, pName, newValue);
     # Set value in object as well
-    setfield!(objV[1], pName, newValue);
+    setfield!(objV[1], pName, deepcopy(newValue));
     return oldValue
 end
 
