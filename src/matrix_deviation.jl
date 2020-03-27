@@ -17,7 +17,7 @@ function get_model_values(d :: Deviation; matchData :: Bool = false)
     if matchData  ||  isempty(d.idxV)
         @assert size(modelV) == size(get_data_values(d))
     end
-    return modelV
+    return deepcopy(modelV)
 end
 
 

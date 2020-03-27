@@ -197,6 +197,13 @@ function dev_vector_test()
         scalarDev1, _ = scalar_dev(dev1);
         # @test devV[1] == scalarDev1
 
+        j = 0;
+        for dev in d
+            @test isa(dev, AbstractDeviation)
+            j += 1;
+        end
+        @test j == length(devV)
+
         sds = scalar_dev_dict(d);
         @test isa(sds, Dict{Symbol, ModelParams.ValueType})
         @test length(sds) == 3

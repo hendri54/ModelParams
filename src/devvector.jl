@@ -20,9 +20,22 @@ function DevVector()
     DevVector(Vector{AbstractDeviation}())
 end
 
+Base.isempty(d :: DevVector) = Base.isempty(d.dv);
+Base.length(d :: DevVector) = Base.length(d.dv);
+Base.getindex(d :: DevVector, j) = d.dv[j];
 
-Base.length(d :: DevVector) = Base.length(d.dv)
-Base.getindex(d :: DevVector, j) = d.dv[j]
+# Iteration
+function Base.iterate(d :: DevVector, j) 
+    if isempty(d)
+        return nothing
+    elseif j > length(d)
+        return nothing
+    else
+        return d.dv[j], j+1
+    end
+end
+
+Base.iterate(d :: DevVector) = Base.iterate(d, 1);
 
 
 """

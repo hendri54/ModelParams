@@ -5,11 +5,11 @@ short_description(d :: AbstractDeviation) = d.shortStr;
 long_description(d :: AbstractDeviation) = d.longStr;
 
 """
-	get_data_values(d :: AbstractDeviation)
+    $(SIGNATURES)
 
 Retrieve data values
 """
-get_data_values(d :: AbstractDeviation) = d.dataV;
+get_data_values(d :: AbstractDeviation) = deepcopy(d.dataV);
 
 
 """
@@ -17,7 +17,7 @@ get_data_values(d :: AbstractDeviation) = d.dataV;
 
 Retrieve model values
 """
-get_model_values(d :: AbstractDeviation) = d.modelV;
+get_model_values(d :: AbstractDeviation) = deepcopy(d.modelV);
 
 
 """
