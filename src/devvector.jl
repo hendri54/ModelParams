@@ -105,13 +105,14 @@ function dev_exists(d :: DevVector, dName :: Symbol)
     return !isempty(retrieve(d, dName))
 end
 
+Base.show(io :: IO, d :: DevVector) = show_deviations(io, d);
 
 """
-	show
+    $(SIGNATURES)
 
 Show all deviations. Each gets a short display with name and scalar deviation.
 """
-function show(io :: IO,  d :: DevVector)
+function show_deviations(io :: IO,  d :: DevVector; sorted :: Bool = false)
     if length(d) < 1
         println(io, "No deviations");
     else
@@ -121,8 +122,13 @@ function show(io :: IO,  d :: DevVector)
             push!(lineV, dStr);
         end
     end
+    if sorted
+        lineV = sort(lineV);
+    end
     show_string_vector(lineV, 80, io = io);
 end
+
+show_deviations(d :: DevVector; kwargs...) = show_deviations(stdout, d; kwargs...);
 
 
 """

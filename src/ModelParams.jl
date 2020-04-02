@@ -50,7 +50,7 @@ export get_data_values, get_unpacked_data_values, get_model_values, get_unpacked
 export set_model_values, set_weights!
 export scalar_dev, scalar_devs, scalar_dev_dict, short_display, show_deviation
 # Deviation vectors
-export DevVector, append!, length, retrieve, scalar_deviation, scalar_devs, show
+export DevVector, append!, length, retrieve, scalar_deviation, scalar_devs, show_deviations
 
 # ValueVector
 export ValueVector, set_values, values, lb, ub

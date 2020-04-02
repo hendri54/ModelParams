@@ -171,6 +171,8 @@ function dev_vector_test()
         dev2 = make_scalar_deviation(2);
         ModelParams.append!(d, dev2);
         @test length(d) == 2
+        show_deviations(d; sorted = false);
+        show_deviations(d; sorted = true);
         show(d);
 
         dev22 = ModelParams.retrieve(d, :d2);
