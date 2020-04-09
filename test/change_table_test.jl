@@ -20,6 +20,9 @@ function change_table_test()
         end
 
         ModelParams.show_table(ct)
+        for transposed = [false, true]
+            ModelParams.show_largest_change_table(ct, 3; transposed = transposed)
+        end
 
         pNameV = ModelParams.find_unchanged_devs(ct; rtol = 0.02);
         println("Unchanged deviations: $pNameV")

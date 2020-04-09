@@ -210,7 +210,8 @@ function check_calibrated_params(x :: ModelObject, pvec)
         isValid = getproperty(x, pName) ≈ pValue;
         if ~isValid
             valid = false;
-            @warn "Invalid value: $pName"
+            propValue = getproperty(x, pName);
+            @warn "Invalid value: $pName: $pValue vs. $propValue"
         end
     end
     return valid

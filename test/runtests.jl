@@ -14,6 +14,7 @@ include("model_test_setup.jl")
     include("m_objects_test.jl")
     include("model_test.jl")
     include("deviation_test.jl")
+    include("dev_vector_test.jl")
     include("change_table_test.jl")
     include("increasing_vector_test.jl")
 end

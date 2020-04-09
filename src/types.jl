@@ -154,6 +154,8 @@ function length(iv :: IncreasingVector)
 end
 
 
+## ------------  ValueVector
+
 """
 	$(SIGNATURES)
 
@@ -195,6 +197,12 @@ function set_values(vv :: ValueVector, valueV)
     return nothing
 end
 
+random_guess(vv :: ValueVector, rng :: AbstractRNG) =
+    lb(vv) .+ (ub(vv) .- lb(vv)) .* rand(rng, length(vv));
+
+
+
+## ---------------  ChangeTable
 
 """
 	$(SIGNATURES)
@@ -204,12 +212,12 @@ Rows are deviations. Columns are parameters.
 """
 mutable struct ChangeTable{T1 <: AbstractFloat}
     # Name of each parameter
-    paramNameV 
+    paramNameV
     # Name of each deviation
     devNameV
     # Vector of intial deviations
     dev0V :: Vector{T1}
-    # Matrix of deviations by [parameter, deviation]
+    # Matrix of deviations by [deviation, parameter]
     devM :: Matrix{T1}
     # Scalar deviations for all parameters
     scalarDevV :: Vector{T1}
