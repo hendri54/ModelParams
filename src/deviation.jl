@@ -63,16 +63,27 @@ function set_weights!(d :: AbstractDeviation, wtV)
 end
 
 
-## Formatted short deviation for display
-function short_display(d :: AbstractDeviation; inclScalarWt :: Bool = true)
-   _, scalarStr = scalar_dev(d, inclScalarWt = inclScalarWt);
-   return d.shortStr * ": " * scalarStr;
-end
+"""
+	$(SIGNATURES)
+
+Validate a `Deviation`.
+"""
+validate_deviation(d :: AbstractDeviation) = true;
 
 
 ## ---------------  Display
 
-"""
+Base.show(io :: IO, d :: AbstractDeviation) = 
+    Base.show(io, name(d) * ":  " * short_description(d));
+
+## Formatted short deviation for display
+function short_display(d :: AbstractDeviation; inclScalarWt :: Bool = true)
+    _, scalarStr = scalar_dev(d, inclScalarWt = inclScalarWt);
+    return d.shortStr * ": " * scalarStr;
+ end
+ 
+ 
+ """
     $(SIGNATURES)
 
 Show a deviation using the show function contained in its definition.

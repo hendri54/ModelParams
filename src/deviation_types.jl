@@ -47,7 +47,7 @@ end
 
 Holds numeric arrays. The default for deviations.
 """
-@with_kw mutable struct Deviation <: AbstractDeviation
+@with_kw_noshow mutable struct Deviation <: AbstractDeviation
     name  :: Symbol     # eg 'fracEnterIq'
     modelV  :: Array{DevType} = DevType[0.0]  # model values
     dataV  :: Array{DevType} = DevType[0.0]   # data values
@@ -73,7 +73,7 @@ end
     
 Here the `wtV` field is intended to hold 1 / std error of the moment.
 """
-@with_kw mutable struct ScalarDeviation <: AbstractDeviation
+@with_kw_noshow mutable struct ScalarDeviation <: AbstractDeviation
     name  :: Symbol     # eg 'fracEnterIq'
     modelV  :: DevType = DevType(0.0)  # model values
     dataV  :: DevType = DevType(0.0)   # data values
@@ -93,7 +93,7 @@ end
 
 Holds model and data in the form of `RegressionTable` objects
 """
-@with_kw mutable struct RegressionDeviation <: AbstractDeviation
+@with_kw_noshow mutable struct RegressionDeviation <: AbstractDeviation
     name  :: Symbol   
     modelV  :: RegressionTable = RegressionTable()
     dataV  :: RegressionTable = RegressionTable()
@@ -111,7 +111,7 @@ end
 
 Bounds deviation. Returns zero scalar deviation until model values get out of bounds.
 """
-@with_kw mutable struct BoundsDeviation <: AbstractDeviation
+@with_kw_noshow mutable struct BoundsDeviation <: AbstractDeviation
     name  :: Symbol 
     modelV  :: Array{DevType} = DevType[0.0] 
     # Bounds
@@ -136,7 +136,7 @@ end
 
 Penalty deviation. Calls a function on model values to return scalar deviation.
 """
-@with_kw mutable struct PenaltyDeviation <: AbstractDeviation
+@with_kw_noshow mutable struct PenaltyDeviation <: AbstractDeviation
     name  :: Symbol 
     modelV  :: Array{DevType} = DevType[0.0] 
     scalarDevFct :: Function

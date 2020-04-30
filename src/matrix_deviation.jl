@@ -8,6 +8,24 @@ function empty_deviation()
 end
 
 
+function validate_deviation(d :: Deviation)
+    isValid = true;
+    if !all(isfinite.(d.modelV))
+        @warn "Model values not finite for $d: $(d.modelV)"
+        isValid = false;
+    end
+    if !all(isfinite.(d.dataV))
+        @warn "Data values not finite for $d: $(d.dataV)"
+        isValid = false;
+    end
+    if !all(isfinite.(d.wtV))
+        @warn "Weights not finite for $d: $(d.wtV)"
+        isValid = false;
+    end
+    return isValid
+end
+
+
 function get_model_values(d :: Deviation; matchData :: Bool = false)
     if matchData  &&  !isempty(d.idxV)
         modelV = d.modelV[d.idxV...];
@@ -60,7 +78,7 @@ function scalar_dev(d :: Deviation; inclScalarWt :: Bool = true)
         scalarDev *= d.scalarWt;
     end
     scalarStr = sprintf1(d.fmtStr, scalarDev);
-
+    @assert scalarDev >= 0.0  "Negative deviation for $d: $scalarDev"
     return scalarDev :: DevType, scalarStr
 end
 

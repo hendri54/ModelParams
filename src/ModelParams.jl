@@ -48,7 +48,7 @@ export IncreasingVector, values
 export AbstractDeviation, ScalarDeviation, Deviation, RegressionDeviation, BoundsDeviation, PenaltyDeviation
 export get_data_values, get_unpacked_data_values, get_model_values, get_unpacked_model_values, get_weights
 export set_model_values, set_weights!
-export scalar_dev, scalar_devs, scalar_dev_dict, short_display, show_deviation
+export scalar_dev, scalar_devs, scalar_dev_dict, short_display, show_deviation, validate_deviation
 # Deviation vectors
 export DevVector, append!, length, retrieve, scalar_deviation, scalar_devs, show_deviations
 
