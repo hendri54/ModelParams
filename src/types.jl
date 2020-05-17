@@ -52,10 +52,10 @@ Holds information about one potentially calibrated parameter (array).
 Default value must always be set. Determines size of inputs.
 Everything else can be either empty or must have the same size.
 """
-mutable struct Param{T1 <: Any, T2 <: AbstractString}
+mutable struct Param{T1 <: Any}
     name :: Symbol
-    description :: T2
-    symbol :: T2
+    description :: String
+    symbol :: String
     value :: T1
     defaultValue :: T1
     "Value bounds"
@@ -77,7 +77,7 @@ Define a concrete type with its own parameters and method
     transform_param(tr :: ParamTransformation, p :: Param)
 ```
 """
-abstract type ParamTransformation end
+abstract type ParamTransformation{F1 <: AbstractFloat} end
 
 
 """
@@ -87,9 +87,9 @@ Default linear transformation into default interval [1, 2].
 
 Keyword constructor is provided.
 """
-@with_kw struct LinearTransformation{T <: Real} <: ParamTransformation
-    lb :: T = 1.0
-    ub :: T = 2.0
+@with_kw struct LinearTransformation{F1 <: AbstractFloat} <: ParamTransformation{F1}
+    lb :: F1 = one(F1)
+    ub :: F1 = F1(2.0)
 end
 
 
@@ -127,7 +127,7 @@ Going from a vector of Dicts to a vector of Floats and back:
     "ObjectId of the ModelObject. To ensure that no mismatches occur."
     objId :: ObjectId
     # A Dict would be natural, but it helps to preserve the order of the params
-    pv :: Vector{Param} = Vector{Param}()
+    pv :: Vector{Param} = Vector{Param{Any}}()
     "Governs scaling of parameters into guess vectors for optimization"
     pTransform :: ParamTransformation = LinearTransformation(lb = 1.0, ub = 2.0)
 end
@@ -145,13 +145,81 @@ mutable struct IncreasingVector{T1} <: ModelObject
 	dxV :: Vector{T1}
 end
 
-function values(iv :: IncreasingVector)
-	return iv.x0 .+ cumsum(vcat(zero(iv.x0), iv.dxV))
+"""
+	$(SIGNATURES)
+
+Retrieve values of an `IncreasingVector`.
+"""
+values(iv :: IncreasingVector{T1}) where T1 =
+	iv.x0 .+ cumsum(vcat(zero(T1), iv.dxV));
+
+values(iv :: IncreasingVector{T1}, idx) where T1 =
+    values(iv)[idx];
+
+Base.length(iv :: IncreasingVector) = Base.length(iv.dxV) + 1;
+
+
+## --------------  BoundedVector
+
+"""
+	$(SIGNATURES)
+
+Increasing or decreasing vector with bounds.
+"""
+mutable struct BoundedVector{T1} <: ModelObject
+    objId :: ObjectId
+    pvec :: ParamVector
+    increasing :: Bool
+    # Values are in these bounds
+    lb :: T1
+    ub :: T1
+    dxV :: Vector{T1}
 end
 
-function length(iv :: IncreasingVector)
-	return Base.length(iv.dxV) + 1
+
+"""
+	$(SIGNATURES)
+
+Initialize the `ParamVector`. Requires `dxV` to be set.
+Note that bounds on `dxV` must be between 0 and 1.
+"""
+function set_pvector!(iv :: BoundedVector{T1};
+    name :: Symbol = :dxV,  description = "Increments", 
+    symbol = "dxV", isCalibrated :: Bool = true) where T1
+    
+    defaultValueV = iv.dxV;
+    n = length(defaultValueV);
+    p = Param(name, description, symbol, defaultValueV, defaultValueV, 
+        zeros(T1, n), ones(T1, n), isCalibrated);
+    iv.pvec = ParamVector(iv.objId, [p]);
+    return nothing
 end
+
+is_increasing(iv :: BoundedVector{T1}) where T1 = iv.increasing;
+lb(iv :: BoundedVector{T1}) where T1 = iv.lb;
+ub(iv :: BoundedVector{T1}) where T1 = iv.ub;
+Base.length(iv :: BoundedVector{T1}) where T1 =
+    Base.length(iv.dxV);
+
+function values(iv :: BoundedVector{T1}) where T1
+    n = length(iv);
+    valueV = zeros(T1, n);
+    if is_increasing(iv)
+        valueV[1] = lb(iv) + iv.dxV[1] * (ub(iv) - lb(iv));
+        for j = 2 : n
+            valueV[j] = valueV[j-1] + iv.dxV[j] * (ub(iv) - valueV[j-1]);
+        end
+    else
+        valueV[1] = ub(iv) - iv.dxV[1] * (ub(iv) - lb(iv));
+        for j = 2 : n
+            valueV[j] = valueV[j-1] - iv.dxV[j] * (valueV[j-1] - lb(iv));
+        end
+    end
+    return valueV
+end
+
+values(iv :: BoundedVector{T1}, idx) where T1 =
+    values(iv)[idx];
 
 
 ## ------------  ValueVector

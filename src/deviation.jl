@@ -74,7 +74,7 @@ validate_deviation(d :: AbstractDeviation) = true;
 ## ---------------  Display
 
 Base.show(io :: IO, d :: AbstractDeviation) = 
-    Base.show(io, name(d) * ":  " * short_description(d));
+    Base.show(io, "$(name(d)):  ", short_description(d));
 
 ## Formatted short deviation for display
 function short_display(d :: AbstractDeviation; inclScalarWt :: Bool = true)

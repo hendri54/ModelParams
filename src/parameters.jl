@@ -6,7 +6,7 @@ function Param(name :: Symbol, description :: T2, symbol :: T2, defaultValue :: 
 end
 
 
-function validate(p :: Param)
+function validate(p :: Param{F1}) where F1
     sizeV = size(p.defaultValue);
     if !Base.isempty(p.value)
         @assert size(p.value) == sizeV

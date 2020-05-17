@@ -30,7 +30,7 @@ export LinearTransformation, transform_bounds, transform_param, untransform_para
 
 # Parameters
 export Param
-export calibrate!, fix!, set_value!, update!, validate
+export calibrate!, fix!, set_value!, update!, validate, value
 
 # ParamVector
 export ParamVector
@@ -42,7 +42,7 @@ export ModelObject
 export check_fixed_params, check_calibrated_params, collect_model_objects, collect_pvectors, find_object, make_guess, perturb_guess, perturb_params, params_equal, validate
 export get_object_id, has_pvector, get_pvector
 export set_values_from_dicts!
-export IncreasingVector, values
+export BoundedVector, IncreasingVector, values, set_pvector!
 
 # Deviations
 export AbstractDeviation, ScalarDeviation, Deviation, RegressionDeviation, BoundsDeviation, PenaltyDeviation
