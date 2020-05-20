@@ -1,5 +1,5 @@
-function empty_regression_deviation()
-    return RegressionDeviation(name = :empty)
+function empty_regression_deviation(F1 = Float64)
+    return RegressionDeviation{F1}(name = :empty)
 end
 
 
@@ -95,6 +95,10 @@ function regression_show_fct(d :: RegressionDeviation;
     pretty_table(io, dataM,  headerV);
     close_show_path(d, io);
 end
+
+
+Base.show(io :: IO, d :: RegressionDeviation{F1}) where F1 = 
+    Base.print(io, "$(name(d)):  ", short_description(d));
 
 
 # -----------------

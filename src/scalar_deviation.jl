@@ -1,5 +1,5 @@
-function empty_scalar_deviation()
-    return ScalarDeviation(name = :empty)
+function empty_scalar_deviation(F1 = Float64)
+    return ScalarDeviation{F1}(name = :empty)
 end
 
 
@@ -18,6 +18,12 @@ function scalar_dev(d :: ScalarDeviation; inclScalarWt :: Bool = true)
 end
 
 
+## -------------  Show
+
+Base.show(io :: IO, d :: ScalarDeviation{F1}) where F1 = 
+    Base.print(io, "$(name(d)):  ", short_description(d));
+
+
 """
     $(SIGNATURES)
 
@@ -31,7 +37,7 @@ function scalar_show_fct(d :: ScalarDeviation; showModel :: Bool = true, fPath :
     return nothing
 end
 
-function scalar_show_string(d :: ScalarDeviation; showModel :: Bool = true)
+function scalar_show_string(d :: ScalarDeviation{F1}; showModel :: Bool = true) where F1
     if showModel
         mStr = " m: " * sprintf1(d.fmtStr, d.modelV);
     else

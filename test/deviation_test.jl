@@ -2,7 +2,7 @@ using EconometricsLH, ModelParams
 
 function deviation_test()
     @testset "Deviation" begin
-        d1 = ModelParams.empty_deviation();
+        d1 = ModelParams.empty_deviation(Float64);
         @test isempty(d1);
 
         dV = [make_deviation(1), make_matrix_deviation(1)];
@@ -21,6 +21,7 @@ function deviation_test()
             println("--- Showing deviation")
             show_deviation(d);
             show_deviation(d, showModel = false);
+            Base.println(d);
 
             wtV = get_data_values(d) .+ 0.1;
             ModelParams.set_weights!(d, wtV);
@@ -64,6 +65,7 @@ function bounds_test()
             println("--- Showing deviation")
             show_deviation(d);
             show_deviation(d, showModel = false);
+            Base.println(d);
 
             # Set model values and check that values were copied
             modelV = get_model_values(d);
@@ -91,6 +93,7 @@ function penalty_test()
         println("--- Showing deviation")
         show_deviation(d);
         show_deviation(d, showModel = false);
+        Base.println(d);
 
         # Set model values and check that values were copied
         modelV = get_model_values(d);
@@ -122,6 +125,7 @@ function scalar_dev_test()
         println("--- Showing scalar deviation")
         show_deviation(d);
         show_deviation(d, showModel = false);
+        Base.println(d);
     end
 end
 
@@ -137,6 +141,7 @@ function regression_dev_test()
 
     show_deviation(d);
     show_deviation(d, showModel = false);
+    Base.println(d);
 
     mNameV, mCoeffV, mSeV = get_unpacked_model_values(d);
     @test length(mCoeffV) == length(mSeV) == length(dCoeffV)

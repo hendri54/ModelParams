@@ -34,7 +34,7 @@ Contains:
     * `showFct`: function that takes an `AbstractDeviation` as input and produces a model/data comparison
     * `showPath`: file name where `showFct` files its output. `stdout` is used if empty.
 """
-abstract type AbstractDeviation end
+abstract type AbstractDeviation{F1} end
 
 function isempty(d :: AbstractDeviation)
     return d.name == :empty
@@ -47,16 +47,18 @@ end
 
 Holds numeric arrays. The default for deviations.
 """
-@with_kw_noshow mutable struct Deviation <: AbstractDeviation
+@with_kw_noshow mutable struct Deviation{F1 <: AbstractFloat} <: 
+    AbstractDeviation{F1}
+
     name  :: Symbol     # eg 'fracEnterIq'
-    modelV  :: Array{DevType} = DevType[0.0]  # model values
-    dataV  :: Array{DevType} = DevType[0.0]   # data values
+    modelV  :: Array{F1} = zeros(F1, 1)  # model values
+    dataV  :: Array{F1} = zeros(F1, 1)   # data values
     # relative weights, sum to user choice
-    wtV  :: Array{DevType} = ones(DevType, size(dataV))
+    wtV  :: Array{F1} = ones(F1, size(dataV))
     # Indices such that `modelV[idxV...]` matches `dataV`
     # Default is to use all
     idxV :: Vector{Any} = []
-    scalarWt :: DevType = 1.0
+    scalarWt :: F1 = one(F1)
     shortStr  :: String = String(name)      # eg 'enter/iq'
     # eg 'fraction entering college by iq quartile'
     longStr  :: String = shortStr
@@ -73,13 +75,13 @@ end
     
 Here the `wtV` field is intended to hold 1 / std error of the moment.
 """
-@with_kw_noshow mutable struct ScalarDeviation <: AbstractDeviation
+@with_kw_noshow mutable struct ScalarDeviation{F1 <: AbstractFloat} <: AbstractDeviation{F1}
     name  :: Symbol     # eg 'fracEnterIq'
-    modelV  :: DevType = DevType(0.0)  # model values
-    dataV  :: DevType = DevType(0.0)   # data values
+    modelV  :: F1 = zero(F1)  # model values
+    dataV  :: F1 = zero(F1)   # data values
     # Used when a std error of the data moment is known
-    wtV :: DevType = DevType(1.0)
-    scalarWt :: DevType = 1.0
+    wtV :: F1 = one(F1)
+    scalarWt :: F1 = one(F1)
     shortStr  :: String = String(name)      # eg 'enter/iq'
     longStr  :: String = shortStr
     fmtStr  :: String = "%.2f"
@@ -93,11 +95,11 @@ end
 
 Holds model and data in the form of `RegressionTable` objects
 """
-@with_kw_noshow mutable struct RegressionDeviation <: AbstractDeviation
+@with_kw_noshow mutable struct RegressionDeviation{F1} <: AbstractDeviation{F1}
     name  :: Symbol   
     modelV  :: RegressionTable = RegressionTable()
     dataV  :: RegressionTable = RegressionTable()
-    scalarWt :: DevType = 1.0
+    scalarWt :: F1 = one(F1)
     shortStr  :: String = String(name)      # eg 'enter/iq'
     longStr  :: String = shortStr
     fmtStr  :: String = "%.2f"
@@ -111,15 +113,15 @@ end
 
 Bounds deviation. Returns zero scalar deviation until model values get out of bounds.
 """
-@with_kw_noshow mutable struct BoundsDeviation <: AbstractDeviation
+@with_kw_noshow mutable struct BoundsDeviation{F1 <: AbstractFloat} <: AbstractDeviation{F1}
     name  :: Symbol 
-    modelV  :: Array{DevType} = DevType[0.0] 
+    modelV  :: Array{F1} = zeros(F1, 1)
     # Bounds
-    lbV  :: Array{DevType} = DevType[0.0]
-    ubV  :: Array{DevType} = DevType[0.0]
+    lbV  :: Array{F1} = zeros(F1, 1)
+    ubV  :: Array{F1} = ones(F1, 1)
     # relative weights, sum to user choice
-    wtV  :: Array{DevType} = ones(DevType, size(lbV))
-    scalarWt :: DevType = 1.0
+    wtV  :: Array{F1} = ones(F1, size(lbV))
+    scalarWt :: F1 = one(F1)
     shortStr  :: String = String(name)  
     # eg 'fraction entering college by iq quartile'
     longStr  :: String = shortStr
@@ -136,11 +138,11 @@ end
 
 Penalty deviation. Calls a function on model values to return scalar deviation.
 """
-@with_kw_noshow mutable struct PenaltyDeviation <: AbstractDeviation
+@with_kw_noshow mutable struct PenaltyDeviation{F1 <: AbstractFloat} <: AbstractDeviation{F1}
     name  :: Symbol 
-    modelV  :: Array{DevType} = DevType[0.0] 
+    modelV  :: Array{F1} = zeros(F1, 1)
     scalarDevFct :: Function
-    scalarWt :: DevType = 1.0
+    scalarWt :: F1 = one(F1)
     shortStr  :: String = String(name)  
     longStr  :: String = shortStr
     showFct = penalty_show_fct

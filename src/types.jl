@@ -10,40 +10,9 @@ a subtype of `ModelObject`
 """
 abstract type ModelObject end
 
+include("id_types.jl")
+include("transformation_types.jl")
 
-## ----------  ObjectId
-
-"""
-    SingleId
-
-Id for one object or object vector. 
-Does not keep track of location in model.
-
-`index` is used when there is a vector or matrix of objects of the same type
-`index` is typically empty (scalar object) or scalar (vector objects)
-"""
-struct SingleId
-    name :: Symbol
-    index :: Array{Int}
-end
-
-
-"""
-    ObjectId
-
-Complete, unique ID of a `ModelObject`
-
-Contains own id and a vector of parent ids, so one knows exactly where the object
-is placed in the model tree.
-"""
-struct ObjectId
-    # Store IDs as vector, not tuple (b/c empty tuples are tricky)
-    # "Youngest" member is positioned last in vector
-    ids :: Vector{SingleId}
-end
-
-
-## ----------  Parameters
 
 """
     Param
@@ -62,34 +31,6 @@ mutable struct Param{T1 <: Any}
     lb :: T1
     ub :: T1
     isCalibrated :: Bool
-end
-
-
-## ----------  Parameter Transformations
-
-"""
-	ParamTransformation
-
-Abstract type for transforming parameters into bounded values (guesses) and reverse.
-
-Define a concrete type with its own parameters and method
-```julia
-    transform_param(tr :: ParamTransformation, p :: Param)
-```
-"""
-abstract type ParamTransformation{F1 <: AbstractFloat} end
-
-
-"""
-	LinearTransformation
-
-Default linear transformation into default interval [1, 2].
-
-Keyword constructor is provided.
-"""
-@with_kw struct LinearTransformation{F1 <: AbstractFloat} <: ParamTransformation{F1}
-    lb :: F1 = one(F1)
-    ub :: F1 = F1(2.0)
 end
 
 
@@ -134,97 +75,6 @@ end
 
 
 """
-	IncreasingVector
-
-Encodes an increasing vector of fixed length. Its values are calibrated.
-"""
-mutable struct IncreasingVector{T1} <: ModelObject
-	objId :: ObjectId
-	pvec :: ParamVector
-	x0 :: T1
-	dxV :: Vector{T1}
-end
-
-"""
-	$(SIGNATURES)
-
-Retrieve values of an `IncreasingVector`.
-"""
-values(iv :: IncreasingVector{T1}) where T1 =
-	iv.x0 .+ cumsum(vcat(zero(T1), iv.dxV));
-
-values(iv :: IncreasingVector{T1}, idx) where T1 =
-    values(iv)[idx];
-
-Base.length(iv :: IncreasingVector) = Base.length(iv.dxV) + 1;
-
-
-## --------------  BoundedVector
-
-"""
-	$(SIGNATURES)
-
-Increasing or decreasing vector with bounds.
-"""
-mutable struct BoundedVector{T1} <: ModelObject
-    objId :: ObjectId
-    pvec :: ParamVector
-    increasing :: Bool
-    # Values are in these bounds
-    lb :: T1
-    ub :: T1
-    dxV :: Vector{T1}
-end
-
-
-"""
-	$(SIGNATURES)
-
-Initialize the `ParamVector`. Requires `dxV` to be set.
-Note that bounds on `dxV` must be between 0 and 1.
-"""
-function set_pvector!(iv :: BoundedVector{T1};
-    name :: Symbol = :dxV,  description = "Increments", 
-    symbol = "dxV", isCalibrated :: Bool = true) where T1
-    
-    defaultValueV = iv.dxV;
-    n = length(defaultValueV);
-    p = Param(name, description, symbol, defaultValueV, defaultValueV, 
-        zeros(T1, n), ones(T1, n), isCalibrated);
-    iv.pvec = ParamVector(iv.objId, [p]);
-    return nothing
-end
-
-is_increasing(iv :: BoundedVector{T1}) where T1 = iv.increasing;
-lb(iv :: BoundedVector{T1}) where T1 = iv.lb;
-ub(iv :: BoundedVector{T1}) where T1 = iv.ub;
-Base.length(iv :: BoundedVector{T1}) where T1 =
-    Base.length(iv.dxV);
-
-function values(iv :: BoundedVector{T1}) where T1
-    n = length(iv);
-    valueV = zeros(T1, n);
-    if is_increasing(iv)
-        valueV[1] = lb(iv) + iv.dxV[1] * (ub(iv) - lb(iv));
-        for j = 2 : n
-            valueV[j] = valueV[j-1] + iv.dxV[j] * (ub(iv) - valueV[j-1]);
-        end
-    else
-        valueV[1] = ub(iv) - iv.dxV[1] * (ub(iv) - lb(iv));
-        for j = 2 : n
-            valueV[j] = valueV[j-1] - iv.dxV[j] * (valueV[j-1] - lb(iv));
-        end
-    end
-    return valueV
-end
-
-values(iv :: BoundedVector{T1}, idx) where T1 =
-    values(iv)[idx];
-
-
-## ------------  ValueVector
-
-"""
 	$(SIGNATURES)
 
 Object that holds vectorized version of calibrated parameter values.
@@ -237,36 +87,6 @@ mutable struct ValueVector{T <: AbstractFloat}
     ubV :: Vector{T}
     pNameV :: Vector{Symbol}
 end
-
-values(vv :: ValueVector) = vv.valueV;
-lb(vv :: ValueVector) = vv.lbV;
-ub(vv :: ValueVector) = vv.ubV;
-pnames(vv :: ValueVector) = vv.pNameV;
-Base.length(vv :: ValueVector) = Base.length(vv.valueV);
-
-function Base.isapprox(vv1 :: ValueVector, vv2 :: ValueVector;
-    atol :: Real = 1e-8)
-
-    return isapprox(values(vv1), values(vv2), atol = atol)  &&
-        isapprox(lb(vv1), lb(vv2), atol = atol)  &&
-        isapprox(ub(vv1), ub(vv2), atol = atol)  &&
-        isequal(pnames(vv1), pnames(vv2));
-end
-
-
-"""
-	$(SIGNATURES)
-
-Set values.
-"""
-function set_values(vv :: ValueVector, valueV)
-    @assert size(valueV) == size(lb(vv))  "Size mismatch"
-    vv.valueV = deepcopy(valueV);
-    return nothing
-end
-
-random_guess(vv :: ValueVector, rng :: AbstractRNG) =
-    lb(vv) .+ (ub(vv) .- lb(vv)) .* rand(rng, length(vv));
 
 
 
@@ -292,5 +112,7 @@ mutable struct ChangeTable{T1 <: AbstractFloat}
     scalarDev0 :: T1
 end
 
+include("param_types.jl")
+include("deviation_types.jl")
 
 # -----------

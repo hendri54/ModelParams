@@ -1,14 +1,14 @@
 """
-    empty_deviation()
+    $(SIGNATURES)
 
 Empty deviation. Mainly as return object when no match is found in DevVector
 """
-function empty_deviation()
-    return Deviation(name = :empty)
+function empty_deviation(F1 = Float64)
+    return Deviation{F1}(name = :empty)
 end
 
 
-function validate_deviation(d :: Deviation)
+function validate_deviation(d :: Deviation{F1}) where F1
     isValid = true;
     if !all(isfinite.(d.modelV))
         @warn "Model values not finite for $d: $(d.modelV)"
@@ -26,7 +26,7 @@ function validate_deviation(d :: Deviation)
 end
 
 
-function get_model_values(d :: Deviation; matchData :: Bool = false)
+function get_model_values(d :: Deviation{F1}; matchData :: Bool = false) where F1
     if matchData  &&  !isempty(d.idxV)
         modelV = d.modelV[d.idxV...];
     else
@@ -81,6 +81,13 @@ function scalar_dev(d :: Deviation; inclScalarWt :: Bool = true)
     @assert scalarDev >= 0.0  "Negative deviation for $d: $scalarDev"
     return scalarDev :: DevType, scalarStr
 end
+
+
+## -----------  Show
+
+Base.show(io :: IO, d :: Deviation{F1}) where F1 = 
+    Base.print(io, "$(name(d)):  ", short_description(d));
+
 
 
 """

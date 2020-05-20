@@ -97,7 +97,7 @@ function retrieve(d :: DevVector, dName :: Symbol)
             outDev = d.dv[dIdx];
         end
     end
-    return outDev :: AbstractDeviation
+    return outDev
 end
 
 

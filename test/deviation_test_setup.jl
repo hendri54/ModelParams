@@ -8,7 +8,7 @@ function make_matrix_deviation(devNo :: Integer; offset :: Float64 = 0.0)
     dataV = modelV[idxV...] .+ 0.7;
     wtV = dataV .+ 0.9;
     name, shortStr, longStr, fmtStr = dev_info(devNo);
-    d = Deviation(name = name, 
+    d = Deviation{Float64}(name = name, 
         modelV = modelV, dataV = dataV, wtV = wtV, idxV = idxV,
         shortStr = shortStr, longStr = longStr);
     return d;
@@ -19,7 +19,7 @@ function make_deviation(devNo :: Integer; offset :: Float64 = 0.0)
     modelV = dataV .+ 0.7 .+ offset;
     wtV = dataV .+ 0.9;
     name, shortStr, longStr, fmtStr = dev_info(devNo);
-    d = Deviation(name = name, 
+    d = Deviation{Float64}(name = name, 
         modelV = modelV, dataV = dataV, wtV = wtV,
         shortStr = shortStr, longStr = longStr);
     return d;
@@ -35,7 +35,7 @@ function make_bounds_deviation(devNo :: Integer, insideBounds :: Bool)
     end
 
     name, shortStr, longStr, fmtStr = dev_info(devNo);
-    d = BoundsDeviation(name = name,  modelV = modelM,  lbV = lbM,  ubV = ubM,
+    d = BoundsDeviation{Float64}(name = name,  modelV = modelM,  lbV = lbM,  ubV = ubM,
         wtV = wtM,  shortStr = shortStr, longStr = longStr, fmtStr = fmtStr);
     return d;
 end
@@ -43,7 +43,7 @@ end
 function make_penalty_deviation(devNo :: Integer)
     modelM = collect(1 : 5) .+ collect(2 : 4)' .+ 0.5;
     name, shortStr, longStr, fmtStr = dev_info(devNo);
-    d = PenaltyDeviation(name = name,  modelV = modelM,  
+    d = PenaltyDeviation{Float64}(name = name,  modelV = modelM,  
         scalarDevFct = penalty_dev_fct,
         shortStr = shortStr, longStr = longStr);
     return d;
@@ -59,7 +59,7 @@ function make_scalar_deviation(devNo :: Integer)
     name, shortStr, longStr, fmtStr = dev_info(devNo);
     modelV = devNo * 1.1;
     dataV = devNo * 2.2;
-    return ScalarDeviation(name = name, modelV = modelV, 
+    return ScalarDeviation{Float64}(name = name, modelV = modelV, 
         dataV = dataV, shortStr = shortStr, 
         longStr = longStr)
 end
@@ -72,7 +72,7 @@ function make_regression_deviation(devNo :: Integer)
     mSeV = collect(range(0.3, 0.1, length = nc));
     rModel = RegressionTable(coeffNameV, mCoeffV, mSeV);
     rData = RegressionTable(coeffNameV, mCoeffV .+ 0.1, mSeV .+ 0.2);
-    return RegressionDeviation(name = name,
+    return RegressionDeviation{Float64}(name = name,
         shortStr = shortStr, longStr = longStr,
         modelV = rModel, dataV = rData)
 end

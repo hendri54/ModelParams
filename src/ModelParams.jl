@@ -64,14 +64,20 @@ const ObjIdSeparator = " > "
 
 
 include("types.jl")
-include("deviation_types.jl")
 # General purpose code copied from `CommonLH`
 include("helpers.jl")
+
 include("single_id.jl")
 include("object_id.jl")
+
+# Parameters
+include("bounded_vector.jl")
+include("value_vector.jl")
 include("transformations.jl")
 include("parameters.jl")
 include("param_vector.jl")
+
+# Deviations
 include("deviation.jl")
 include("regression_deviation.jl")
 include("scalar_deviation.jl")
@@ -79,6 +85,7 @@ include("matrix_deviation.jl")
 include("bounds_deviation.jl")
 include("penalty_deviation.jl")
 include("devvector.jl")
+
 include("change_table.jl")
 include("m_objects.jl")
 include("obj_pvectors.jl")

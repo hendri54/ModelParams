@@ -37,5 +37,6 @@ function penalty_show_fct(d :: PenaltyDeviation; showModel :: Bool = true, fPath
     return nothing
 end
 
+Base.show(io :: IO, p :: PenaltyDeviation) = Base.print(io, "Penalty deviation")
 
 # ----------------

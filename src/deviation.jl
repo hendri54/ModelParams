@@ -9,7 +9,7 @@ long_description(d :: AbstractDeviation) = d.longStr;
 
 Retrieve data values
 """
-get_data_values(d :: AbstractDeviation) = deepcopy(d.dataV);
+get_data_values(d :: AbstractDeviation{F1}) where F1 = deepcopy(d.dataV);
 
 
 """
@@ -17,7 +17,7 @@ get_data_values(d :: AbstractDeviation) = deepcopy(d.dataV);
 
 Retrieve model values
 """
-get_model_values(d :: AbstractDeviation) = deepcopy(d.modelV);
+get_model_values(d :: AbstractDeviation{F1}) where F1 = deepcopy(d.modelV);
 
 
 """
@@ -25,7 +25,7 @@ get_model_values(d :: AbstractDeviation) = deepcopy(d.modelV);
 
 Set model values in an existing deviation.
 """
-function set_model_values(d :: AbstractDeviation, modelV)
+function set_model_values(d :: AbstractDeviation{F1}, modelV) where F1
     dataV = get_data_values(d);
     if typeof(modelV) != typeof(dataV)  
         println(modelV);
@@ -43,7 +43,7 @@ end
 
 Retrieve weights. Returns scalar 1 for scalar deviations.
 """
-function get_weights(d :: AbstractDeviation)
+function get_weights(d :: AbstractDeviation{F1}) where F1
     return d.wtV
 end
 
@@ -52,7 +52,7 @@ end
     
 Does nothing for Deviation types that do not have weights.
 """
-function set_weights!(d :: AbstractDeviation, wtV)
+function set_weights!(d :: AbstractDeviation{F1}, wtV) where F1
     if isa(d, Deviation)
         @assert typeof(wtV) == typeof(get_data_values(d))
         @assert size(wtV) == size(get_data_values(d))
@@ -73,11 +73,12 @@ validate_deviation(d :: AbstractDeviation) = true;
 
 ## ---------------  Display
 
-Base.show(io :: IO, d :: AbstractDeviation) = 
-    Base.show(io, "$(name(d)):  ", short_description(d));
+# This is never called for concrete types (why?)
+Base.show(io :: IO, d :: AbstractDeviation{F1}) where F1 = 
+    Base.print(io, "$(name(d)):  ", short_description(d));
 
 ## Formatted short deviation for display
-function short_display(d :: AbstractDeviation; inclScalarWt :: Bool = true)
+function short_display(d :: AbstractDeviation{F1}; inclScalarWt :: Bool = true) where F1
     _, scalarStr = scalar_dev(d, inclScalarWt = inclScalarWt);
     return d.shortStr * ": " * scalarStr;
  end
@@ -90,13 +91,13 @@ Show a deviation using the show function contained in its definition.
 
 Optionally, a file path can be provided. If none is provided, the path inside the deviation is used.
 """
-function show_deviation(d :: AbstractDeviation; showModel :: Bool = true, fPath :: String = "")
+function show_deviation(d :: AbstractDeviation{F1}; showModel :: Bool = true, fPath :: String = "") where F1
     return d.showFct(d,  showModel = showModel, fPath = fPath)
 end
 
 
-function open_show_path(d :: AbstractDeviation; 
-    fPath :: String = "", writeMode :: String = "w")
+function open_show_path(d :: AbstractDeviation{F1}; 
+    fPath :: String = "", writeMode :: String = "w") where F1
 
     if isempty(fPath)
         showPath = d.showPath;
@@ -111,7 +112,7 @@ function open_show_path(d :: AbstractDeviation;
     return io
 end
 
-function close_show_path(d :: AbstractDeviation, io)
+function close_show_path(d :: AbstractDeviation{F1}, io) where F1
     if io != stdout
         close(io);
     end
