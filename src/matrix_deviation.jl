@@ -8,6 +8,7 @@ function empty_deviation(F1 = Float64)
 end
 
 
+# Do not check that sizes of modelV and dataV match because of `idxV`.
 function validate_deviation(d :: Deviation{F1}) where F1
     isValid = true;
     if !all(isfinite.(d.modelV))
@@ -22,6 +23,7 @@ function validate_deviation(d :: Deviation{F1}) where F1
         @warn "Weights not finite for $d: $(d.wtV)"
         isValid = false;
     end
+    isValid = isValid  &&  (ndims(d.modelV) == ndims(d.dataV))
     return isValid
 end
 
@@ -39,12 +41,7 @@ function get_model_values(d :: Deviation{F1}; matchData :: Bool = false) where F
 end
 
 
-"""
-	set_model_values
-
-Set model values in an existing deviation.
-"""
-function set_model_values(d :: Deviation, modelV)
+function set_model_values(d :: Deviation{F1}, modelV) where F1
     dataV = get_data_values(d);
     if typeof(modelV) != typeof(dataV)  
         println(modelV);
@@ -68,7 +65,7 @@ Scalar deviation from one Deviation object.
 
 Optionally includes `scalarWt` factor.
 """
-function scalar_dev(d :: Deviation; inclScalarWt :: Bool = true)
+function scalar_dev(d :: Deviation{F1}; inclScalarWt :: Bool = true) where F1
     modelV = get_model_values(d; matchData = true);
     @assert size(modelV) == size(get_data_values(d))
 
@@ -78,8 +75,8 @@ function scalar_dev(d :: Deviation; inclScalarWt :: Bool = true)
         scalarDev *= d.scalarWt;
     end
     scalarStr = sprintf1(d.fmtStr, scalarDev);
-    @assert scalarDev >= 0.0  "Negative deviation for $d: $scalarDev"
-    return scalarDev :: DevType, scalarStr
+    @assert scalarDev >= zero(F1)  "Negative deviation for $d: $scalarDev"
+    return scalarDev, scalarStr
 end
 
 

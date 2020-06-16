@@ -11,14 +11,14 @@ Scalar deviation from one Deviation object.
 
 Optionally includes `scalarWt` factor.
 """
-function scalar_dev(d :: PenaltyDeviation; inclScalarWt :: Bool = true)
+function scalar_dev(d :: PenaltyDeviation{F1}; inclScalarWt :: Bool = true) where F1
     scalarDev = d.scalarDevFct(d.modelV);
     if inclScalarWt
         scalarDev *= d.scalarWt;
     end
     scalarStr = sprintf1("%.2f", scalarDev);
 
-    return scalarDev :: DevType, scalarStr
+    return scalarDev, scalarStr
 end
 
 

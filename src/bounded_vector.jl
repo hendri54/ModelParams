@@ -5,6 +5,16 @@
 
 Initialize the `ParamVector`. Requires `dxV` to be set.
 Note that bounds on `dxV` must be between 0 and 1.
+This is called after the `BoundedVector` has been constructed with an empty `ParamVector` but with the values of the field `dxV` set to reasonable defaults.
+
+# Example
+```
+dxV = [0.3, 0.2, 0.8];
+b = BoundedVector(objId, ParamVector(objId), true, 1.0, 2.0, dxV);
+set_pvector!(b; description = "Gradient", symbol = "g(x)");
+```
+
+change: remove the name option. It must always be :dxV +++
 """
 function set_pvector!(iv :: BoundedVector{T1};
     name :: Symbol = :dxV,  description = "Increments", 

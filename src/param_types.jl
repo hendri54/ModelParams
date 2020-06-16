@@ -30,6 +30,9 @@ Base.length(iv :: IncreasingVector) = Base.length(iv.dxV) + 1;
 	$(SIGNATURES)
 
 Increasing or decreasing vector with bounds.
+
+A `BoundedVector` is typically constructed with an empty `ParamVector`. Then [`set_pvector!`](@ref) is used to initialize the `ParamVector`.
+The `ParamVector` contains a single entry which must be named `:dxV`. It sets the values for the eponymous `BoundedVector` field.
 """
 mutable struct BoundedVector{T1} <: ModelObject
     objId :: ObjectId
@@ -38,6 +41,7 @@ mutable struct BoundedVector{T1} <: ModelObject
     # Values are in these bounds
     lb :: T1
     ub :: T1
+    # Increments, typically in [0, 1]
     dxV :: Vector{T1}
 end
 

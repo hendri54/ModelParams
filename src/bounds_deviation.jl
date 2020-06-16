@@ -14,13 +14,13 @@ Scalar deviation from one Deviation object.
 
 Optionally includes `scalarWt` factor.
 """
-function scalar_dev(d :: BoundsDeviation; inclScalarWt :: Bool = true)
+function scalar_dev(d :: BoundsDeviation{F1}; inclScalarWt :: Bool = true) where F1
     if inside_bounds(d)
-        scalarDev = 0.0;
+        scalarDev = zero(F1);
     else
         modelV = get_model_values(d);
-        devV = d.wtV .* max.(0.0, modelV .- ubounds(d)) .+
-            d.wtV .* max.(0.0, lbounds(d) .- modelV);
+        devV = d.wtV .* max.(zero(F1), modelV .- ubounds(d)) .+
+            d.wtV .* max.(zero(F1), lbounds(d) .- modelV);
         scalarDev = sum(devV);
         if inclScalarWt
             scalarDev *= d.scalarWt;
@@ -28,7 +28,7 @@ function scalar_dev(d :: BoundsDeviation; inclScalarWt :: Bool = true)
     end
     scalarStr = sprintf1(d.fmtStr, scalarDev);
 
-    return scalarDev :: DevType, scalarStr
+    return scalarDev, scalarStr
 end
 
 
@@ -37,7 +37,7 @@ end
 
 Show a bounds deviation. As a table.
 """
-function bounds_show_fct(d :: BoundsDeviation; showModel :: Bool = true, fPath :: String = "")
+function bounds_show_fct(d :: BoundsDeviation{F1}; showModel :: Bool = true, fPath :: String = "") where F1
     io = open_show_path(d, fPath = fPath);
 
     # Dimensions of data matrix

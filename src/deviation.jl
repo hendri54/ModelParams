@@ -68,7 +68,7 @@ end
 
 Validate a `Deviation`.
 """
-validate_deviation(d :: AbstractDeviation) = true;
+validate_deviation(d :: AbstractDeviation) = true
 
 
 ## ---------------  Display

@@ -67,7 +67,7 @@ Base.eltype(pvec :: ParamVector) = Param;
 """
     retrieve
 
-Returns the index of a named parameter.
+Returns a named parameter and its index in the `ParamVector`.
 First occurrence. Returns 0 if not found.
 """
 function retrieve(pvec :: ParamVector, pName :: Symbol)
@@ -154,6 +154,11 @@ function append!(pvec :: ParamVector,  p :: Param)
     return nothing
 end
 
+"""
+	$(SIGNATURES)
+
+Remove the parameter names `pName` from `pvec`.
+"""
 function remove!(pvec :: ParamVector, pName :: Symbol)
     _, idx = retrieve(pvec, pName);
     @assert (idx > 0)  "$pName does not exist"
@@ -161,12 +166,22 @@ function remove!(pvec :: ParamVector, pName :: Symbol)
     return nothing
 end
 
+"""
+	$(SIGNATURES)
+
+Replace a parameter with a new parameter `p`.
+"""
 function replace!(pvec :: ParamVector, p :: Param)
     remove!(pvec, p.name);
     append!(pvec, p);
     return nothing
 end
 
+"""
+	$(SIGNATURES)
+
+Set whether or not a parameter is calibrated.
+"""
 function change_calibration_status!(pvec :: ParamVector, pName :: Symbol,
     doCal :: Bool)
 
@@ -179,6 +194,11 @@ function change_calibration_status!(pvec :: ParamVector, pName :: Symbol,
     end
 end
 
+"""
+	$(SIGNATURES)
+
+Change the value of parameter `pName`.
+"""
 function change_value!(pvec :: ParamVector, pName :: Symbol, newValue)
     _, idx = retrieve(pvec, pName);
     @assert (idx > 0)  "$pName does not exist"

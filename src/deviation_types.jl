@@ -29,6 +29,7 @@ Abstract type for Deviation objects. A Deviation object implements:
 
 Contains:
 
+    * `stdV`: std errors of data. Defaults to []. Used when showing deviations.
     * `wtV`: weights within a deviation (e.g. 1/std error)
     * `scalarWt`: used by `DevVector` to weight each `scalar_dev`
     * `showFct`: function that takes an `AbstractDeviation` as input and produces a model/data comparison
@@ -53,6 +54,7 @@ Holds numeric arrays. The default for deviations.
     name  :: Symbol     # eg 'fracEnterIq'
     modelV  :: Array{F1} = zeros(F1, 1)  # model values
     dataV  :: Array{F1} = zeros(F1, 1)   # data values
+    stdV :: Array{F1} = zeros(F1, 1)
     # relative weights, sum to user choice
     wtV  :: Array{F1} = ones(F1, size(dataV))
     # Indices such that `modelV[idxV...]` matches `dataV`
@@ -79,6 +81,7 @@ Here the `wtV` field is intended to hold 1 / std error of the moment.
     name  :: Symbol     # eg 'fracEnterIq'
     modelV  :: F1 = zero(F1)  # model values
     dataV  :: F1 = zero(F1)   # data values
+    stdV :: F1 = zero(F1)
     # Used when a std error of the data moment is known
     wtV :: F1 = one(F1)
     scalarWt :: F1 = one(F1)
