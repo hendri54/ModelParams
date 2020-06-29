@@ -21,6 +21,21 @@ get_model_values(d :: AbstractDeviation{F1}) where F1 = deepcopy(d.modelV);
 
 
 """
+	$(SIGNATURES)
+
+Retrieve std errors of data values. Not valid for all types of deviations.
+Returns `nothing` if std errors are not set (are all 0).
+"""
+function get_std_errors(d :: AbstractDeviation{F1}) where F1
+    if all(d.stdV .== zero(F1))
+        return nothing
+    else
+        return deepcopy(d.stdV);
+    end
+end
+
+
+"""
     $(SIGNATURES)
 
 Set model values in an existing deviation.
