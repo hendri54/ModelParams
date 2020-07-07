@@ -18,7 +18,8 @@ end
 function init_obj1(objId)
     # objId = ObjectId(:obj1);
     px = Param(:x, "x obj1", "x1", 11.1, 9.9, 1.1, 99.9, true);
-    valueY = [1.1, 2.2];
+    # Important to have vector of length 1 as test case
+    valueY = fill(1.1, 1);
     py = Param(:y, "y obj1", "y1", valueY, valueY .+ 1.0,
         valueY .- 5.0, valueY .+ 5.0, true);
     valueZ = [3.3 4.4; 5.5 7.6];

@@ -374,12 +374,15 @@ function vector_to_dict(pvec :: ParamVector, vVec :: ValueVector,
     for i1 in idxV
         p = pvec.pv[i1];
         nElem = length(p.defaultValue);
-        if nElem == 1
+        if isa(p.defaultValue, AbstractFloat)
             vIdxV = iEnd + 1;
             pValue = v[vIdxV];
-        else
+        elseif isa(p.defaultValue, AbstractArray)
             vIdxV = iEnd .+ (1 : nElem);
             pValue = reshape(v[vIdxV], size(p.defaultValue));
+        else
+            pType = typeof(p.defaultValue);
+            error("Unexpected type: $pType")
         end
         iEnd += nElem;
         pd[name(p)] = untransform_param(pvec.pTransform, p, pValue);

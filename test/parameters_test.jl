@@ -38,8 +38,19 @@ function param_test()
     end
 end
 
+function vec1_test()
+    @testset "Vector of length 1" begin
+        pValue = fill(1.2, 1);
+        p1 = Param(:p1, "param1", "\$p_{1}\$", pValue, pValue .+ 0.1, 
+            fill(0.1, 1), fill(5.0, 1), true);
+        show(p1);
+        @test isequal(pValue, ModelParams.value(p1))
+    end
+end
+
 @testset "Parameters" begin
-    param_test()
+    param_test();
+    vec1_test();
 end
 
 # ------------
