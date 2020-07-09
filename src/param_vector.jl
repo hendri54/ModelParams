@@ -234,6 +234,7 @@ end
 
 Table with calibrated parameters.
 Optionally reports params that are close to bounds.
+Columns are name, description, value.
 """
 function param_table(pvec :: ParamVector, isCalibrated :: Bool;
     closeToBounds :: Bool = false)

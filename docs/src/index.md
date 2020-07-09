@@ -106,10 +106,12 @@ The workflow is implemented and tested in the `SampleModel` repo.
 2. Write the code and solves the model and computes any desired statistics. This part is not affected by anything related to `ModelParams` because the potentially calibrated parameters are stored inside each object and synced with the `ParamVector`s.
 3. Write a deviation function that accepts a vector of calibrated parameters as an input. Call [`set_params_from_guess!`](@ref) to copy the parameter values from the vector into the various model objects.
 4. In the calibration function, call [`make_guess`](@ref) to make a vector of parameter values from the parameter values in all of the model objects.
+5. Report the calibrated and fixed parameters using [`report_params`](@ref)
 
 ```@docs
 set_params_from_guess!
 make_guess
+report_params
 ```
 
 ## Data moments and deviations

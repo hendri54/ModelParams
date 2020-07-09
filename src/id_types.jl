@@ -5,6 +5,7 @@
 
 Id for one object or object vector. 
 Does not keep track of location in model.
+Keeps track of `name` (Symbol identifier), `index`, and `description` (for display purposes).
 
 `index` is used when there is a vector or matrix of objects of the same type
 `index` is typically empty (scalar object) or scalar (vector objects)
@@ -12,6 +13,7 @@ Does not keep track of location in model.
 struct SingleId
     name :: Symbol
     index :: Array{Int}
+    description :: String
 end
 
 

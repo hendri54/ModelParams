@@ -29,6 +29,10 @@ function ObjectId(name :: Symbol, idx :: T1,
     return ObjectId(vcat(parentIds.ids,  SingleId(name, [idx])))
 end
 
+ObjectId(name :: Symbol, descr :: String, 
+    parentIds :: ObjectId = ObjectId()) where T1 <: Integer = 
+    ObjectId(vcat(parentIds.ids,  SingleId(name, descr)));
+
 
 ## ------  Parent info
 
@@ -45,7 +49,7 @@ function get_parent_id(oId :: ObjectId)
 end
 
 is_parent_of(pId :: ObjectId,  oId :: ObjectId) = isequal(pId, get_parent_id(oId))
-
+n_parents(pId :: ObjectId) = length(pId.ids) - 1;
 
 
 # Make child ID for an object
@@ -62,18 +66,21 @@ function make_child_id(parentId :: ObjectId, name :: Symbol,
     return ObjectId(name, index, parentId)
 end
 
+make_child_id(parentId :: ObjectId, name :: Symbol, descr :: String) = 
+    ObjectId(name, descr, parentId);
+
 
 """
 	$(SIGNATURES)
 
-Checks whether two `ObjectId`s are the same.
+Checks whether two `ObjectId`s are the same. Does not consider descriptions.
 """
 function Base.isequal(id1 :: ObjectId,  id2 :: ObjectId)
     outVal = (length(id1.ids) == length(id2.ids))  &&  all(isequal.(id1.ids, id2.ids))
     return outVal
 end
 
-
+description(oId :: ObjectId) = description(own_id(oId));
 own_index(oId :: ObjectId) = oId.ids[end].index
 # Return own SingleId
 own_id(oId :: ObjectId) = oId.ids[end];
@@ -135,7 +142,7 @@ end
 Show an object id.
 """
 function show(io :: IO,  id :: ObjectId)
-    println(io,  "ObjectId: " * make_string(id));
+    print(io,  "ObjectId: " * make_string(id));
 end
 
 

@@ -3,13 +3,16 @@ export SingleId, has_index
 ## ----------  SingleId
 
 # Object without index
-function SingleId(name :: Symbol)
-    return SingleId(name, Array{Int,1}())
-end
+SingleId(name :: Symbol) = SingleId(name, Array{Int,1}(), "");
 
-function SingleId(name :: Symbol, idx :: T1) where T1 <: Integer
-    return SingleId(name, [idx])
-end
+SingleId(name :: Symbol, idx :: T1, descr = "") where T1 <: Integer =
+    SingleId(name, [idx], descr);
+
+SingleId(name :: Symbol, idxM :: Array{I1}) where I1 <: Integer =
+    SingleId(name, idxM, "");
+
+SingleId(name :: Symbol, descr :: String) = SingleId(name, Array{Int,1}(), descr);
+
 
 # Make a string of the form "x[2, 1]"
 function show_string(s :: SingleId)
@@ -20,11 +23,10 @@ function show_string(s :: SingleId)
     return outStr
 end
 
-function show(io :: IO,  s :: SingleId)
-    println(io,  "SingleId:  $(show_string(s))");
-    return nothing
-end
+show(io :: IO,  s :: SingleId) = 
+    print(io,  "SingleId:  $(show_string(s))");
 
+description(s :: SingleId) = s.description;
 name(s :: SingleId) = s.name;
 index(s :: SingleId) = s.index;
 

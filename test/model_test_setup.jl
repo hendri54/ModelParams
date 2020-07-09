@@ -69,9 +69,9 @@ end
 has_pvector(o :: TestModel) = false;
 
 function init_test_model()
-    objName = ObjectId(:testModel);
-    o1 = init_obj1(ModelParams.make_child_id(objName, :o1));
-    o2 = init_obj2(ModelParams.make_child_id(objName, :o2));
+    objName = ObjectId(:testModel, "Test model");
+    o1 = init_obj1(ModelParams.make_child_id(objName, :o1, "Child object 1"));
+    o2 = init_obj2(ModelParams.make_child_id(objName, :o2, "Child object 2"));
     return TestModel(objName, o1, o2, 9.87, 87.73)
 end
 

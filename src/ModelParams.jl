@@ -48,7 +48,7 @@ export BoundedVector, IncreasingVector, values, set_pvector!
 export AbstractDeviation, ScalarDeviation, Deviation, RegressionDeviation, BoundsDeviation, PenaltyDeviation
 export get_data_values, get_unpacked_data_values, get_model_values, get_unpacked_model_values, get_weights, get_std_errors
 export set_model_values, set_weights!
-export scalar_dev, scalar_devs, scalar_dev_dict, short_display, show_deviation, validate_deviation
+export scalar_dev, scalar_devs, scalar_dev_dict, short_display, show_deviation, validate_deviation, long_description, short_description
 # Deviation vectors
 export DevVector, append!, length, retrieve, scalar_deviation, scalar_devs, show_deviations
 
@@ -176,24 +176,27 @@ function report_params(o :: ModelObject, isCalibrated :: Bool; io :: IO = stdout
 
     pvecV = collect_pvectors(o);
 
-    dataM = nothing;
     for pvec in pvecV
         tbM = param_table(pvec, isCalibrated; closeToBounds = closeToBounds);
         if !isnothing(tbM)
-            objId = make_string(pvec.objId);
-            if isnothing(dataM)
-                dataM = [objId  ""  ""];
+            oId = get_object_id(pvec);
+            nParents = n_parents(oId);
+            print(io, indent_string(nParents), string(own_name(oId)));
+            if isempty(description(oId))
+                println(io, " ");
             else
-                dataM = vcat(dataM, [objId   ""  ""])
+                println(io, ":  ",  description(oId));
             end
-            dataM = vcat(dataM, tbM);
+            for ir = 1 : size(tbM, 1)
+                println(io, indent_string(nParents + 1), 
+                    tbM[ir,1],  " (",  tbM[ir,2], "):  ", tbM[ir, 3]);
+            end
         end
-    end
-    if !isnothing(dataM)
-        pretty_table(io, dataM, noheader = true);
     end
     return nothing
 end
+
+indent_string(n) = "   " ^ n;
 
 
 """
