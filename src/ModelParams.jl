@@ -168,8 +168,8 @@ end
 """
     $(SIGNATURES)
 
-Report all parameters by calibration status
-For all ModelObjects contained in `o`
+Report all parameters by calibration status.
+For all ModelObjects contained in `o`.
 """
 function report_params(o :: ModelObject, isCalibrated :: Bool; io :: IO = stdout,
     closeToBounds :: Bool = false)

@@ -364,7 +364,7 @@ function vector_to_dict(pvec :: ParamVector, vVec :: ValueVector,
     isCalibrated :: Bool; startIdx = 1)
 
     n = length(pvec);
-    @assert n > 0  "Parameter vector is empty"
+    @assert n > 0  "$pvec vector is empty"
     idxV = indices_calibrated(pvec, isCalibrated);
     v = values(vVec);
     pNameV = pnames(vVec);

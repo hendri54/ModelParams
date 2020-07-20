@@ -36,6 +36,11 @@ The abstract type [`ModelObject`](@ref) determines which objects the methods of 
 
 A `ModelObject` typically contains other `ModelObjects`. Each contains (potentially) calibrated parameters.
 
+```@docs
+ModelObject
+```
+
+
 ## [`ObjectId`](@ref)
 
 Each `ModelObject` has a unique [`ObjectId`](@ref). It identifies where each object is located in the model hierarchy. Example: ":model > :firm > :technology" would be (the string representation of) and `ObjectId`.
@@ -58,7 +63,7 @@ make_single_id
 make_object_id
 ```
 
-## [`Param`](@ref)
+## Parameters: [`Param`](@ref)
 
 Model parameters that are either calibrated or fixed are defined in [`Param`](@ref) objects. These encode default values (used when not calibrated), bounds, Latex symbols, and descriptions.
 
@@ -66,15 +71,17 @@ Vectors that are increasing are encoded in an [`IncreasingVector`](@ref).
 
 ```@docs
 IncreasingVector
+values
 ```
 
 [`BoundedVector`](@ref) encodes a vector that is monotone and bounded.
 
 ```@docs
 BoundedVector
+set_pvector!
 ```
 
-## ParamVector
+## Parameter Vectors: `ParamVector`
 
 The second key concept is a [`ParamVector`](@ref). It collects all potentially calibrated model parameters, represented as [`Param`](@ref) objects.
 
@@ -144,8 +151,4 @@ The user initializes the table with the constructor. Then they solve the model p
 ChangeTable
 ```
 
-<!-- # Function Reference
-
-```@autodocs
-Modules = [ModelParams]
-``` -->
+-----------
