@@ -17,6 +17,27 @@ function collect_pvectors(o :: ModelObject)
 end
 
 
+"""
+    $(SIGNATURES)
+
+Find a `ParamVector` for a given ObjectId. 
+Returns index and the `ParamVector`. Or `0` and `nothing` if not found.
+"""
+function find_pvector(pvv :: Vector{ParamVector}, objId :: ObjectId)
+    idx = 0;
+    pvOut = nothing;
+    for (j, pv) in enumerate(pvv)
+        if isequal(objId, get_object_id(pv))
+            idx = j;
+            pvOut = pv;
+            break;
+        end
+    end
+    return idx, pvOut
+end
+
+
+
 ## --------------  Vectors and Dicts
 
 """

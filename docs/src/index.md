@@ -105,6 +105,14 @@ change_calibration_status!
 change_value!
 ```
 
+## Vectors of `ParamVector`
+
+These are used when all the `ParamVector`s from a `ModelObject` are collected.
+
+```@docs
+find_pvector
+```
+
 ## Calibrating a model
 
 The workflow is implemented and tested in the `SampleModel` repo.

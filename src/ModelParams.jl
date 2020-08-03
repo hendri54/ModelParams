@@ -39,7 +39,7 @@ export param_table, param_value, report_params, retrieve, vector_to_dict
 
 # Model objects
 export ModelObject
-export check_fixed_params, check_calibrated_params, collect_model_objects, collect_pvectors, find_object, make_guess, perturb_guess, perturb_params, params_equal, validate
+export check_fixed_params, check_calibrated_params, collect_model_objects, collect_pvectors, find_pvector, find_object, make_guess, perturb_guess, perturb_params, params_equal, validate
 export get_object_id, has_pvector, get_pvector
 export set_values_from_dicts!
 export BoundedVector, IncreasingVector, values, set_pvector!

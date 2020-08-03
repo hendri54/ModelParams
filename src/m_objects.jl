@@ -30,7 +30,7 @@ has_pvector(o) = false;
 """
 	$(SIGNATURES)
 
-Find the ParamVector. Return empty if not found.
+Find the ParamVector in a `ModelObject`. Return empty if not found.
 Override for user types.
 """
 function get_pvector(o)
@@ -120,6 +120,7 @@ Returns empty Vector if no objects found.
 function get_child_objects(o :: ModelObject)
     childV = Vector{Any}();
     for pn in propertynames(o)
+        @assert isdefined(o, pn)  "$pn undefined in $o"
         obj = getproperty(o, pn);
         if isa(obj, Vector)
             # This check is not quite right. But objects should all be the same type.
