@@ -47,6 +47,10 @@ end
     Deviation
 
 Holds numeric arrays. The default for deviations.
+
+Contains model values, data values, data std deviations (for display only), weights (for constructing scalar deviation).
+
+Can specify that only `modelV[idxV...]` is to be compared with `dataV`.
 """
 @with_kw_noshow mutable struct Deviation{F1 <: AbstractFloat} <: 
     AbstractDeviation{F1}
@@ -60,7 +64,10 @@ Holds numeric arrays. The default for deviations.
     # Indices such that `modelV[idxV...]` matches `dataV`
     # Default is to use all
     idxV :: Vector{Any} = []
+    # Scales the scalar deviation.
     scalarWt :: F1 = one(F1)
+    # Using weighted normp. By default: sum of abs deviations.
+    normP :: F1 = one(F1)
     shortStr  :: String = String(name)      # eg 'enter/iq'
     # eg 'fraction entering college by iq quartile'
     longStr  :: String = shortStr
@@ -76,6 +83,7 @@ end
     ScalarDeviation
     
 Here the `wtV` field is intended to hold 1 / std error of the moment.
+The scalar deviation is always the absolute deviation. For scalars, the exponent in the norm makes no difference.
 """
 @with_kw_noshow mutable struct ScalarDeviation{F1 <: AbstractFloat} <: AbstractDeviation{F1}
     name  :: Symbol     # eg 'fracEnterIq'
@@ -103,6 +111,7 @@ Holds model and data in the form of `RegressionTable` objects
     modelV  :: RegressionTable = RegressionTable()
     dataV  :: RegressionTable = RegressionTable()
     scalarWt :: F1 = one(F1)
+    normP :: F1 = one(F1)
     shortStr  :: String = String(name)      # eg 'enter/iq'
     longStr  :: String = shortStr
     fmtStr  :: String = "%.2f"

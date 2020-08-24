@@ -5,7 +5,8 @@ end
 get_weights(d :: ScalarDeviation{F1}) where F1 = one(F1);
 
 function scalar_dev(d :: ScalarDeviation; inclScalarWt :: Bool = true)
-    scalarDev = abs(d.modelV - d.dataV) * d.wtV;
+    # scalarDev = abs(d.modelV - d.dataV) * d.wtV;
+    scalarDev = scalar_deviation(d.modelV, d.dataV, d.wtV);
     if inclScalarWt
         scalarDev *= d.scalarWt;
     end

@@ -10,6 +10,7 @@ function make_matrix_deviation(devNo :: Integer; offset :: Float64 = 0.0)
     name, shortStr, longStr, fmtStr = dev_info(devNo);
     d = Deviation{Float64}(name = name, 
         modelV = modelV, dataV = dataV, wtV = wtV, idxV = idxV,
+        normP = 1.5,
         shortStr = shortStr, longStr = longStr);
     return d;
 end
@@ -21,6 +22,7 @@ function make_deviation(devNo :: Integer; offset :: Float64 = 0.0)
     name, shortStr, longStr, fmtStr = dev_info(devNo);
     d = Deviation{Float64}(name = name, 
         modelV = modelV, dataV = dataV, wtV = wtV,
+        normP = 1.8,
         shortStr = shortStr, longStr = longStr);
     return d;
 end
@@ -74,7 +76,7 @@ function make_regression_deviation(devNo :: Integer)
     rData = RegressionTable(coeffNameV, mCoeffV .+ 0.1, mSeV .+ 0.2);
     return RegressionDeviation{Float64}(name = name,
         shortStr = shortStr, longStr = longStr,
-        modelV = rModel, dataV = rData)
+        modelV = rModel, dataV = rData, normP = 1.2)
 end
 
 function dev_info(devNo :: Integer)

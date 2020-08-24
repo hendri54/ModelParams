@@ -86,6 +86,27 @@ Validate a `Deviation`.
 validate_deviation(d :: AbstractDeviation) = true
 
 
+## -------------  Computing the scalar deviation
+
+"""
+	$(SIGNATURES)
+
+Compute the scalar deviation between model and data values. 
+Using a weighted norm. By default: simply mean abs deviation.
+"""
+function scalar_deviation(modelV :: AbstractArray{F1}, dataV :: AbstractArray{F1}, 
+    wtV; p :: F1 = one(F1)) where F1 <: AbstractFloat
+
+    devV = wtV .* (abs.(modelV .- dataV)) .^ p;
+    scalarDev = sum(devV) ^ (1/p);
+    return scalarDev
+end
+
+scalar_deviation(model :: F1, data :: F1, wt :: F1;
+    p :: F1 = one(F1)) where F1 <: AbstractFloat =
+    wt * abs(model - data);
+
+
 ## ---------------  Display
 
 # This is never called for concrete types (why?)

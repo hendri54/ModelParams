@@ -140,12 +140,15 @@ There are several types of `AbstractDeviation`s:
 3. [`RegressionDeviation`](@ref) handles the case where the target moments are represented by regression coefficients and their standard errors.
 4. [`BoundsDeviation`](@ref)s are zero until the model values get out of bounds. These are useful for preventing numerical optimizers from trying "crazy" parameter values.
 
+[`scalar_dev`](@ref) computes a scalar deviation from model and data values (weighted). 
+
 ```@docs
 AbstractDeviation
 Deviation
 ScalarDeviation
 RegressionDeviation
 BoundsDeviation
+scalar_dev
 ```
 
 ## [`ChangeTable`](@ref)

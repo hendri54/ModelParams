@@ -39,9 +39,9 @@ function set_model_values(d :: RegressionDeviation, modelV :: RegressionTable);
     if !have_same_regressors([d.dataV, modelV])  
         rModelV = get_names(modelV);
         rDataV = get_names(d.dataV);
-        error("""Regressors do not match
-            $rModelV
-            $rDataV""")
+        error("""Regressors do not match: $d
+            Model: $rModelV
+            Data:  $rDataV""")
     end
     d.modelV = deepcopy(modelV);
     return nothing
@@ -62,9 +62,10 @@ function scalar_dev(d :: RegressionDeviation; se2coeffLb :: Float64 = 0.1,
     @assert isequal(nameV, mNameV);
 
     seV = max.(seV, se2coeffLb .* abs.(coeffV));
-    devV = abs.(coeffV - mCoeffV) ./ seV;
+    # devV = abs.(coeffV - mCoeffV) ./ seV;
 
-    scalarDev = sum(devV);
+    # scalarDev = sum(devV);
+    scalarDev = scalar_deviation(mCoeffV, coeffV, 1.0 ./ seV; p = d.normP);
     if inclScalarWt
         scalarDev *= d.scalarWt;
     end
