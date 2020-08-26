@@ -3,6 +3,7 @@
 name(d :: AbstractDeviation) = d.name;
 short_description(d :: AbstractDeviation) = d.shortStr;
 long_description(d :: AbstractDeviation) = d.longStr;
+norm_p(d :: AbstractDeviation) = d.normP;
 
 """
     $(SIGNATURES)
@@ -92,19 +93,24 @@ validate_deviation(d :: AbstractDeviation) = true
 	$(SIGNATURES)
 
 Compute the scalar deviation between model and data values. 
-Using a weighted norm. By default: simply mean abs deviation.
+Using a weighted sum of deviations to a power. By default: simply mean abs deviation.
+
+Note: Using a weighted norm would not increase the overall deviation for a moment that fits poorly.
 """
 function scalar_deviation(modelV :: AbstractArray{F1}, dataV :: AbstractArray{F1}, 
     wtV; p :: F1 = one(F1)) where F1 <: AbstractFloat
 
-    devV = wtV .* (abs.(modelV .- dataV)) .^ p;
-    scalarDev = sum(devV) ^ (1/p);
+    totalWt = sum(wtV);
+    @assert totalWt > 1e-8  "Total weight too small: $totalWt"
+    # Scaling `wtV` so it sums to 1 partially undoes the `^(1/p)` scaling below.
+    devV = (wtV ./ totalWt) .* (abs.(modelV .- dataV)) .^ p;
+    scalarDev = totalWt * sum(devV);
     return scalarDev
 end
 
 scalar_deviation(model :: F1, data :: F1, wt :: F1;
     p :: F1 = one(F1)) where F1 <: AbstractFloat =
-    wt * abs(model - data);
+    wt * (abs(model - data) ^ p);
 
 
 ## ---------------  Display

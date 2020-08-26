@@ -62,10 +62,7 @@ function scalar_dev(d :: RegressionDeviation; se2coeffLb :: Float64 = 0.1,
     @assert isequal(nameV, mNameV);
 
     seV = max.(seV, se2coeffLb .* abs.(coeffV));
-    # devV = abs.(coeffV - mCoeffV) ./ seV;
-
-    # scalarDev = sum(devV);
-    scalarDev = scalar_deviation(mCoeffV, coeffV, 1.0 ./ seV; p = d.normP);
+    scalarDev = scalar_deviation(mCoeffV, coeffV, 1.0 ./ seV; p = norm_p(d));
     if inclScalarWt
         scalarDev *= d.scalarWt;
     end

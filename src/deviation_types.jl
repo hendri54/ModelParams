@@ -93,6 +93,8 @@ The scalar deviation is always the absolute deviation. For scalars, the exponent
     # Used when a std error of the data moment is known
     wtV :: F1 = one(F1)
     scalarWt :: F1 = one(F1)
+    # Using weighted normp. By default: sum of abs deviations.
+    normP :: F1 = one(F1)
     shortStr  :: String = String(name)      # eg 'enter/iq'
     longStr  :: String = shortStr
     fmtStr  :: String = "%.2f"
