@@ -44,6 +44,15 @@ function get_pvector(o)
 end
 
 
+"""
+	$(SIGNATURES)
+
+Collect all ObjectId's from an object as a `Vector{ObjectId}`.
+"""
+collect_object_ids(o :: ModelObject) = 
+    get_object_id.(collect_pvectors(o));
+
+
 # Code permits objects without ParamVector or child objects
 function validate(o :: T1) where T1 <: ModelObject
     isValid = true;

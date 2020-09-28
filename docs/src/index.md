@@ -59,8 +59,10 @@ Using an `ObjectId`, the corresponding object can be located inside the parent o
 ObjectId
 get_object_id
 make_string
+make_child_id
 make_single_id
 make_object_id
+own_name
 ```
 
 ## Parameters: [`Param`](@ref)
@@ -127,6 +129,7 @@ The workflow is implemented and tested in the `SampleModel` repo.
 set_params_from_guess!
 make_guess
 report_params
+param_tables
 ```
 
 ## Data moments and deviations

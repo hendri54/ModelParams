@@ -93,6 +93,21 @@ function dict_test()
 end
 
 
+function param_table_test()
+    @testset "Parameter table" begin
+        m = init_test_model();
+        d = param_tables(m, true);
+        @test isa(d, Dict{ObjectId, Matrix{String}})
+
+        pvecV = collect_pvectors(m);
+        objIdV = [get_object_id(pvec)  for pvec ∈ pvecV];
+        descrV = ["Description j"  for j = 1 : length(pvecV)];
+        lineV = latex_param_table(m, true, objIdV, descrV);
+        @test isa(lineV, Vector{String})
+        @test startswith(lineV[1], "\\multicolumn")
+	end
+end
+
 # function sync_test()
 #     @testset "Sync" begin
 #         m = init_test_model();
@@ -104,6 +119,7 @@ end
     find_test();
     collect_test();
     change_values_test();
+    param_table_test();
     # sync_test();
 end
 

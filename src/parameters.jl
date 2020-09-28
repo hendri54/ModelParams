@@ -22,6 +22,7 @@ name(p :: Param) = p.name;
 value(p :: Param) = p.value;
 lb(p :: Param) = p.lb;
 ub(p :: Param) = p.ub;
+lsymbol(p :: Param) = p.symbol;
 
 # Is a parameter value close to lower or upper bounds?
 close_to_lb(p :: Param; rtol = 0.01) = 

@@ -223,7 +223,8 @@ function report_params(pvec :: ParamVector, isCalibrated :: Bool;
     if isnothing(dataM)
         println(io, "\t$objId:  Nothing to report");
     else
-        pretty_table(io, dataM, [objId, " ", " "]);
+        # Reports description, name, value (not symbol)
+        pretty_table(io, dataM[:, 1:3], [objId, " ", " "]);
     end
     return nothing
 end
@@ -234,7 +235,8 @@ end
 
 Table with calibrated parameters.
 Optionally reports params that are close to bounds.
-Columns are name, description, value.
+Columns are name, description, value, symbol.
+This is for reporting during a computation.
 """
 function param_table(pvec :: ParamVector, isCalibrated :: Bool;
     closeToBounds :: Bool = false)
@@ -249,12 +251,13 @@ function param_table(pvec :: ParamVector, isCalibrated :: Bool;
     if isempty(idxV)
         dataM = nothing;
     else
-        dataM = Matrix{String}(undef, n, 3);
+        dataM = Matrix{String}(undef, n, 4);
         for j = 1 : n
             p = pvec[idxV[j]];
-            dataM[j,2] = string(p.name);
+            dataM[j,2] = string(name(p));
             dataM[j,1] = p.description;
             dataM[j,3] = formatted_value(p.value);
+            dataM[j,4] = lsymbol(p);
         end
     end
     return dataM

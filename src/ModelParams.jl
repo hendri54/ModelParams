@@ -23,7 +23,7 @@ using EconometricsLH: RegressionTable, get_all_coeff_se, get_coeff_se_multiple, 
 export SingleId, make_single_id
 
 # ObjectId
-export ObjectId, make_string, make_object_id, make_child_id
+export ObjectId, make_string, make_object_id, make_child_id, own_name
 
 # Transformations
 export LinearTransformation, transform_bounds, transform_param, untransform_param
@@ -39,8 +39,8 @@ export param_table, param_value, report_params, retrieve, vector_to_dict
 
 # Model objects
 export ModelObject
-export check_fixed_params, check_calibrated_params, collect_model_objects, collect_pvectors, find_pvector, find_object, make_guess, perturb_guess, perturb_params, params_equal, validate
-export get_object_id, has_pvector, get_pvector
+export check_fixed_params, check_calibrated_params, collect_model_objects, collect_object_ids, collect_pvectors, find_pvector, find_object, make_guess, perturb_guess, perturb_params, params_equal, validate
+export get_object_id, has_pvector, get_pvector, param_tables, latex_param_table
 export set_values_from_dicts!
 export BoundedVector, IncreasingVector, values, set_pvector!
 
@@ -101,6 +101,7 @@ Including nested objects
 """
 function make_guess(m :: ModelObject)
     pvecV = collect_pvectors(m);
+    @assert !isempty(pvecV)  "$m contains no ParamVectors"
     vv = make_vector(pvecV, true);
     return vv :: ValueVector
 end
@@ -170,12 +171,17 @@ end
 
 Report all parameters by calibration status.
 For all ModelObjects contained in `o`.
+
+Each table row looks like:
+"Description (name): value"
 """
 function report_params(o :: ModelObject, isCalibrated :: Bool; io :: IO = stdout,
     closeToBounds :: Bool = false)
 
     pvecV = collect_pvectors(o);
-
+    if isempty(pvecV)
+        return nothing
+    end
     for pvec in pvecV
         tbM = param_table(pvec, isCalibrated; closeToBounds = closeToBounds);
         if !isnothing(tbM)
@@ -200,6 +206,88 @@ indent_string(n) = "   " ^ n;
 
 
 """
+	$(SIGNATURES)
+
+Generate a set of parameter tables with columns
+    symbol | description | value
+One table per model object.
+These are stored in a Dict with ObjectId's as keys.
+
+The purpose is to make it easy to generate nicely formatted parameter tables that are grouped in a sensible way.
+"""
+function param_tables(o :: ModelObject, isCalibrated :: Bool)
+    d = Dict{ObjectId, Matrix{String}}();
+    pvecV = collect_pvectors(o);
+    if !isempty(pvecV)
+        for pvec in pvecV
+            tbM = param_table(pvec, isCalibrated);
+            tbOutM = tbM[:,[4,1,3]];
+            d[get_object_id(pvec)] = tbOutM;
+        end
+    end
+    return d
+end
+
+
+"""
+	$(SIGNATURES)
+
+Make a Latex parameter table for a set of model objects identified by their ObjectIds.
+
+Returns the table body only as a vector of String. Each element is a line in a Latex table. This can be embedded into a 3 column latex table with headers "Symbol & Description & Value";
+"""
+function latex_param_table(o :: ModelObject, isCalibrated :: Bool,
+    objIdV :: AbstractVector{ObjectId}, descrV :: AbstractVector{String})
+
+    @assert size(objIdV) == size(descrV)
+    lineV = Vector{String}();
+    pvecV = collect_pvectors(o);
+    if !isempty(pvecV)
+        for (j, objId) ∈ enumerate(objIdV)
+            _, pv = find_pvector(pvecV, objId);
+            if isnothing(pv)
+                @warn "Could not find ParamVector $objId"
+            else
+                newLineV = latex_param_table(pv, isCalibrated, descrV[j]);
+                if !isnothing(newLineV)
+                    append!(lineV, newLineV);
+                end
+            end
+        end
+    end
+    return lineV
+end
+
+
+# Latex parameter table for one `ParamVector`.
+# `descr` is an optional description that is made into a multicolumn header.
+function latex_param_table(pvec :: ParamVector, isCalibrated :: Bool,
+    descr)
+
+    tbM = param_table(pvec, isCalibrated);
+    if isnothing(tbM)
+        return nothing
+    end
+
+    n = size(tbM, 1);
+    if isempty(descr)
+        lOffset = 0;
+    else
+        lOffset = 1;
+    end
+    sV = fill("", n + lOffset);
+    if !isempty(descr)
+        sV[1] = "\\multicolumn{3}{l}{$descr} \\";
+    end
+    for j = 1 : n
+        lineV = tbM[j,:];
+        sV[j + lOffset] = "\$$(lineV[4])\$ & $(lineV[1]) & $(lineV[3])"
+    end
+    return sV
+end
+
+
+"""
     n_calibrated_params(o, isCalibrated)
 
 Number of calibrated parameters in object and its children.
@@ -208,10 +296,12 @@ function n_calibrated_params(o :: T1, isCalibrated :: Bool) where T1 <: ModelObj
     pvecV = collect_pvectors(o);
     nParam = 0;
     nElem = 0;
-    for i1 = 1 : length(pvecV)
-        nParam2, nElem2 = n_calibrated_params(pvecV[i1], isCalibrated);
-        nParam += nParam2;
-        nElem += nElem2;
+    if !isempty(pvecV)
+        for i1 = 1 : length(pvecV)
+            nParam2, nElem2 = n_calibrated_params(pvecV[i1], isCalibrated);
+            nParam += nParam2;
+            nElem += nElem2;
+        end
     end
     return nParam, nElem
 end

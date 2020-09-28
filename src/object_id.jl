@@ -4,6 +4,11 @@
 
 ## ---------  Constructors
 
+"""
+	$(SIGNATURES)
+
+Construct an ObjectId from a vector of `SingleId`.
+"""
 ObjectId() = ObjectId(Vector{SingleId}());
 
 # Without a parent or index
@@ -52,7 +57,11 @@ is_parent_of(pId :: ObjectId,  oId :: ObjectId) = isequal(pId, get_parent_id(oId
 n_parents(pId :: ObjectId) = length(pId.ids) - 1;
 
 
-# Make child ID for an object
+"""
+	$(SIGNATURES)
+
+Make child ObjectId from parent ObjectId.
+"""
 function make_child_id(obj :: T1, name :: Symbol,
     index :: Vector{T2} = Vector{Int}()) where {T1 <: ModelObject, T2 <: Integer}
 

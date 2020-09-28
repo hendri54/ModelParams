@@ -4,6 +4,7 @@
 	$(SIGNATURES)
 
 Collect all `ParamVector`s in an object and its child objects.
+Returns an empty `ParamVector` if nothing found.
 """
 function collect_pvectors(o :: ModelObject)
     pvecV = Vector{ParamVector}();
