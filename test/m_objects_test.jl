@@ -4,43 +4,9 @@ function find_test()
         @test check_fixed_params(m, get_pvector(m))
         @test check_calibrated_params(m, get_pvector(m))
 
-        childId1 = ModelParams.make_child_id(m, :child)
-
-        # Find objects by name
-        @test isnothing(ModelParams.find_object(m, childId1))
-        @test isempty(ModelParams.find_object(m, :child))
-
-        childId2 = ModelParams.make_child_id(m, :o1);
-        child2 = ModelParams.find_object(m, childId2);
-        @test isa(child2, ModelObject)
-
-        child2 = ModelParams.find_object(m, :o1);
-        @test length(child2) == 1
-        @test isequal(child2[1].objId, childId2)
-
-        # Find the object itself. Does not return anything b/c object has no `pvector`
-        m2 = ModelParams.find_object(m, m.objId);
-        @test isnothing(m2)
-
-        # Get value of a parameter
-        b = ModelParams.get_value(m, :o2, :b);
-        @test isequal(m.o2.b, b)
-
         m2 = init_test_model();
         @test ModelParams.params_equal(m, m2)
     end
-end
-
-
-function collect_test()
-    @testset "Collect" begin
-        m = init_test_model();
-        v = collect_model_objects(m);
-        @test length(v) == 2
-        for o in v
-            @test has_pvector(o)
-        end
-	end
 end
 
 
@@ -117,7 +83,6 @@ end
 
 @testset "Model Objects" begin
     find_test();
-    collect_test();
     change_values_test();
     param_table_test();
     # sync_test();

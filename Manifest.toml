@@ -171,6 +171,12 @@ version = "0.4.4"
 [[Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
+[[ModelObjectsLH]]
+deps = ["DocStringExtensions"]
+git-tree-sha1 = "1e1da2f0d929af5d6f0b12a9a53f44d0d205bf3a"
+uuid = "41cbb5d9-4a7a-4d38-8546-f9486737fd3b"
+version = "0.1.2"
+
 [[OpenSpecFun_jll]]
 deps = ["CompilerSupportLibraries_jll", "Libdl", "Pkg"]
 git-tree-sha1 = "d51c416559217d974a1113522d5919235ae67a87"

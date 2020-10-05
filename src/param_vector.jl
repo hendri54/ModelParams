@@ -25,8 +25,8 @@ function show(io :: IO,  pvec :: ParamVector)
     return nothing
 end
 
-get_object_id(pv :: ParamVector) = pv.objId;
-has_object_id(pv :: ParamVector) = true;
+ModelObjectsLH.get_object_id(pv :: ParamVector) = pv.objId;
+# ModelObjectsLH.has_object_id(pv :: ParamVector) = true;
 Base.length(pvec :: ParamVector) = Base.length(pvec.pv);
 Base.isempty(pvec :: ParamVector) = Base.isempty(pvec.pv);
 

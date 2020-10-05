@@ -11,7 +11,9 @@ function collect_pvectors(o :: ModelObject)
     objV = collect_model_objects(o);
     if !isempty(objV)
         for i1 = 1 : length(objV)
-            push!(pvecV, get_pvector(objV[i1]));
+            if has_pvector(objV[i1])
+                push!(pvecV, get_pvector(objV[i1]));
+            end
         end
     end
     return pvecV :: Vector{ParamVector}
@@ -118,7 +120,7 @@ function set_values_from_dicts!(x :: ModelObject,  pvDict :: D1; isCalibrated ::
         oId = make_object_id(string(nameStr));
         # Find the matching model object
         obj = find_object(x, oId);
-        if !isnothing(obj)
+        if !isnothing(obj)  &&  has_pvector(obj)
             set_values_from_dict!(obj.pvec, pd);
             set_own_values_from_pvec!(obj, isCalibrated);
         end
@@ -142,7 +144,7 @@ function set_values_from_pvectors!(x :: ModelObject, v :: Vector{ParamVector}, i
         # Find the matching model object
         obj = find_object(x, pvec.objId);
         # show(obj)
-        if !isnothing(obj)
+        if !isnothing(obj)  &&  has_pvector(obj)
             set_own_values_from_pvec!(obj.pvec, pvec, isCalibrated);
             set_own_values_from_pvec!(obj, isCalibrated);
         end
@@ -187,10 +189,12 @@ function sync_from_vector!(xV :: Vector, vAll :: ValueVector)
         # check that ParamVector matches model object
         # @assert check_match(pvecV[i1], xV[i1].objId);
         o = xV[i1];
-        idxLast = sync_own_from_vector!(o, vAll; startIdx = startIdx);
-        @assert check_calibrated_params(o, get_pvector(o))
-        @assert check_fixed_params(o, get_pvector(o))
-        startIdx = idxLast + 1;
+        if has_pvector(o)
+            idxLast = sync_own_from_vector!(o, vAll; startIdx = startIdx);
+            @assert check_calibrated_params(o, get_pvector(o))
+            @assert check_fixed_params(o, get_pvector(o))
+            startIdx = idxLast + 1;
+        end
     end
 
     if startIdx == length(vAll) + 1

@@ -1,16 +1,6 @@
-"""
-    ModelObject
+# abstract type ModelObject end
 
-Abstract model object
-Must have field `objId :: ObjectId` that uniquely identifies it
-May contain a ParamVector, but need not.
-
-Child objects may be vectors. Then the vector must have a fixed element type that is
-a subtype of `ModelObject`
-"""
-abstract type ModelObject end
-
-include("id_types.jl")
+# include("id_types.jl")
 include("transformation_types.jl")
 include("param_types.jl")
 include("deviation_types.jl")
