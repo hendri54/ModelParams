@@ -31,7 +31,7 @@ export LinearTransformation, transform_bounds, transform_param, untransform_para
 
 # Parameters
 export Param
-export calibrate!, fix!, set_value!, update!, validate, value
+export calibrate!, fix!, fix_values!, set_value!, set_default_value!, update!, validate, value
 
 # ParamVector
 export ParamVector
@@ -232,9 +232,9 @@ end
 """
 	$(SIGNATURES)
 
-Make a Latex parameter table for a set of model objects identified by their ObjectIds.
+Make a Latex parameter table for a set of model objects identified by their ObjectIds. Not all objects have ParamVectors.
 
-Returns the table body only as a vector of String. Each element is a line in a Latex table. This can be embedded into a 3 column latex table with headers "Symbol & Description & Value";
+Returns the table body only as a vector of String. Each element is a line in a Latex table. This can be embedded into a 3 column latex table with headers "Symbol & Description & Value".
 """
 function latex_param_table(o :: ModelObject, isCalibrated :: Bool,
     objIdV :: AbstractVector{ObjectId}, descrV :: AbstractVector{String})
@@ -245,9 +245,7 @@ function latex_param_table(o :: ModelObject, isCalibrated :: Bool,
     if !isempty(pvecV)
         for (j, objId) ∈ enumerate(objIdV)
             _, pv = find_pvector(pvecV, objId);
-            if isnothing(pv)
-                @warn "Could not find ParamVector $objId"
-            else
+            if !isnothing(pv)
                 newLineV = latex_param_table(pv, isCalibrated, descrV[j]);
                 if !isnothing(newLineV)
                     append!(lineV, newLineV);

@@ -32,6 +32,30 @@ ub(iv :: BoundedVector{T1}) where T1 = iv.ub;
 Base.length(iv :: BoundedVector{T1}) where T1 =
     Base.length(iv.dxV);
 
+function calibrate_values!(iv :: BoundedVector{T1}) where T1
+    p = iv.pvec[1];
+    @assert name(p) == :dxV
+    calibrate!(p);
+end
+
+
+"""
+	$(SIGNATURES)
+
+Switches calibration toggle off. Sets values and default values everywhere. The end result is a `BoundedVector` with fixed (not calibrated) increments that result in values of `valueV`.
+"""
+function fix_values!(iv :: BoundedVector{T1}, 
+    valueV :: AbstractVector{T1}) where T1
+
+    dxV = values_to_dx(iv, valueV);
+    p = iv.pvec[1];
+    @assert name(p) == :dxV
+    set_value!(p, valueV);
+    set_default_value!(p, valueV);
+    fix!(p);
+    iv.dxV = dxV;
+end
+
 
 """
 	$(SIGNATURES)
@@ -39,20 +63,25 @@ Base.length(iv :: BoundedVector{T1}) where T1 =
 Returns all values of a `BoundedVector`.
 """
 function values(iv :: BoundedVector{T1}) where T1
+    valueV = dx_to_values(iv, iv.dxV);
+    return valueV
+end
+
+function dx_to_values(iv :: BoundedVector{T1}, dxV) where T1
     n = length(iv);
     valueV = zeros(T1, n);
     if is_increasing(iv)
-        valueV[1] = lb(iv) + iv.dxV[1] * (ub(iv) - lb(iv));
+        valueV[1] = lb(iv) + dxV[1] * (ub(iv) - lb(iv));
         if n > 1
             for j = 2 : n
-                valueV[j] = valueV[j-1] + iv.dxV[j] * (ub(iv) - valueV[j-1]);
+                valueV[j] = valueV[j-1] + dxV[j] * (ub(iv) - valueV[j-1]);
             end
         end
     else
-        valueV[1] = ub(iv) - iv.dxV[1] * (ub(iv) - lb(iv));
+        valueV[1] = ub(iv) - dxV[1] * (ub(iv) - lb(iv));
         if n > 1
             for j = 2 : n
-                valueV[j] = valueV[j-1] - iv.dxV[j] * (valueV[j-1] - lb(iv));
+                valueV[j] = valueV[j-1] - dxV[j] * (valueV[j-1] - lb(iv));
             end
         end
     end
@@ -67,5 +96,58 @@ Returns a subset of the values of a `BoundedVector`.
 """
 values(iv :: BoundedVector{T1}, idx) where T1 =
     values(iv)[idx];
+
+
+"""
+	$(SIGNATURES)
+
+Set the default values of a `BoundedVector`.
+"""
+function set_default_value!(iv :: BoundedVector{T1}, 
+    valueV :: AbstractVector{T1}) where T1
+
+    dxV = values_to_dx(iv, valueV);
+    p = iv.pvec[1];
+    @assert name(p) == :dxV
+    set_default_value!(p, valueV)
+end
+
+
+function values_to_dx(iv :: BoundedVector{T1}, valueV :: AbstractVector{T1}) where T1
+    @assert check_values(iv, valueV);
+    n = length(iv);
+    dxV = zeros(T1, n);
+
+    if is_increasing(iv)
+        dxV[1] = (valueV[1] - lb(iv)) / (ub(iv) - lb(iv));
+        if n > 1
+            for j = 2 : n
+                dxV[j] = (valueV[j] - valueV[j-1]) / (ub(iv) - valueV[j-1]);
+            end
+        end
+    else
+        dxV[1] = (ub(iv) - valueV[1]) / (ub(iv) - lb(iv));
+        if n > 1
+            for j = 2 : n
+                dxV[j] = (valueV[j-1] - valueV[j]) / (valueV[j-1] - lb(iv));
+            end
+        end
+    end
+    return dxV
+end
+
+
+function check_values(iv :: BoundedVector{T1}, valueV :: AbstractVector{T1}) where T1
+    isValid = true;
+    isValid = isValid  &&  isequal(length(valueV), length(iv));
+    isValid = isValid  &&  all(valueV .>= lb(iv));
+    isValid = isValid  &&  all(valueV .<= ub(iv));
+    if is_increasing(iv)
+        isValid = isValid  &&  all(diff(valueV) .> 0.0);
+    else
+        isValid = isValid  &&  all(diff(valueV) .< 0.0);
+    end
+    return isValid
+end
 
 # ----------------

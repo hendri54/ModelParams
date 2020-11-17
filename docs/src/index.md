@@ -47,6 +47,8 @@ values
 ```@docs
 BoundedVector
 set_pvector!
+set_default_value!
+fix_values!
 ```
 
 ## Parameter Vectors: `ParamVector`

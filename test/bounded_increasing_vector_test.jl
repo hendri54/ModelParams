@@ -1,4 +1,4 @@
-using ModelParams, Test
+using ModelObjectsLH, ModelParams, Test
 
 function make_bounded_test_vector(vLength :: Integer, increasing :: Bool)
     ownId = ObjectId(:test1);
@@ -19,18 +19,16 @@ end
             iv = make_bounded_test_vector(vLength, increasing);
             n = length(iv);
             xV = values(iv);
-            @test length(xV) == n
-            if increasing
-                @test all(diff(xV) .> 0.0)
-            else
-                @test all(diff(xV) .< 0.0)
-            end
-            @test all(xV .<= ub(iv))
-            @test all(xV .>= lb(iv))
+            @test ModelParams.check_values(iv, xV)
 
             for j = 1 : n
                 @test values(iv, j) == xV[j]
             end
+
+            xNewV = xV .+ 0.05;
+    		fix_values!(iv, xNewV);
+            x2V = values(iv);
+            @test isapprox(xNewV, x2V)
         end
     end
 end

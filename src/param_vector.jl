@@ -185,12 +185,12 @@ Set whether or not a parameter is calibrated.
 function change_calibration_status!(pvec :: ParamVector, pName :: Symbol,
     doCal :: Bool)
 
-    _, idx = retrieve(pvec, pName);
+    p, idx = retrieve(pvec, pName);
     @assert (idx > 0)  "$pName does not exist"
     if doCal
-        calibrate!(pvec.pv[idx])
+        calibrate!(p);
     else
-        fix!(pvec.pv[idx])
+        fix!(p);
     end
 end
 
@@ -200,9 +200,14 @@ end
 Change the value of parameter `pName`.
 """
 function change_value!(pvec :: ParamVector, pName :: Symbol, newValue)
-    _, idx = retrieve(pvec, pName);
-    @assert (idx > 0)  "$pName does not exist"
-    oldValue = set_value!(pvec.pv[idx], newValue);
+    p, idx = retrieve(pvec, pName);
+    @assert (idx > 0)  "$pName does not exist in $pvec"
+    @assert size(p.defaultValue) == size(newValue)  """
+        Wrong size for $pName in $pvec
+        Given: $(size(newValue))
+        Expected: $(size(p.defaultValue))
+        """
+    oldValue = set_value!(p, newValue);
     return oldValue
 end
 

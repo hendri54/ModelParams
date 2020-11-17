@@ -123,6 +123,11 @@ function set_value!(p :: Param, vIn)
     return oldValue
 end
 
+function set_default_value!(p :: Param, vIn)
+    @assert size(p.defaultValue) == size(vIn)  "Size invalid for $(p.name): $(size(vIn)). Expected $(size(p.defaultValue))"
+    p.defaultValue = vIn
+end
+
 
 """
     $(SIGNATURES)
