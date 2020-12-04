@@ -86,6 +86,21 @@ values(iv :: IncreasingVector{T1}, idx) where T1 =
 Base.length(iv :: IncreasingVector) = Base.length(iv.dxV) + 1;
 
 
+# Displays parameters in levels, not as intercept and increments.
+function param_table(iv :: IncreasingVector{T1}, isCalibrated :: Bool) where T1
+    if isCalibrated
+        # This is where we get the description and symbol from
+        p = iv.pvec[2];
+        pt = ParamTable(1);
+        set_row!(pt, 1, string(p.name), p.symbol, p.description, 
+            formatted_value(values(iv)));
+    else
+        pt = nothing;
+    end
+    return pt
+end
+
+
 """
 	$(SIGNATURES)
 

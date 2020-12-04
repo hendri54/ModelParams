@@ -146,7 +146,7 @@ function regression_dev_test()
     mNameV, mCoeffV, mSeV = get_unpacked_model_values(d);
     @test length(mCoeffV) == length(mSeV) == length(dCoeffV)
 
-    nameV = get_names(d.dataV);
+    nameV = EconometricsLH.get_names(d.dataV);
     mRegr = RegressionTable(nameV, mCoeffV .+ 1.0, mSeV .+ 1.0)
     set_model_values(d, mRegr);
     mRegr = nothing;

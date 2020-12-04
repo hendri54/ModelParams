@@ -16,7 +16,7 @@ end
 
 # Return coefficients and std errors in same order as for data
 function get_unpacked_model_values(d :: RegressionDeviation)
-    nameV = get_names(d.dataV);
+    nameV = EconometricsLH.get_names(d.dataV);
     coeffV, seV = get_coeff_se_multiple(d.modelV, nameV);
     return nameV, coeffV, seV
 end
@@ -37,8 +37,8 @@ function set_model_values(d :: RegressionDeviation, modelV :: RegressionTable);
     # end
 
     if !have_same_regressors([d.dataV, modelV])  
-        rModelV = get_names(modelV);
-        rDataV = get_names(d.dataV);
+        rModelV = EconometricsLH.get_names(modelV);
+        rDataV = EconometricsLH.get_names(d.dataV);
         error("""Regressors do not match: $d
             Model: $rModelV
             Data:  $rDataV""")

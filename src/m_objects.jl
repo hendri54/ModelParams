@@ -122,6 +122,21 @@ function change_value!(x :: ModelObject, oName :: Symbol, pName :: Symbol,  newV
 end
 
 
+"""
+	$(SIGNATURES)
+
+Retrieve a parameter value in a `ModelObject`. 
+"""
+function get_value(x :: ModelObject, oName :: Symbol, pName :: Symbol)
+    objV = find_object(x, oName);
+    @assert length(objV) == 1  "Found $(length(objV)) matches for $oName / $pName"
+    pvec = get_pvector(objV[1]);
+    @assert length(pvec) > 0  "No ParamVector in $oName / $pName"
+    p, idx = retrieve(pvec, pName);
+    @assert (idx > 0)  "$pName does not exist in $pvec"
+    return p.value
+end
+
 ## Set fields in struct from param vector (using values, not defaults)
 # Does not reach into child objects.
 function set_own_values_from_pvec!(x :: ModelObject, isCalibrated :: Bool)

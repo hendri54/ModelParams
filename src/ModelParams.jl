@@ -18,7 +18,7 @@ import Base.append!, Base.length, Base.getindex, Base.values
 import Random: AbstractRNG
 using ArgCheck, DocStringExtensions, Formatting, Parameters, PrettyTables
 using ModelObjectsLH
-using EconometricsLH: RegressionTable, get_all_coeff_se, get_coeff_se_multiple, get_names, have_same_regressors
+using EconometricsLH # : RegressionTable, get_all_coeff_se, get_coeff_se_multiple, have_same_regressors
 
 # SingleId
 # export SingleId, make_single_id
@@ -62,7 +62,7 @@ export ChangeTable, set_param_values!, show_table
 
 const ValueType = Float64;
 
-
+include("param_table.jl");
 include("types.jl")
 # General purpose code copied from `CommonLH`
 include("helpers.jl")
@@ -169,8 +169,9 @@ end
 """
     $(SIGNATURES)
 
-Report all parameters by calibration status.
-For all ModelObjects contained in `o`.
+Report all parameters by calibration status. For all ModelObjects contained in `o`.
+
+Intended for reporting at the end (or during) a calibration run. Not formatted for inclusion in papers.
 
 Each table row looks like:
 "Description (name): value"
@@ -193,9 +194,11 @@ function report_params(o :: ModelObject, isCalibrated :: Bool; io :: IO = stdout
             else
                 println(io, ":  ",  description(oId));
             end
-            for ir = 1 : size(tbM, 1)
+            for ir = 1 : length(tbM)
                 println(io, indent_string(nParents + 1), 
-                    tbM[ir,1],  " (",  tbM[ir,2], "):  ", tbM[ir, 3]);
+                    get_description(tbM, ir),  
+                    " (",  get_name(tbM, ir), "):  ", 
+                    get_value(tbM, ir));
             end
         end
     end
@@ -208,24 +211,41 @@ indent_string(n) = "   " ^ n;
 """
 	$(SIGNATURES)
 
-Generate a set of parameter tables with columns
-    symbol | description | value
-One table per model object.
+Generate a set of `ParamTable`s. One table per model object.
 These are stored in a Dict with ObjectId's as keys.
 
 The purpose is to make it easy to generate nicely formatted parameter tables that are grouped in a sensible way.
 """
 function param_tables(o :: ModelObject, isCalibrated :: Bool)
-    d = Dict{ObjectId, Matrix{String}}();
-    pvecV = collect_pvectors(o);
-    if !isempty(pvecV)
-        for pvec in pvecV
-            tbM = param_table(pvec, isCalibrated);
-            tbOutM = tbM[:,[4,1,3]];
-            d[get_object_id(pvec)] = tbOutM;
+    d = Dict{ObjectId, ParamTable}();
+
+    # new +++++
+    # Iterating over ModelObjects rather than ParamVectors allows specific objects to override how their parameters are reported.
+    objV = collect_model_objects(o);
+    for obj in objV
+        pt = param_table(obj, isCalibrated);
+        if !isnothing(pt)
+            d[get_object_id(obj)] = pt;
         end
     end
+
+    # pvecV = collect_pvectors(o);
+    # if !isempty(pvecV)
+    #     for pvec in pvecV
+    #         tbM = param_table(pvec, isCalibrated);
+    #         d[get_object_id(pvec)] = tbM;
+    #     end
+    # end
     return d
+end
+
+function param_table(o :: ModelObject, isCalibrated :: Bool)
+    if has_pvector(o)
+        pt = param_table(get_pvector(o), isCalibrated);
+    else
+        pt = nothing;
+    end
+    return pt
 end
 
 
@@ -240,19 +260,34 @@ function latex_param_table(o :: ModelObject, isCalibrated :: Bool,
     objIdV :: AbstractVector{ObjectId}, descrV :: AbstractVector{String})
 
     @assert size(objIdV) == size(descrV)
+
+    # Param tables for all model objects. Not efficient, but convenient.
+    d = param_tables(o, isCalibrated);
+
     lineV = Vector{String}();
-    pvecV = collect_pvectors(o);
-    if !isempty(pvecV)
-        for (j, objId) ∈ enumerate(objIdV)
-            _, pv = find_pvector(pvecV, objId);
-            if !isnothing(pv)
-                newLineV = latex_param_table(pv, isCalibrated, descrV[j]);
-                if !isnothing(newLineV)
-                    append!(lineV, newLineV);
-                end
+    for (j, objId) ∈ enumerate(objIdV)
+        if haskey(d, objId)
+            newLineV = latex_param_table(d[objId], descrV[j]);
+            if !isnothing(newLineV)
+                append!(lineV, newLineV);
             end
+        else
+            @warn "$objId not found in $o"
         end
     end
+
+    # pvecV = collect_pvectors(o);
+    # if !isempty(pvecV)
+    #     for (j, objId) ∈ enumerate(objIdV)
+    #         _, pv = find_pvector(pvecV, objId);
+    #         if !isnothing(pv)
+    #             newLineV = latex_param_table(pv, isCalibrated, descrV[j]);
+    #             if !isnothing(newLineV)
+    #                 append!(lineV, newLineV);
+    #             end
+    #         end
+    #     end
+    # end
     return lineV
 end
 
@@ -266,22 +301,7 @@ function latex_param_table(pvec :: ParamVector, isCalibrated :: Bool,
     if isnothing(tbM)
         return nothing
     end
-
-    n = size(tbM, 1);
-    if isempty(descr)
-        lOffset = 0;
-    else
-        lOffset = 1;
-    end
-    sV = fill("", n + lOffset);
-    if !isempty(descr)
-        sV[1] = "\\multicolumn{3}{l}{$descr} \\";
-    end
-    for j = 1 : n
-        lineV = tbM[j,:];
-        sV[j + lOffset] = "\$$(lineV[4])\$ & $(lineV[1]) & $(lineV[3])"
-    end
-    return sV
+    return latex_param_table(tbM, descr)
 end
 
 

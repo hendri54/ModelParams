@@ -59,11 +59,11 @@ function dict_test()
 end
 
 
-function param_table_test()
+function param_tables_test()
     @testset "Parameter table" begin
         m = init_test_model();
         d = param_tables(m, true);
-        @test isa(d, Dict{ObjectId, Matrix{String}})
+        @test isa(d, Dict{ObjectId, ModelParams.ParamTable})
 
         pvecV = collect_pvectors(m);
         objIdV = [get_object_id(pvec)  for pvec ∈ pvecV];
@@ -84,7 +84,7 @@ end
 @testset "Model Objects" begin
     find_test();
     change_values_test();
-    param_table_test();
+    param_tables_test();
     # sync_test();
 end
 

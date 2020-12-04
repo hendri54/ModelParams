@@ -150,4 +150,17 @@ function check_values(iv :: BoundedVector{T1}, valueV :: AbstractVector{T1}) whe
     return isValid
 end
 
+
+function param_table(iv :: BoundedVector{T1}, isCalibrated :: Bool) where T1
+    p = iv.pvec[1];
+    if isCalibrated == p.isCalibrated
+        pt = ParamTable(1);
+        set_row!(pt, 1, string(p.name), p.symbol, p.description, 
+            formatted_value(values(iv)));
+    else
+        pt = nothing;
+    end
+    return pt
+end
+
 # ----------------
