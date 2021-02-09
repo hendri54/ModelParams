@@ -39,25 +39,16 @@ export param_exists, make_dict, make_vector
 export param_table, param_value, report_params, retrieve, vector_to_dict
 
 # Model objects
-# export ModelObject
 export check_fixed_params, check_calibrated_params, collect_pvectors, find_pvector, make_guess, perturb_guess, perturb_params, params_equal, validate
 export has_pvector, get_pvector, param_tables, latex_param_table
 export set_values_from_dicts!
 export BoundedVector, IncreasingVector, values, set_pvector!
 
-# Deviations
-export AbstractDeviation, ScalarDeviation, Deviation, RegressionDeviation, BoundsDeviation, PenaltyDeviation
-export get_data_values, get_unpacked_data_values, get_model_values, get_unpacked_model_values, get_weights, get_std_errors
-export set_model_values, set_weights!
-export scalar_dev, scalar_devs, scalar_dev_dict, short_display, show_deviation, validate_deviation, long_description, short_description
-# Deviation vectors
-export DevVector, append!, length, retrieve, scalar_deviation, scalar_devs, show_deviations
+# ParamTable
+export ParamTable, set_row!
 
 # ValueVector
 export ValueVector, set_values, values, lb, ub
-
-# ChangeTable
-export ChangeTable, set_param_values!, show_table
 
 
 const ValueType = Float64;
@@ -67,9 +58,6 @@ include("types.jl")
 # General purpose code copied from `CommonLH`
 include("helpers.jl")
 
-# include("single_id.jl")
-# include("object_id.jl")
-
 # Parameters
 include("bounded_vector.jl")
 include("value_vector.jl")
@@ -77,16 +65,6 @@ include("transformations.jl")
 include("parameters.jl")
 include("param_vector.jl")
 
-# Deviations
-include("deviation.jl")
-include("regression_deviation.jl")
-include("scalar_deviation.jl")
-include("matrix_deviation.jl")
-include("bounds_deviation.jl")
-include("penalty_deviation.jl")
-include("devvector.jl")
-
-include("change_table.jl")
 include("m_objects.jl")
 include("obj_pvectors.jl")
 

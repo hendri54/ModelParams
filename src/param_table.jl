@@ -1,9 +1,14 @@
-# Holds symbol, name, description, value
-# All as formatted text
 mutable struct ParamTable
     m :: Matrix{String}
 end
 
+"""
+    $(SIGNATURES)
+
+Holds symbol, name, description, value.
+All as formatted text.
+Used for constructing formatted parameter tables.
+"""
 ParamTable() = ParamTable(Matrix{String}(undef, 0, 4));
 ParamTable(n :: Integer) = ParamTable(fill("", n, 4));
 
@@ -19,10 +24,20 @@ get_descriptions(pt :: ParamTable) = pt.m[:, 2];
 get_values(pt :: ParamTable) = pt.m[:, 3];
 get_names(pt :: ParamTable) = pt.m[:, 4];
 
+"""
+	$(SIGNATURES)
+
+Add a row to a `ParamTable`.
+"""
 function add_row!(pt :: ParamTable, name, lsymbol, descr, value)
     append!(pt.m, [lsymbol descr value name]);
 end
 
+"""
+	$(SIGNATURES)
+
+Replace an existing row in a `ParamTable`.
+"""
 function set_row!(pt :: ParamTable, ir :: Integer, name, lsymbol, descr, value)
     pt.m[ir,:] .= [lsymbol, descr, value, name];
 end

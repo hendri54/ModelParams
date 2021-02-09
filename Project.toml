@@ -1,7 +1,7 @@
 name = "ModelParams"
 uuid = "4089ccbe-b1dc-5f86-a141-4606b18b4241"
 authors = ["hendri54 <hendricksl@protonmail.com>"]
-version = "0.9.6"
+version = "1.0.1"
 
 [deps]
 ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
@@ -15,7 +15,8 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
-julia = "^1"
+julia = "^1.5"
+ArgCheck = "^2"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
