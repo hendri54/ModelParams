@@ -19,6 +19,12 @@ function validate(p :: Param{F1}) where F1
 end
 
 name(p :: Param) = p.name;
+
+"""
+	$(SIGNATURES)
+
+Retrieve value of a `Param`.
+"""
 value(p :: Param) = p.value;
 lb(p :: Param) = p.lb;
 ub(p :: Param) = p.ub;
