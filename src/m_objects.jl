@@ -1,3 +1,15 @@
+has_pvector(switches :: ModelSwitches) = false;
+get_pvector(switches :: ModelSwitches) = switches.pvec;
+
+Lazy.@forward ModelSwitches.pvec (
+    is_calibrated, calibrate!, param_value, param_default_value
+    );
+
+# function is_calibrated(switches :: ModelSwitches, pName :: Symbol)
+#     ModelParams.is_calibrated(get_pvector(switches), pName);
+# end
+
+
 """
 	$(SIGNATURES)
 
@@ -11,6 +23,23 @@ has_pvector(o) = false;
 """
 	$(SIGNATURES)
 
+Retrieve the switches that govern the `ModelObject`'s behavior. Nothing if not found.
+"""
+function get_switches(o :: ModelObject)
+    if isdefined(o, :switches)
+        return o.switches;
+    else
+        return nothing;
+    end
+end
+get_switches(o) = nothing;
+
+has_switches(o) = !isnothing(get_switches(o));
+
+
+"""
+	$(SIGNATURES)
+
 Find the ParamVector in a `ModelObject`. Return empty if not found.
 Override for user types.
 """
@@ -18,6 +47,8 @@ function get_pvector(o)
     # Try the default field
     if has_pvector(o)  &&  isdefined(o, :pvec)
         pvec = o.pvec;
+    elseif has_pvector(get_switches(o))
+        pvec = get_switches(o).pvec;
     else
         pvec = ParamVector(o.objId);
     end
@@ -53,8 +84,8 @@ end
 Check that param vector values are consistent with object values.
 Does not reach into child objects.
 """
-function check_calibrated_params(x :: ModelObject, pvec)
-    d = make_dict(pvec, true);
+function check_param_values(x :: ModelObject, pvec, isCalibrated :: Bool)
+    d = make_dict(pvec, isCalibrated);
     valid = true;
     for (pName, pValue) in d
         isValid = getproperty(x, pName) ≈ pValue;
@@ -67,6 +98,14 @@ function check_calibrated_params(x :: ModelObject, pvec)
     return valid
 end
 
+"""
+	$(SIGNATURES)
+
+Check that calibrated param vector values are consistent with object values.
+Does not reach into child objects.   
+"""
+check_calibrated_params(x :: ModelObject, pvec) = 
+    check_param_values(x, pvec, true);
 
 """
     $(SIGNATURES)
@@ -74,19 +113,20 @@ end
 Check that all fixed parameters have the correct values
 Does not reach into child objects.
 """
-function check_fixed_params(x :: ModelObject, pvec)
-    # Make dict of default values for non-calibrated params
-    d = make_dict(pvec, false);
-    valid = true;
-    for (pName, pValue) in d
-        isValid = getproperty(x, pName) ≈ pValue;
-        if ~isValid
-            valid = false;
-            @warn "Invalid value: $pName"
-        end
-    end
-    return valid
-end
+check_fixed_params(x :: ModelObject, pvec) =
+    check_param_values(x, pvec, false);
+#     # Make dict of default values for non-calibrated params
+#     d = make_dict(pvec, false);
+#     valid = true;
+#     for (pName, pValue) in d
+#         isValid = getproperty(x, pName) ≈ pValue;
+#         if ~isValid
+#             valid = false;
+#             @warn "Invalid value: $pName"
+#         end
+#     end
+#     return valid
+# end
 
 
 """
@@ -109,15 +149,20 @@ end
 	$(SIGNATURES)
 
 Change value of a field in a `ModelObject` and its `ParamVector`.
+
+# Example
+```julia
+change_value!(mObj, :utilityFunction, :sigma, 2.0);
+get_value(mObj, :utilityFunction, :sigma) ≈ 2.0
+```
 """
 function change_value!(x :: ModelObject, oName :: Symbol, pName :: Symbol,  newValue)
-    objV = find_object(x, oName);
-    @assert length(objV) == 1  "Found $(length(objV)) matches for $oName / $pName"
-    pvec = get_pvector(objV[1]);
+    obj = find_only_object(x, oName);
+    pvec = get_pvector(obj);
     @assert length(pvec) > 0  "No ParamVector in $oName / $pName"
     oldValue = change_value!(pvec, pName, newValue);
     # Set value in object as well
-    setfield!(objV[1], pName, deepcopy(newValue));
+    setfield!(obj, pName, deepcopy(newValue));
     return oldValue
 end
 
@@ -128,12 +173,11 @@ end
 Retrieve a parameter value in a `ModelObject`. 
 """
 function get_value(x :: ModelObject, oName :: Symbol, pName :: Symbol)
-    objV = find_object(x, oName);
-    @assert length(objV) == 1  "Found $(length(objV)) matches for $oName / $pName"
-    pvec = get_pvector(objV[1]);
+    obj = find_only_object(x, oName);
+    pvec = get_pvector(obj);
     @assert length(pvec) > 0  "No ParamVector in $oName / $pName"
-    p, idx = retrieve(pvec, pName);
-    @assert (idx > 0)  "$pName does not exist in $pvec"
+    @assert param_exists(pvec, pName)  "$pName not found";
+    p = retrieve(pvec, pName);
     return p.value
 end
 

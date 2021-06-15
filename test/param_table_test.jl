@@ -10,11 +10,11 @@ function param_table_test()
         descrV = ["descr$j"  for j = 1 : n];
         valueV = ["val$j"  for j = 1 : n];
 
-        pt = mp.ParamTable(n);
+        pt = ParamTable(n);
         @test length(pt) == n
 
         for j = 1 : n
-            mp.set_row!(pt, j, nameV[j], symbolV[j], descrV[j], valueV[j]);
+            set_row!(pt, j, nameV[j], symbolV[j], descrV[j], valueV[j]);
         end
 
         for j = 1 : n
@@ -24,7 +24,7 @@ function param_table_test()
 
         @test mp.get_descriptions(pt) == descrV
 
-        lineV = mp.latex_param_table(pt, "Description line");
+        lineV = latex_param_table(pt, "Description line");
         @test isa(lineV, Vector{String})
         @test length(lineV) == n+1
 	end

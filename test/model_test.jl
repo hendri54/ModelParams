@@ -33,19 +33,22 @@ function model_test()
 
         # For each model object: make vector of param values
         vv1 = make_vector(m.o1.pvec, isCalibrated);
-        @test isa(ModelParams.values(vv1), Vector{Float64})
+        @test isa(mdl.values(vv1), Vector{Float64})
         vv2 = make_vector(m.o2.pvec, isCalibrated);
-        @test isa(ModelParams.values(vv2), Vector{Float64})
+        @test isa(mdl.values(vv2), Vector{Float64})
 
         # This is passed to optimizer as guess
-        vAll = [ModelParams.values(vv1); ModelParams.values(vv2)];
+        vAll = [mdl.values(vv1); mdl.values(vv2)];
         @test isa(vAll, Vector{Float64})
 
         # Same in one step for all param vectors
-        vv = ModelParams.make_vector([m.o1.pvec, m.o2.pvec], isCalibrated);
-        @test vAll ≈ ModelParams.values(vv)
-        @test ModelParams.lb(vv) ≈ [ModelParams.lb(vv1); ModelParams.lb(vv2)]
-        @test ModelParams.ub(vv) ≈ [ModelParams.ub(vv1); ModelParams.ub(vv2)]
+        pvv = PVectorCollection();
+        push!(pvv, m.o1.pvec);
+        push!(pvv, m.o2.pvec);
+        vv = mdl.make_vector(pvv, isCalibrated);
+        @test vAll ≈ mdl.values(vv)
+        @test mdl.lb(vv) ≈ [mdl.lb(vv1); mdl.lb(vv2)]
+        @test mdl.ub(vv) ≈ [mdl.ub(vv1); mdl.ub(vv2)]
 
         # Now we run the optimizer, which changes `vAll`
 
@@ -55,12 +58,12 @@ function model_test()
         # into dicts which are then put into the objects
 
         # Using in a single convenience method
-        vv = ModelParams.make_guess(m);
-        @test ModelParams.sync_from_vector!([m.o1, m.o2], vv);
-        @test ModelParams.check_calibrated_params(m.o1, m.o1.pvec);
-        @test ModelParams.check_fixed_params(m.o1, m.o1.pvec);
-        @test ModelParams.check_calibrated_params(m.o2, m.o2.pvec);
-        @test ModelParams.check_fixed_params(m.o2, m.o2.pvec);
+        vv = mdl.make_guess(m);
+        @test mdl.sync_from_vector!([m.o1, m.o2], vv);
+        @test mdl.check_calibrated_params(m.o1, m.o1.pvec);
+        @test mdl.check_fixed_params(m.o1, m.o1.pvec);
+        @test mdl.check_calibrated_params(m.o2, m.o2.pvec);
+        @test mdl.check_fixed_params(m.o2, m.o2.pvec);
 
 
         # The same in a single convenience function, one object at a time

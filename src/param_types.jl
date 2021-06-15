@@ -48,13 +48,33 @@ Going from a vector of Dicts to a vector of Floats and back:
     Currently, the user has to ensure that the ordering of ParamVectors and model
     objects never changes.
 """
-@with_kw_noshow mutable struct ParamVector
+Base.@kwdef mutable struct ParamVector
     "ObjectId of the ModelObject. To ensure that no mismatches occur."
     objId :: ObjectId
     # A Dict would be natural, but it helps to preserve the order of the params
-    pv :: Vector{Param} = Vector{Param{Any}}()
+    # pv :: Vector{Param} = Vector{Param{Any}}()
+    pv :: OrderedDict{Symbol, Param} = OrderedDict{Symbol, Param}()
     "Governs scaling of parameters into guess vectors for optimization"
     pTransform :: ParamTransformation = LinearTransformation(lb = 1.0, ub = 2.0)
+end
+
+
+"""
+	$(SIGNATURES)
+
+Collection of `ParamVector` for several `ModelObject`s.
+
+Supports iteration like a `Dict`:
+
+```julia
+for (objId, pvec) in pvCollection
+    @assert objId isa ObjectId
+    @assert pvec isa ParamVector
+end
+```
+"""
+mutable struct PVectorCollection
+    d :: OrderedDict{ObjectId, ParamVector}
 end
 
 
@@ -109,6 +129,13 @@ The special case where the vector is of length 1 is supported.
 
 A `BoundedVector` is typically constructed with an empty `ParamVector`. Then [`set_pvector!`](@ref) is used to initialize the `ParamVector`.
 The `ParamVector` contains a single entry which must be named `:dxV`. It sets the values for the eponymous `BoundedVector` field. The `dxV` are typically in [0, 1]. They represent the increments in the vector.
+
+# Example: 
+```julia
+bv = BoundedVector(objId, pvec, true, 5.0, 10.0, [0.5, 0.4]);
+values(bv, 1) == 7.5;
+values(bv, 2) == 7.5 + 0.4 * (10.0 - 7.5);
+```
 """
 mutable struct BoundedVector{T1} <: ModelObject
     objId :: ObjectId

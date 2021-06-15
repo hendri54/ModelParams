@@ -1,62 +1,35 @@
-using Test, ModelParams
+using Test, ModelObjectsLH,  ModelParams
 
 ## Parameter vector test
 import ModelParams.get_pvector
 
-## --------------  Setup
-
-# Make a ParamVector for testing
-# Alternates between calibrated and fixed parameters
-function init_pvector(n :: Integer; objId :: Symbol = :obj1,
-    offset :: Float64 = 0.0)
-
-    pv = ParamVector(ObjectId(objId));
-    for i1 = 1 : n
-        p = init_parameter(i1; offset = offset);
-        if isodd(i1)
-            calibrate!(p);
-        end
-        ModelParams.append!(pv, p);
-    end
-    return pv
-end
-
-function init_parameter(i1 :: Integer;  offset :: Float64 = 0.0)
-    pSym = Symbol("p$i1");
-    pName = "param$i1";
-    pDescr = "sym$i1";
-    valueM = (offset + i1) .+ collect(1 : i1) * [1.0 2.0];
-    return Param(pSym, pName, pDescr, valueM)
-end
-
-
-## --------------  Tests
+mdl = ModelParams;
 
 ## Test basic operations
 function pvectorTest()
     @testset "Pvector" begin
         pv = ParamVector(ObjectId(:pv1));
-        show(pv);
+        println(pv);
         @test length(pv) == 0
 
         p = Param(:p1, "param1", "sym1", [1.2 3.4; 4.5 5.6])
         ModelParams.append!(pv, p)
         @test length(pv) == 1
-        nParam, nElem = ModelParams.n_calibrated_params(pv, p.isCalibrated);
+        nParam, nElem = mdl.n_calibrated_params(pv, p.isCalibrated);
         @test nParam == 1
         @test nElem == 4
 
-        pOut, idx = retrieve(pv, :p11)
-        @test idx == 0
+        pOut = retrieve(pv, :p11)
+        @test isnothing(pOut);
         @test !param_exists(pv, :p11)
-        pOut, idx = retrieve(pv, :p1)
-        @test idx == 1
+        pOut = retrieve(pv, :p1)
         @test pOut.name == :p1
+        @test pv[1].name == :p1;
         @test param_exists(pv, :p1)
 
         p = Param(:p2, "param2", "sym2", [2.2 4.4; 4.5 5.6])
         ModelParams.append!(pv, p)
-        show(pv)
+        println(pv)
         ModelParams.remove!(pv, :p1)
         @test length(pv) == 1
         @test param_exists(pv, :p2)
@@ -65,12 +38,12 @@ function pvectorTest()
         # Test replace
         p2 = Param(:p2, "param2", "sym2", 1.0);
         ModelParams.replace!(pv, p2);
-        p22, _ = retrieve(pv, :p2);
+        p22 = retrieve(pv, :p2);
         @test p22.value == 1
 
         # Retrieve non-existing
-        p3, idx = retrieve(pv, :notThere);
-        @test isnothing(p3) && (idx == 0)
+        p3 = retrieve(pv, :notThere);
+        @test isnothing(p3);
 
         # Parameter value
         pValue = param_value(pv, :p2);
@@ -84,7 +57,7 @@ end
 function iter_test()
     @testset "Iteration" begin
         n = 5;
-        pv = init_pvector(n);
+        pv = mdl.make_test_pvector(n);
         j = 0;
         for p in pv
             j += 1;
@@ -98,10 +71,10 @@ end
 ## Vector to Dict and back
 function pvectorDictTest()
     @testset "Pvector Dict" begin
-        pv = init_pvector(3);
+        pv = mdl.make_test_pvector(3);
         d = make_dict(pv, true)
-        p1, _ = retrieve(pv, :p1);
-        p3, _ = retrieve(pv, :p3);
+        p1 = retrieve(pv, :p1);
+        p3 = retrieve(pv, :p3);
         @test d[:p1] == p1.value
         @test d[:p3] == p3.value
         @test length(d) == 2
@@ -127,10 +100,10 @@ end
 function set_values_test()
     @testset "Set values" begin
         isCalibrated = true;
-        pv = init_pvector(7);
+        pv = mdl.make_test_pvector(7);
         d = make_dict(pv, isCalibrated);
         # Change values in `pv`
-        pv2 = init_pvector(7; offset = 1.0);
+        pv2 = mdl.make_test_pvector(7; offset = 1.0);
         # d2 = make_dict(pv2, isCalibrated);
         ModelParams.set_own_values_from_pvec!(pv, pv2, true);
         # Check that values are now higher using a `Dict`
@@ -179,17 +152,16 @@ end
 
 function report_test()
     @testset "Pvector reporting" begin
-        pv = init_pvector(9);
+        pv = mdl.make_test_pvector(9);
 
-        idxV = ModelParams.indices_calibrated(pv, true);
-        for idx in idxV
-            p = pv[idx];
+        pList = ModelParams.calibrated_params(pv, true);
+        for p in pList
             @test p.isCalibrated
         end
 
         pvEmpty = ParamVector(ObjectId(:pvEmpty));
         @test isempty(pvEmpty)
-        @test isempty(ModelParams.indices_calibrated(pvEmpty, false))
+        @test isempty(ModelParams.calibrated_params(pvEmpty, false))
 
         println("-----  Calibrated parameters")
         ModelParams.report_params(pv, true)
@@ -209,34 +181,13 @@ function report_test()
 end
 
 
-# wrong place +++
-function pv_vector_test()
-    @testset "Vector of ParamVector" begin
-        n = 3;
-        pvv = Vector{ParamVector}(undef, n);
-        for j = 1 : n
-            pvv[j] = init_pvector(j + 2; objId = Symbol("obj$j"));
-        end
-
-        d = ModelParams.make_dict(pvv);
-        @test length(d) == n
-        for j = 1 : n
-            objId = make_string(get_object_id(pvv[j]));
-            @test haskey(d, objId)
-            @test isequal(d[objId],  make_dict(pvv[j], true))
-        end
-    end
-end
-
-
 @testset "ParamVector" begin
-    pvectorTest()
+    pvectorTest();
     iter_test()
     get_pvector_test()
     pvectorDictTest()
     set_values_test()
     report_test()
-    pv_vector_test()
 end
 
 # -------------

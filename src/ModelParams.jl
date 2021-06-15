@@ -16,7 +16,7 @@ module ModelParams
 import Base.show, Base.isempty, Base.isequal
 import Base.append!, Base.length, Base.getindex, Base.values
 import Random: AbstractRNG
-using ArgCheck, DocStringExtensions, Formatting, Parameters, PrettyTables
+using ArgCheck, DataStructures, DocStringExtensions, Formatting, Lazy, Parameters, PrettyTables
 using ModelObjectsLH
 using EconometricsLH # : RegressionTable, get_all_coeff_se, get_coeff_se_multiple, have_same_regressors
 
@@ -31,21 +31,24 @@ export LinearTransformation, transform_bounds, transform_param, untransform_para
 
 # Parameters
 export Param
-export calibrate!, fix!, fix_values!, set_value!, set_default_value!, update!, validate, value
+export calibrate!, fix!, fix_values!, set_value!, set_default_value!, update!, validate, value, is_calibrated
 
 # ParamVector
 export ParamVector
 export param_exists, make_dict, make_vector
-export param_table, param_value, report_params, retrieve, vector_to_dict
+export param_table, param_value, param_default_value, report_params, retrieve, vector_to_dict
+
+# PVectorCollection
+export PVectorCollection
 
 # Model objects
 export check_fixed_params, check_calibrated_params, collect_pvectors, find_pvector, make_guess, perturb_guess, perturb_params, params_equal, validate
-export has_pvector, get_pvector, param_tables, latex_param_table
+export has_pvector, get_pvector, get_switches, param_tables, latex_param_table
 export set_values_from_dicts!
 export BoundedVector, IncreasingVector, values, set_pvector!
 
 # ParamTable
-export ParamTable, set_row!
+export ParamTable, get_symbol, get_description, get_values, set_row!, latex_param_table
 
 # ValueVector
 export ValueVector, set_values, values, lb, ub
@@ -54,19 +57,19 @@ export ValueVector, set_values, values, lb, ub
 const ValueType = Float64;
 
 include("param_table.jl");
-include("types.jl")
+include("types.jl");
 # General purpose code copied from `CommonLH`
-include("helpers.jl")
+include("helpers.jl");
+include("value_vector.jl");
 
 # Parameters
-include("bounded_vector.jl")
-include("value_vector.jl")
-include("transformations.jl")
-include("parameters.jl")
-include("param_vector.jl")
+include("bounded_vector.jl");
+include("transformations.jl");
+include("parameters.jl");
+include("param_vector.jl");
 
-include("m_objects.jl")
-include("obj_pvectors.jl")
+include("m_objects.jl");
+include("obj_pvectors.jl");
 
 
 ## ------------  Main user interface functions
@@ -161,7 +164,7 @@ function report_params(o :: ModelObject, isCalibrated :: Bool; io :: IO = stdout
     if isempty(pvecV)
         return nothing
     end
-    for pvec in pvecV
+    for (objId, pvec) in pvecV.d
         tbM = param_table(pvec, isCalibrated; closeToBounds = closeToBounds);
         if !isnothing(tbM)
             oId = get_object_id(pvec);
@@ -197,7 +200,6 @@ The purpose is to make it easy to generate nicely formatted parameter tables tha
 function param_tables(o :: ModelObject, isCalibrated :: Bool)
     d = Dict{ObjectId, ParamTable}();
 
-    # new +++++
     # Iterating over ModelObjects rather than ParamVectors allows specific objects to override how their parameters are reported.
     objV = collect_model_objects(o);
     for obj in objV
@@ -206,14 +208,6 @@ function param_tables(o :: ModelObject, isCalibrated :: Bool)
             d[get_object_id(obj)] = pt;
         end
     end
-
-    # pvecV = collect_pvectors(o);
-    # if !isempty(pvecV)
-    #     for pvec in pvecV
-    #         tbM = param_table(pvec, isCalibrated);
-    #         d[get_object_id(pvec)] = tbM;
-    #     end
-    # end
     return d
 end
 
@@ -293,8 +287,8 @@ function n_calibrated_params(o :: T1, isCalibrated :: Bool) where T1 <: ModelObj
     nParam = 0;
     nElem = 0;
     if !isempty(pvecV)
-        for i1 = 1 : length(pvecV)
-            nParam2, nElem2 = n_calibrated_params(pvecV[i1], isCalibrated);
+        for (_, pvec) in pvecV
+            nParam2, nElem2 = n_calibrated_params(pvec, isCalibrated);
             nParam += nParam2;
             nElem += nElem2;
         end

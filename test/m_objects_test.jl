@@ -66,7 +66,7 @@ function param_tables_test()
         @test isa(d, Dict{ObjectId, ModelParams.ParamTable})
 
         pvecV = collect_pvectors(m);
-        objIdV = [get_object_id(pvec)  for pvec ∈ pvecV];
+        objIdV = [get_object_id(pvec)  for (_, pvec) ∈ pvecV];
         descrV = ["Description j"  for j = 1 : length(pvecV)];
         lineV = latex_param_table(m, true, objIdV, descrV);
         @test isa(lineV, Vector{String})

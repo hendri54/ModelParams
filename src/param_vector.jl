@@ -8,20 +8,33 @@ function ParamVector(id :: ObjectId)
 end
 
 # With default parameter transformation
-function ParamVector(id :: ObjectId, pv :: Vector)
-    return ParamVector(id, pv, LinearTransformation(lb = 1.0, ub = 2.0))
+# Providing vector of Param or an OrderedDict.
+function ParamVector(id :: ObjectId, pv)
+    return ParamVector(id, 
+        make_ordered_dict(pv), 
+        LinearTransformation(lb = 1.0, ub = 2.0))
 end
 
+function make_ordered_dict(v)
+    d = OrderedDict{Symbol, Param}();
+    for p in v
+        d[p.name] = p;
+    end
+    return d
+end
 
-function show(io :: IO,  pvec :: ParamVector)
+make_ordered_dict(v :: OrderedDict{Symbol, Param}) = v;
+
+
+function Base.show(io :: IO,  pvec :: ParamVector)
     n = length(pvec);
     idStr = make_string(pvec.objId);
     println(io,  "ParamVector $idStr of length $n");
-    if n > 0
-        for j = 1 : n
-            show(io, pvec[j]);
-        end
-    end
+    # if n > 0
+    #     for p in pvec
+    #         println(io, "  ", p);
+    #     end
+    # end
     return nothing
 end
 
@@ -39,17 +52,20 @@ end
 
 ## ----------  Retrieve
 
-# Allows to access values simply as `p[j]`
+# Allows to access values simply as `p[j]`.
+# But access by name is far more efficient.
 function getindex(pvec :: ParamVector, j :: Integer)
-    @argcheck j <= Base.length(pvec.pv)
-    return pvec.pv[j]
+    @argcheck j <= Base.length(pvec.pv);
+    k = collect(keys(pvec.pv))[j];
+    return pvec.pv[k]
 end
+
 
 function Base.iterate(pvec :: ParamVector)
     if isempty(pvec) 
         return nothing
     else
-        return pvec.pv[1], 1
+        return pvec[1], 1
     end
 end
 
@@ -57,7 +73,7 @@ function Base.iterate(pvec :: ParamVector, s)
     if s >= length(pvec)
         return nothing
     else
-        return pvec.pv[s+1], s+1
+        return pvec[s+1], s+1
     end
 end
 
@@ -71,16 +87,26 @@ Returns a named parameter and its index in the `ParamVector`.
 First occurrence. Returns 0 if not found.
 """
 function retrieve(pvec :: ParamVector, pName :: Symbol)
-    idxOut = param_index(pvec, pName);
-    if isnothing(idxOut)
-        return nothing, 0
-    else
-        return pvec.pv[idxOut], idxOut
-    end
+    return get(pvec.pv, pName, nothing);
 end
 
-param_index(pvec :: ParamVector, pName :: Symbol) = 
-    findfirst(x -> isequal(x.name, pName),  pvec.pv);
+# param_index(pvec :: ParamVector, pName :: Symbol) = 
+#     findfirst(x -> x == pName,  collect(keys(pvec.pv)));
+    # findfirst(x -> isequal(x.name, pName),  pvec.pv);
+
+
+"""
+	$(SIGNATURES)
+
+Is this parameter calibrated?
+"""
+function is_calibrated(pvec :: ParamVector, pName :: Symbol)
+    @assert param_exists(pvec, pName)  "Not found: $pName";
+    return is_calibrated(retrieve(pvec, pName))
+end
+
+calibrate!(pvec :: ParamVector, pName :: Symbol) = 
+    calibrate!(retrieve(pvec, pName));
 
 
 """
@@ -89,7 +115,7 @@ param_index(pvec :: ParamVector, pName :: Symbol) =
 Does a `Param` named `pName` exist in `ParamVector pvec`?
 """
 param_exists(pvec :: ParamVector, pName :: Symbol) =
-    !isnothing(param_index(pvec, pName))
+    haskey(pvec.pv, pName);
 
 
 """
@@ -99,11 +125,11 @@ Return the value of a parameter from a `ParamVector`.
 Returns `nothing` if not found.
 """
 function param_value(pvec :: ParamVector, pName :: Symbol)
-    p, idx = retrieve(pvec, pName);
-    if idx > 0
-        return p.value;
-    else
+    p = retrieve(pvec, pName);
+    if isnothing(p) 
         return nothing
+    else
+        return value(p)
     end
 end
 
@@ -111,17 +137,50 @@ end
 """
 	$(SIGNATURES)
 
-Return indices of all parameters with a given calibration status.
+Return the default value of a parameter from a `ParamVector`. 
+Returns `nothing` if not found.
 """
-function indices_calibrated(pvec :: ParamVector, isCalibrated :: Bool)
-    n = length(pvec);
-    if n > 0
-        isCalV = [pvec.pv[j].isCalibrated  for j in 1 : n];
-        idxV = findall(isCalV .== isCalibrated);
+function param_default_value(pvec :: ParamVector, pName :: Symbol)
+    p = retrieve(pvec, pName);
+    if isnothing(p) 
+        return nothing
     else
-        idxV = Vector{Int}();
+        return default_value(p)
     end
-    return idxV
+end
+
+
+# """
+# 	$(SIGNATURES)
+
+# Return indices of all parameters with a given calibration status.
+# """
+# function indices_calibrated(pvec :: ParamVector, isCalibrated :: Bool)
+#     n = length(pvec);
+#     if n > 0
+#         isCalV = [pvec.pv[k].isCalibrated  for k in keys(pvec.pv)];
+#         # isCalV = [pvec.pv[j].isCalibrated  for j in 1 : n];
+#         idxV = findall(isCalV .== isCalibrated);
+#     else
+#         idxV = Vector{Int}();
+#     end
+#     return idxV
+# end
+
+
+"""
+	$(SIGNATURES)
+
+List of calibrated or not calibrated parameters. Returns vector of names.
+"""
+function calibrated_params(pvec :: ParamVector, isCalibrated :: Bool)
+    pList = Vector{Param}();
+    for (k, p) in pvec.pv
+        if p.isCalibrated == isCalibrated
+            push!(pList, p);
+        end
+    end
+    return pList
 end
 
 
@@ -131,11 +190,12 @@ end
 Number of calibrated parameters and their total element count.
 """
 function n_calibrated_params(pvec :: ParamVector, isCalibrated :: Bool)
-    idxV = indices_calibrated(pvec, isCalibrated);
-    nParams = length(idxV);
+    # idxV = indices_calibrated(pvec, isCalibrated);
+    pList = calibrated_params(pvec, isCalibrated);
+    nParams = length(pList);
     nElem = 0;
-    for i1 in idxV
-        nElem += length(pvec.pv[i1].value);
+    for p in pList
+        nElem += length(p.value);
     end
     return nParams, nElem
 end
@@ -149,8 +209,8 @@ end
 Append a `Param` to a `ParamVector`
 """
 function append!(pvec :: ParamVector,  p :: Param)
-    @assert !param_exists(pvec, p.name)  "$(p.name) already exists"
-    push!(pvec.pv, p)
+    @assert !param_exists(pvec, p.name)  "$(p.name) already exists";
+    pvec.pv[p.name] = p;
     return nothing
 end
 
@@ -160,20 +220,18 @@ end
 Remove the parameter names `pName` from `pvec`.
 """
 function remove!(pvec :: ParamVector, pName :: Symbol)
-    _, idx = retrieve(pvec, pName);
-    @assert (idx > 0)  "$pName does not exist"
-    deleteat!(pvec.pv, idx);
+    @assert haskey(pvec.pv, pName)  "$pName does not exist";
+    delete!(pvec.pv, pName);
     return nothing
 end
 
 """
 	$(SIGNATURES)
 
-Replace a parameter with a new parameter `p`.
+Replace a parameter with a new parameter `p`. Without changing the order.
 """
 function replace!(pvec :: ParamVector, p :: Param)
-    remove!(pvec, p.name);
-    append!(pvec, p);
+    pvec.pv[p.name] = p;
     return nothing
 end
 
@@ -185,8 +243,8 @@ Set whether or not a parameter is calibrated.
 function change_calibration_status!(pvec :: ParamVector, pName :: Symbol,
     doCal :: Bool)
 
-    p, idx = retrieve(pvec, pName);
-    @assert (idx > 0)  "$pName does not exist"
+    @assert param_exists(pvec, pName)  "$pName does not exist";
+    p = retrieve(pvec, pName);
     if doCal
         calibrate!(p);
     else
@@ -200,8 +258,8 @@ end
 Change the value of parameter `pName`.
 """
 function change_value!(pvec :: ParamVector, pName :: Symbol, newValue)
-    p, idx = retrieve(pvec, pName);
-    @assert (idx > 0)  "$pName does not exist in $pvec"
+    @assert param_exists(pvec, pName)  "$pName does not exist";
+    p = retrieve(pvec, pName);
     @assert size(p.defaultValue) == size(newValue)  """
         Wrong size for $pName in $pvec
         Given: $(size(newValue))
@@ -230,8 +288,8 @@ function report_params(pvec :: ParamVector, isCalibrated :: Bool;
     else
         # Reports description, name, value (not symbol)
         pretty_table(io, 
-            [get_descriptions(dataM) get_names(dataM) get_values(dataM)], 
-            [objId, " ", " "]);
+            [get_descriptions(dataM) get_names(dataM) get_values(dataM)]; 
+            header = [objId, " ", " "]);
     end
     return nothing
 end
@@ -249,19 +307,18 @@ function param_table(pvec :: ParamVector, isCalibrated :: Bool;
     closeToBounds :: Bool = false)
 
     if closeToBounds
-        idxV = find_close_to_bounds(pvec);
+        pList = find_close_to_bounds(pvec);
     else
-        idxV = indices_calibrated(pvec, isCalibrated);
+        pList = calibrated_params(pvec, isCalibrated);
     end
-    n = length(idxV);
+    n = length(pList);
 
-    if isempty(idxV)
+    if isempty(pList)
         dataM = nothing;
     else
         # dataM = Matrix{String}(undef, n, 4);
         dataM = ParamTable(n);
-        for j = 1 : n
-            p = pvec[idxV[j]];
+        for (j, p) in enumerate(pList)
             set_row!(dataM, j, string(name(p)), lsymbol(p), 
                 p.description, formatted_value(p.value));
         end
@@ -272,14 +329,14 @@ end
 
 # Find parameters that are close to bounds
 function find_close_to_bounds(pvec :: ParamVector; rtol = 0.01)
-    idxV = indices_calibrated(pvec, true);
-    idxCloseV = Vector{Int}();
-    for j in idxV
-        if close_to_bounds(pvec[j]; rtol = rtol)
-            push!(idxCloseV, j);
+    pList = calibrated_params(pvec, true);
+    pCloseV = Vector{Param}();
+    for p in pList
+        if close_to_bounds(p; rtol = rtol)
+            push!(pCloseV, p);
         end
     end
-    return idxCloseV
+    return pCloseV
 end
 
 
@@ -295,9 +352,8 @@ function make_dict(pvec :: ParamVector, isCalibrated :: Bool,
     useValues :: Bool)
 
     pd = Dict{Symbol, Any}()
-    idxV = indices_calibrated(pvec, isCalibrated);
-    for i1 in idxV
-        p = pvec.pv[i1];
+    pList = calibrated_params(pvec, isCalibrated);
+    for p in pList
         if useValues
             pd[p.name] = p.value;
         else
@@ -322,14 +378,14 @@ Returns a `ValueVector`.
 """
 function make_vector(pvec :: ParamVector, isCalibrated :: Bool)
     T1 = ValueType;
-    idxV = indices_calibrated(pvec, isCalibrated);
+    pList = calibrated_params(pvec, isCalibrated);
     n, nElem = n_calibrated_params(pvec, isCalibrated);
     valueV = Vector{T1}(undef, nElem);
     pNameV = Vector{Symbol}(undef, nElem);
 
     idxLast = 0;
-    for i1 in idxV
-        pValue = transform_param(pvec.pTransform,  pvec.pv[i1]);
+    for p in pList
+        pValue = transform_param(pvec.pTransform,  p);
         pLen = length(pValue);
         pIdxV = idxLast .+ (1 : pLen);
         idxLast += pLen;
@@ -338,7 +394,7 @@ function make_vector(pvec :: ParamVector, isCalibrated :: Bool)
         else
             valueV[pIdxV] .= vec(pValue);
         end
-        pNameV[pIdxV] .= name(pvec.pv[i1]);
+        pNameV[pIdxV] .= p.name;
         # # Append works for scalars, vectors, and matrices (that get flattened)
         # # Need to qualify - otherwise local append! is called
         # Base.append!(valueV, pValue);
@@ -374,15 +430,14 @@ function vector_to_dict(pvec :: ParamVector, vVec :: ValueVector,
 
     n = length(pvec);
     @assert n > 0  "$pvec vector is empty"
-    idxV = indices_calibrated(pvec, isCalibrated);
+    pList = calibrated_params(pvec, isCalibrated);
     v = values(vVec);
     pNameV = pnames(vVec);
 
     pd = Dict{Symbol, Any}();
     # Last index of `v` used so far
     iEnd = startIdx - 1;
-    for i1 in idxV
-        p = pvec.pv[i1];
+    for p in pList
         nElem = length(p.defaultValue);
         if isa(p.defaultValue, AbstractFloat)
             vIdxV = iEnd + 1;
@@ -439,6 +494,33 @@ function set_own_values_from_pvec!(pvecOld :: ParamVector,  pvecNew :: ParamVect
         change_value!(pvecOld, pName, dNew[pName]);
     end
     return nothing
+end
+
+
+## -----------  Testing
+
+# Make a ParamVector for testing
+# Alternates between calibrated and fixed parameters
+function make_test_pvector(n :: Integer; objId :: Symbol = :obj1,
+    offset :: Float64 = 0.0)
+
+    pv = ParamVector(ObjectId(objId));
+    for i1 = 1 : n
+        p = init_parameter(i1; offset = offset);
+        if isodd(i1)
+            calibrate!(p);
+        end
+        ModelParams.append!(pv, p);
+    end
+    return pv
+end
+
+function init_parameter(i1 :: Integer;  offset :: Float64 = 0.0)
+    pSym = Symbol("p$i1");
+    pName = "param$i1";
+    pDescr = "sym$i1";
+    valueM = (offset + i1) .+ collect(1 : i1) * [1.0 2.0];
+    return Param(pSym, pName, pDescr, valueM)
 end
 
 

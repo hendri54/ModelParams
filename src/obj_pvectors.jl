@@ -1,5 +1,33 @@
 # Code that deals with objects and child objects.
 
+PVectorCollection() = PVectorCollection(OrderedDict{ObjectId, ParamVector}());
+
+function PVectorCollection(v :: Vector{ParamVector})
+    pvecV = PVectorCollection();
+    for pvec in v
+        push!(pvecV, pvec);
+    end
+    return pvecV
+end
+
+Base.show(io :: IO, pvecV :: PVectorCollection) = 
+    print(io, "PVectorCollection of length $(length(pvecV))");
+
+has_pvector(pvecV :: PVectorCollection, pv :: ParamVector) = 
+    has_pvector(pvecV, get_object_id(pv));
+
+has_pvector(pvecV :: PVectorCollection, objId :: ObjectId) = 
+    haskey(pvecV.d, objId);
+
+function Base.push!(pvecV :: PVectorCollection, pv :: ParamVector)
+    @assert !has_pvector(pvecV, pv)  "$pv already exists.";
+    pvecV.d[get_object_id(pv)] = pv;
+end
+
+Lazy.@forward PVectorCollection.d (
+    Base.iterate, Base.isempty, Base.length
+    );
+
 """
 	$(SIGNATURES)
 
@@ -7,7 +35,7 @@ Collect all `ParamVector`s in an object and its child objects.
 Returns an empty `ParamVector` if nothing found.
 """
 function collect_pvectors(o :: ModelObject)
-    pvecV = Vector{ParamVector}();
+    pvecV = PVectorCollection();
     objV = collect_model_objects(o);
     if !isempty(objV)
         for i1 = 1 : length(objV)
@@ -16,7 +44,7 @@ function collect_pvectors(o :: ModelObject)
             end
         end
     end
-    return pvecV :: Vector{ParamVector}
+    return pvecV :: PVectorCollection
 end
 
 
@@ -26,17 +54,22 @@ end
 Find a `ParamVector` for a given ObjectId. 
 Returns index and the `ParamVector`. Or `0` and `nothing` if not found.
 """
-function find_pvector(pvv :: Vector{ParamVector}, objId :: ObjectId)
-    idx = 0;
-    pvOut = nothing;
-    for (j, pv) in enumerate(pvv)
-        if isequal(objId, get_object_id(pv))
-            idx = j;
-            pvOut = pv;
-            break;
-        end
+function find_pvector(pvv :: PVectorCollection, objId :: ObjectId)
+    if has_pvector(pvv, objId)
+        return pvv.d[objId];
+    else
+        return nothing;
     end
-    return idx, pvOut
+    # idx = 0;
+    # pvOut = nothing;
+    # for (j, pv) in enumerate(pvv)
+    #     if isequal(objId, get_object_id(pv))
+    #         idx = j;
+    #         pvOut = pv;
+    #         break;
+    #     end
+    # end
+    # return idx, pvOut
 end
 
 
@@ -49,13 +82,13 @@ end
 Make vector from a list of param vectors.
 Output contains values, lower bounds, upper bounds.
 """
-function make_vector(pvv :: Vector{ParamVector}, isCalibrated :: Bool)
+function make_vector(pvv :: PVectorCollection, isCalibrated :: Bool)
     outV = Vector{ValueType}();
     lbV = Vector{ValueType}();
     ubV = Vector{ValueType}();
     pNameV = Vector{Symbol}();
-    for i1 = 1 : length(pvv)
-        vVec = make_vector(pvv[i1], isCalibrated);
+    for (objId, pv) in pvv
+        vVec = make_vector(pv, isCalibrated);
         append!(outV, values(vVec));
         append!(lbV, lb(vVec));
         append!(ubV, ub(vVec));
@@ -69,25 +102,26 @@ end
 """
 	$(SIGNATURES)
 
-Make a `Vector{ParamVector}` into a `Dict{String, Dict{Symbol, Any}}`.
+Make a `PVectorCollection` into a `Dict{String, Dict{Symbol, Any}}`.
 Each entry is one `ParamVector`. 
 They key is the `ObjectId` of each `ParamVector` made into a `String`. Such as "parent > child > grandchild[2, 1]".
 The value is the `ParamVector` made into a Dict.
+Objects without calibrated params have no entries.
 
 This is a format that can be saved without using user defined types. There is hope this can be serialized.
 """
-function make_dict(pvv :: Vector{ParamVector}; isCalibrated :: Bool = true)
+function make_dict(pvv :: PVectorCollection; isCalibrated :: Bool = true)
     n = length(pvv);
     if n < 1
         return nothing
     end
 
     d = nothing;
-    for j = 1 : n
-        pv = pvv[j];
-        key = make_string(get_object_id(pv));
+    for (objId, pv) in pvv.d
+        # pv = pvv[j];
+        key = make_string(objId);
         pd = make_dict(pv, isCalibrated);
-        if j == 1
+        if isnothing(d)
             d = Dict([key => pd]);
         else
             push!(d, key => pd);
@@ -121,7 +155,7 @@ function set_values_from_dicts!(x :: ModelObject,  pvDict :: D1; isCalibrated ::
         # Find the matching model object
         obj = find_object(x, oId);
         if !isnothing(obj)  &&  has_pvector(obj)
-            set_values_from_dict!(obj.pvec, pd);
+            set_values_from_dict!(get_pvector(obj), pd);
             set_own_values_from_pvec!(obj, isCalibrated);
         end
     end
@@ -135,17 +169,16 @@ end
 Copy all values from a vector of `ParamVector` into an object, including child objects.
 Only changes values that are `isCalibrated` in object and `v`.
 """
-function set_values_from_pvectors!(x :: ModelObject, v :: Vector{ParamVector}, isCalibrated :: Bool)
+function set_values_from_pvectors!(x :: ModelObject, v :: PVectorCollection, isCalibrated :: Bool)
     # Collect all model objects
     mObjV = collect_model_objects(x);
 
     # Loop over `ParamVector`s
-    for pvec in v
+    for (objId, pvec) in v.d
         # Find the matching model object
-        obj = find_object(x, pvec.objId);
-        # show(obj)
+        obj = find_object(x, objId);
         if !isnothing(obj)  &&  has_pvector(obj)
-            set_own_values_from_pvec!(obj.pvec, pvec, isCalibrated);
+            set_own_values_from_pvec!(get_pvector(obj), pvec, isCalibrated);
             set_own_values_from_pvec!(obj, isCalibrated);
         end
     end
@@ -204,6 +237,18 @@ function sync_from_vector!(xV :: Vector, vAll :: ValueVector)
         @warn "Not all values used: $(startIdx - 1)  vs  $(length(vAll))"
     end
     return success
+end
+
+
+## --------  Testing
+
+function make_test_pvector_collection(n)
+    pvecV = PVectorCollection();
+    for j = 1 : n
+        oId = Symbol("id$j");
+        push!(pvecV, make_test_pvector(n; objId = oId));
+    end
+    return pvecV
 end
 
 # --------------

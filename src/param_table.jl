@@ -65,6 +65,4 @@ function latex_param_table(tbM :: ParamTable, descr)
 end
 
 
-
-
 # ------------

@@ -16,7 +16,8 @@ set_pvector!(b; description = "Gradient", symbol = "g(x)");
 """
 function set_pvector!(iv :: BoundedVector{T1};
     description = "Increments", 
-    symbol = "dxV", isCalibrated :: Bool = true) where T1
+    symbol = "dxV", 
+    isCalibrated :: Bool = true) where T1
     
     defaultValueV = iv.dxV;
     n = length(defaultValueV);

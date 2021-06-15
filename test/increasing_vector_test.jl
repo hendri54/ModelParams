@@ -7,7 +7,7 @@ function make_increasing_vector()
         dWageV, dWageV, dWageV .* 0.05, dWageV .* 10, true);
 
 	ownId = ObjectId(:test1);
-    pvec = ParamVector(objId = ownId,  pv = [wageInter, dWage]);
+    pvec = ParamVector(ownId,  [wageInter, dWage]);
 	return IncreasingVector(ownId, pvec, x0, dWageV)
 end
 
