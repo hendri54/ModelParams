@@ -20,11 +20,6 @@ using ArgCheck, DataStructures, DocStringExtensions, Formatting, Lazy, Parameter
 using ModelObjectsLH
 using EconometricsLH # : RegressionTable, get_all_coeff_se, get_coeff_se_multiple, have_same_regressors
 
-# SingleId
-# export SingleId, make_single_id
-
-# ObjectId
-# export ObjectId, make_string, make_object_id, make_child_id, own_name
 
 # Transformations
 export LinearTransformation, transform_bounds, transform_param, untransform_param
@@ -278,9 +273,9 @@ end
 
 
 """
-    n_calibrated_params(o, isCalibrated)
+    $(SIGNATURES)
 
-Number of calibrated parameters in object and its children.
+Number of calibrated parameters in object and its children. Also returns the number of elements (scalar values) in these parameters.
 """
 function n_calibrated_params(o :: T1, isCalibrated :: Bool) where T1 <: ModelObject
     pvecV = collect_pvectors(o);

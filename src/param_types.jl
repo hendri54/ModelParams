@@ -140,7 +140,7 @@ values(bv, 2) == 7.5 + 0.4 * (10.0 - 7.5);
 mutable struct BoundedVector{T1} <: ModelObject
     objId :: ObjectId
     pvec :: ParamVector
-    increasing :: Bool
+    increasing :: Symbol
     # Values are in these bounds
     lb :: T1
     ub :: T1

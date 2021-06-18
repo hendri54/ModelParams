@@ -29,7 +29,7 @@ make_ordered_dict(v :: OrderedDict{Symbol, Param}) = v;
 function Base.show(io :: IO,  pvec :: ParamVector)
     n = length(pvec);
     idStr = make_string(pvec.objId);
-    println(io,  "ParamVector $idStr of length $n");
+    print(io,  "ParamVector $idStr of length $n");
     # if n > 0
     #     for p in pvec
     #         println(io, "  ", p);
@@ -107,6 +107,8 @@ end
 
 calibrate!(pvec :: ParamVector, pName :: Symbol) = 
     calibrate!(retrieve(pvec, pName));
+fix!(pvec :: ParamVector, pName :: Symbol) = 
+    fix!(retrieve(pvec, pName));
 
 
 """
@@ -185,7 +187,7 @@ end
 
 
 """
-    n_calibrated_params
+    $(SIGNATURES)
 
 Number of calibrated parameters and their total element count.
 """
@@ -204,7 +206,7 @@ end
 ## ------------  Modify
 
 """
-    append!
+    $(SIGNATURES)
 
 Append a `Param` to a `ParamVector`
 """
@@ -251,6 +253,12 @@ function change_calibration_status!(pvec :: ParamVector, pName :: Symbol,
         fix!(p);
     end
 end
+
+calibrate!(pvec :: ParamVector, pName :: Symbol) = 
+    change_calibration_status!(pvec, pName, true);
+fix!(pvec :: ParamVector, pName :: Symbol) = 
+    change_calibration_status!(pvec, pName, false);
+
 
 """
 	$(SIGNATURES)

@@ -27,16 +27,16 @@ function set_pvector!(iv :: BoundedVector{T1};
     return nothing
 end
 
-is_increasing(iv :: BoundedVector{T1}) where T1 = iv.increasing;
+is_increasing(iv :: BoundedVector{T1}) where T1 = (iv.increasing == :increasing);
+is_decreasing(iv :: BoundedVector{T1}) where T1 = (iv.increasing == :decreasing);
+is_nonmonotone(iv :: BoundedVector{T1}) where T1 = (iv.increasing == :nonmonotone);
 lb(iv :: BoundedVector{T1}) where T1 = iv.lb;
 ub(iv :: BoundedVector{T1}) where T1 = iv.ub;
-Base.length(iv :: BoundedVector{T1}) where T1 =
-    Base.length(iv.dxV);
+Base.length(iv :: BoundedVector{T1}) where T1 =  Base.length(iv.dxV);
+
 
 function calibrate_values!(iv :: BoundedVector{T1}) where T1
-    p = iv.pvec[1];
-    @assert name(p) == :dxV
-    calibrate!(p);
+    calibrate!(iv, :dxV);
 end
 
 
@@ -48,12 +48,11 @@ Switches calibration toggle off. Sets values and default values everywhere. The 
 function fix_values!(iv :: BoundedVector{T1}, 
     valueV :: AbstractVector{T1}) where T1
 
-    dxV = values_to_dx(iv, valueV);
-    p = iv.pvec[1];
-    @assert name(p) == :dxV
+    p = retrieve(iv.pvec, :dxV);
     set_value!(p, valueV);
     set_default_value!(p, valueV);
     fix!(p);
+    dxV = values_to_dx(iv, valueV);
     iv.dxV = dxV;
 end
 
@@ -68,23 +67,29 @@ function values(iv :: BoundedVector{T1}) where T1
     return valueV
 end
 
+
 function dx_to_values(iv :: BoundedVector{T1}, dxV) where T1
     n = length(iv);
-    valueV = zeros(T1, n);
     if is_increasing(iv)
+        valueV = zeros(T1, n);
         valueV[1] = lb(iv) + dxV[1] * (ub(iv) - lb(iv));
         if n > 1
             for j = 2 : n
                 valueV[j] = valueV[j-1] + dxV[j] * (ub(iv) - valueV[j-1]);
             end
         end
-    else
+    elseif is_decreasing(iv)
+        valueV = zeros(T1, n);
         valueV[1] = ub(iv) - dxV[1] * (ub(iv) - lb(iv));
         if n > 1
             for j = 2 : n
                 valueV[j] = valueV[j-1] - dxV[j] * (valueV[j-1] - lb(iv));
             end
         end
+    elseif is_nonmonotone(iv)
+        valueV = copy(dxV);
+    else
+        error("Invalid");
     end
     return valueV
 end
@@ -108,8 +113,7 @@ function set_default_value!(iv :: BoundedVector{T1},
     valueV :: AbstractVector{T1}) where T1
 
     dxV = values_to_dx(iv, valueV);
-    p = iv.pvec[1];
-    @assert name(p) == :dxV
+    p = retrieve(iv.pvec, :dxV);
     set_default_value!(p, valueV)
 end
 
@@ -117,22 +121,27 @@ end
 function values_to_dx(iv :: BoundedVector{T1}, valueV :: AbstractVector{T1}) where T1
     @assert check_values(iv, valueV);
     n = length(iv);
-    dxV = zeros(T1, n);
 
     if is_increasing(iv)
+        dxV = zeros(T1, n);
         dxV[1] = (valueV[1] - lb(iv)) / (ub(iv) - lb(iv));
         if n > 1
             for j = 2 : n
                 dxV[j] = (valueV[j] - valueV[j-1]) / (ub(iv) - valueV[j-1]);
             end
         end
-    else
+    elseif is_decreasing(iv)
+        dxV = zeros(T1, n);
         dxV[1] = (ub(iv) - valueV[1]) / (ub(iv) - lb(iv));
         if n > 1
             for j = 2 : n
                 dxV[j] = (valueV[j-1] - valueV[j]) / (valueV[j-1] - lb(iv));
             end
         end
+    elseif is_nonmonotone(iv)
+        dxV = copy(valueV);
+    else
+        error("Invalid");
     end
     return dxV
 end
@@ -141,11 +150,18 @@ end
 function check_values(iv :: BoundedVector{T1}, valueV :: AbstractVector{T1}) where T1
     isValid = true;
     isValid = isValid  &&  isequal(length(valueV), length(iv));
-    isValid = isValid  &&  all(valueV .>= lb(iv));
+    if any(valueV .< lb(iv))
+        isValid = false;
+        @warn "Values too low: $valueV";
+    end
+    if any(valueV .> ub(iv))
+        isValid = false;
+        @warn "Values too high: $valueV";
+    end
     isValid = isValid  &&  all(valueV .<= ub(iv));
     if is_increasing(iv)
         isValid = isValid  &&  all(diff(valueV) .> 0.0);
-    else
+    elseif is_decreasing(iv)
         isValid = isValid  &&  all(diff(valueV) .< 0.0);
     end
     return isValid
@@ -153,7 +169,7 @@ end
 
 
 function param_table(iv :: BoundedVector{T1}, isCalibrated :: Bool) where T1
-    p = iv.pvec[1];
+    p = retrieve(iv.pvec, :dxV);
     if isCalibrated == p.isCalibrated
         pt = ParamTable(1);
         set_row!(pt, 1, string(p.name), p.symbol, p.description, 

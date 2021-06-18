@@ -2,7 +2,7 @@ has_pvector(switches :: ModelSwitches) = false;
 get_pvector(switches :: ModelSwitches) = switches.pvec;
 
 Lazy.@forward ModelSwitches.pvec (
-    is_calibrated, calibrate!, param_value, param_default_value
+    is_calibrated, calibrate!, fix!, param_value, param_default_value
     );
 
 # function is_calibrated(switches :: ModelSwitches, pName :: Symbol)

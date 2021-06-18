@@ -1,13 +1,23 @@
 using ModelObjectsLH, ModelParams, Test
 
-function make_bounded_test_vector(vLength :: Integer, increasing :: Bool)
+function make_bounded_test_vector(vLength :: Integer, increasing :: Symbol)
     ownId = ObjectId(:test1);
-    if vLength > 1
-        dxV = collect(range(0.4, 0.2, length = vLength));
+    lb = 3.0;
+    ub = 7.0;
+    if increasing == :nonmonotone
+        if vLength > 1
+            dxV = collect(LinRange(lb + 0.1, ub - 0.1, vLength));
+        else
+            dxV = [lb + 1.5];
+        end
     else
-        dxV = [0.4];
+        if vLength > 1
+            dxV = collect(range(0.4, 0.2, length = vLength));
+        else
+            dxV = [0.4];
+        end
     end
-    iv = BoundedVector(ownId, ParamVector(ownId), increasing, 3.0, 7.0, dxV);
+    iv = BoundedVector(ownId, ParamVector(ownId), increasing, lb, ub, dxV);
     set_pvector!(iv);
     return iv
 end
@@ -15,7 +25,7 @@ end
 
 @testset "BoundedVector" begin
     for vLength in [1, 3]
-        for increasing in [false, true]
+        for increasing in [:increasing, :decreasing, :nonmonotone]
             iv = make_bounded_test_vector(vLength, increasing);
             n = length(iv);
             xV = values(iv);
