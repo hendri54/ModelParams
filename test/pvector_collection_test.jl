@@ -42,11 +42,27 @@ function make_dict_test()
     end
 end
 
+function find_param_test()
+    @testset "Find param" begin
+        n = 5;
+        pvv = mdl.make_test_pvector_collection(n);
+        d = find_param(pvv, :notThere);
+        @test isempty(d);
+        pName = :p4;
+        d = find_param(pvv, pName);
+        for (objId, p) in d
+            pvec = find_pvector(pvv, objId);
+            @test param_exists(pvec, pName);
+        end
+    end
+end
+
 
 @testset "PVectorCollection" begin
     constructors_test();
     pv_collection_test();
     make_dict_test();
+    find_param_test();
 end
 
 # -----------

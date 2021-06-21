@@ -52,24 +52,49 @@ end
     $(SIGNATURES)
 
 Find a `ParamVector` for a given ObjectId. 
-Returns index and the `ParamVector`. Or `0` and `nothing` if not found.
+Returns the `ParamVector`. Or `nothing` if not found.
 """
+find_pvector(o :: ModelObject, objId) = find_pvector(collect_pvectors(o), objId);
+
 function find_pvector(pvv :: PVectorCollection, objId :: ObjectId)
     if has_pvector(pvv, objId)
         return pvv.d[objId];
     else
         return nothing;
     end
-    # idx = 0;
-    # pvOut = nothing;
-    # for (j, pv) in enumerate(pvv)
-    #     if isequal(objId, get_object_id(pv))
-    #         idx = j;
-    #         pvOut = pv;
-    #         break;
-    #     end
-    # end
-    # return idx, pvOut
+end
+
+
+"""
+	$(SIGNATURES)
+
+Find all occurrences of a given parameter name.
+Returns a `Dict` that maps `ObjectId => Param`. Or is empty.
+
+# Example
+```julia
+d = find_param(o, :alpha);
+for (objId, p) in d
+    # Since a reference to the `Param` is returned, this changes the calibration status in `o`.
+    calibrate!(p);
+    pvec = find_pvector(o, objId);
+end
+```
+"""
+function find_param(o :: ModelObject, pName)
+    pvv = collect_pvectors(o);
+    return find_param(pvv, pName);
+end
+
+function find_param(pvv :: PVectorCollection, pName)
+    d = Dict{ObjectId, Param}();
+    for (objId, pvec) in pvv
+        if param_exists(pvec, pName)
+            p = retrieve(pvec, pName);
+            d[objId] = p;
+        end
+    end
+    return d
 end
 
 

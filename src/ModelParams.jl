@@ -37,7 +37,7 @@ export param_table, param_value, param_default_value, report_params, retrieve, v
 export PVectorCollection
 
 # Model objects
-export check_fixed_params, check_calibrated_params, collect_pvectors, find_pvector, make_guess, perturb_guess, perturb_params, params_equal, validate
+export check_fixed_params, check_calibrated_params, collect_pvectors, find_pvector, find_param, make_guess, perturb_guess, perturb_params, params_equal, validate
 export has_pvector, get_pvector, get_switches, param_tables, latex_param_table
 export set_values_from_dicts!
 export BoundedVector, IncreasingVector, values, set_pvector!
@@ -160,18 +160,21 @@ function report_params(o :: ModelObject, isCalibrated :: Bool; io :: IO = stdout
         return nothing
     end
     for (objId, pvec) in pvecV.d
+        # Print the ObjectId, even if the object contains no params.
+        # Its children might.
+        oId = get_object_id(pvec);
+        nParents = n_parents(oId);
+        print(io, indent_string(nParents), string(own_name(oId)));
+        if isempty(description(oId))
+            println(io, " ");
+        else
+            println(io, ":  ",  description(oId));
+        end
         tbM = param_table(pvec, isCalibrated; closeToBounds = closeToBounds);
         if !isnothing(tbM)
-            oId = get_object_id(pvec);
-            nParents = n_parents(oId);
-            print(io, indent_string(nParents), string(own_name(oId)));
-            if isempty(description(oId))
-                println(io, " ");
-            else
-                println(io, ":  ",  description(oId));
-            end
             for ir = 1 : length(tbM)
-                println(io, indent_string(nParents + 1), 
+                println(io, 
+                    indent_string(nParents + 1), 
                     get_description(tbM, ir),  
                     " (",  get_name(tbM, ir), "):  ", 
                     get_value(tbM, ir));

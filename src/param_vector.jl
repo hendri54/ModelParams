@@ -105,11 +105,6 @@ function is_calibrated(pvec :: ParamVector, pName :: Symbol)
     return is_calibrated(retrieve(pvec, pName))
 end
 
-calibrate!(pvec :: ParamVector, pName :: Symbol) = 
-    calibrate!(retrieve(pvec, pName));
-fix!(pvec :: ParamVector, pName :: Symbol) = 
-    fix!(retrieve(pvec, pName));
-
 
 """
 	$(SIGNATURES)
