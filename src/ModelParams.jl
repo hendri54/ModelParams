@@ -30,11 +30,11 @@ export calibrate!, fix!, fix_values!, set_value!, set_default_value!, update!, v
 
 # ParamVector
 export ParamVector
-export param_exists, make_dict, make_vector
+export param_exists, make_dict, make_vector, n_calibrated_params
 export param_table, param_value, param_default_value, report_params, retrieve, vector_to_dict
 
 # PVectorCollection
-export PVectorCollection
+export PVectorCollection, set_calibration_status_all_params!, set_default_values_all_params!
 
 # Model objects
 export check_fixed_params, check_calibrated_params, collect_pvectors, find_pvector, find_param, make_guess, perturb_guess, perturb_params, params_equal, validate
@@ -160,16 +160,11 @@ function report_params(o :: ModelObject, isCalibrated :: Bool; io :: IO = stdout
         return nothing
     end
     for (objId, pvec) in pvecV.d
-        # Print the ObjectId, even if the object contains no params.
-        # Its children might.
         oId = get_object_id(pvec);
         nParents = n_parents(oId);
-        print(io, indent_string(nParents), string(own_name(oId)));
-        if isempty(description(oId))
-            println(io, " ");
-        else
-            println(io, ":  ",  description(oId));
-        end
+        # Print the ObjectId, even if the object contains no params.
+        # Its children might.
+        report_obj_id(io, oId);
         tbM = param_table(pvec, isCalibrated; closeToBounds = closeToBounds);
         if !isnothing(tbM)
             for ir = 1 : length(tbM)
@@ -185,6 +180,16 @@ function report_params(o :: ModelObject, isCalibrated :: Bool; io :: IO = stdout
 end
 
 indent_string(n) = "   " ^ n;
+
+# Report ObjectId with indent depending on no of parents
+function report_obj_id(io, oId :: ObjectId; nParents = n_parents(oId))
+    print(io, indent_string(nParents), string(own_name(oId)));
+    if isempty(description(oId))
+        println(io, " ");
+    else
+        println(io, ":  ",  description(oId));
+    end
+end
 
 
 """

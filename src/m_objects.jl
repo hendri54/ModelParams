@@ -1,13 +1,16 @@
 has_pvector(switches :: ModelSwitches) = false;
-get_pvector(switches :: ModelSwitches) = switches.pvec;
+
+function get_pvector(switches :: ModelSwitches)
+    if has_pvector(switches)
+        return switches.pvec;
+    else
+        return nothing;
+    end
+end
 
 Lazy.@forward ModelSwitches.pvec (
     is_calibrated, calibrate!, fix!, param_value, param_default_value
     );
-
-# function is_calibrated(switches :: ModelSwitches, pName :: Symbol)
-#     ModelParams.is_calibrated(get_pvector(switches), pName);
-# end
 
 
 """
@@ -115,18 +118,6 @@ Does not reach into child objects.
 """
 check_fixed_params(x :: ModelObject, pvec) =
     check_param_values(x, pvec, false);
-#     # Make dict of default values for non-calibrated params
-#     d = make_dict(pvec, false);
-#     valid = true;
-#     for (pName, pValue) in d
-#         isValid = getproperty(x, pName) ≈ pValue;
-#         if ~isValid
-#             valid = false;
-#             @warn "Invalid value: $pName"
-#         end
-#     end
-#     return valid
-# end
 
 
 """
@@ -231,6 +222,49 @@ function sync_own_values!(x :: ModelObject)
     set_own_values_from_pvec!(x, true);
     # Set fixed parameters
     set_own_default_values!(x, false);
+end
+
+
+"""
+	$(SIGNATURES)
+
+Set all parameters to calibrated or fixed. Useful for experiments that calibrate only select parameters. Recurses into child objects.
+"""
+function set_calibration_status_all_params!(x :: ModelObject, isCalibrated :: Bool)
+    pvecV = collect_pvectors(x);
+    for (_, pvec) in pvecV
+        set_calibration_status_all_params!(pvec, isCalibrated);
+    end
+end
+
+
+"""
+	$(SIGNATURES)
+
+Set default values for all parameters to values. 
+Useful for fixing parameters at previously calibrated values.
+"""
+function set_default_values_all_params!(x :: ModelObject)
+    pvecV = collect_pvectors(x);
+    for (_, pvec) in pvecV
+        set_default_values_all_params!(pvec);
+    end
+end
+
+
+"""
+	$(SIGNATURES)
+
+Return all `Param`s in a `ModelObject`. Optionally filtered by calibration status.
+"""
+function all_params(x :: ModelObject; isCalibrated = nothing)
+    pvecV = collect_pvectors(x);
+    pList = Vector{Param}();
+    for (_, pvec) in pvecV
+        pvecList = all_params(pvec; isCalibrated);
+        isempty(pvecList)  ||  append!(pList, pvecList);
+    end
+    return pList
 end
 
 

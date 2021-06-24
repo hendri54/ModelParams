@@ -168,12 +168,28 @@ end
 """
 	$(SIGNATURES)
 
-List of calibrated or not calibrated parameters. Returns vector of names.
+List of calibrated or not calibrated parameters. Returns vector of `Param`.
 """
 function calibrated_params(pvec :: ParamVector, isCalibrated :: Bool)
+    return all_params(pvec; isCalibrated)
+    # pList = Vector{Param}();
+    # for (k, p) in pvec.pv
+    #     if p.isCalibrated == isCalibrated
+    #         push!(pList, p);
+    #     end
+    # end
+    # return pList
+end
+
+"""
+	$(SIGNATURES)
+
+Vector of all parameters, including nested objects. Optionally filter by calibration status.
+"""
+function all_params(pvec :: ParamVector; isCalibrated = nothing)
     pList = Vector{Param}();
     for (k, p) in pvec.pv
-        if p.isCalibrated == isCalibrated
+        if isnothing(isCalibrated)  ||   (p.isCalibrated == isCalibrated)
             push!(pList, p);
         end
     end
@@ -232,6 +248,27 @@ function replace!(pvec :: ParamVector, p :: Param)
     return nothing
 end
 
+
+function set_calibration_status_all_params!(pvec :: ParamVector, isCalibrated :: Bool)
+    for p in calibrated_params(pvec, !isCalibrated)
+        set_calibration_status!(p, isCalibrated);
+    end
+end
+
+
+"""
+	$(SIGNATURES)
+
+Set default values for all parameters to values. 
+Useful for fixing parameters at previously calibrated values.
+"""
+function set_default_values_all_params!(pvec :: ParamVector)
+    for p in pvec
+        set_default_value!(p, value(p));
+    end
+end
+
+
 """
 	$(SIGNATURES)
 
@@ -260,15 +297,25 @@ fix!(pvec :: ParamVector, pName :: Symbol) =
 
 Change the value of parameter `pName`.
 """
-function change_value!(pvec :: ParamVector, pName :: Symbol, newValue)
+function change_value!(pvec :: ParamVector, pName :: Symbol, newValue;
+    skipInvalidSize :: Bool = false
+    )
     @assert param_exists(pvec, pName)  "$pName does not exist";
     p = retrieve(pvec, pName);
-    @assert size(p.defaultValue) == size(newValue)  """
-        Wrong size for $pName in $pvec
-        Given: $(size(newValue))
-        Expected: $(size(p.defaultValue))
-        """
-    oldValue = set_value!(p, newValue);
+    if size(p.defaultValue) == size(newValue)  
+        oldValue = set_value!(p, newValue);
+    else
+        @warn("""
+            Wrong size for $pName in $pvec
+            Given: $(size(newValue))
+            Expected: $(size(p.defaultValue))
+            """);
+        if skipInvalidSize
+            oldValue = value(p);
+        else 
+            error("Stopped");
+        end
+    end
     return oldValue
 end
 
@@ -471,9 +518,10 @@ end
 
 Set values in param vector from dictionary.
 """
-function set_values_from_dict!(pvec :: ParamVector, d :: D1) where D1 <: AbstractDict
+function set_values_from_dict!(pvec :: ParamVector, d :: D1;
+    skipInvalidSize :: Bool = false) where D1 <: AbstractDict
     for (pName, newValue) in d
-        change_value!(pvec, pName :: Symbol, newValue);
+        change_value!(pvec, pName :: Symbol, newValue;  skipInvalidSize);
     end
     return nothing
 end
@@ -488,13 +536,15 @@ Only for values that are in both `ParamVector`s and that are `isCalibrated` in b
 Only if the size matches.
 """
 function set_own_values_from_pvec!(pvecOld :: ParamVector,  pvecNew :: ParamVector,
-    isCalibrated :: Bool)
+    isCalibrated :: Bool;
+    skipInvalidSize :: Bool = false
+    )
 
     dOld = make_dict(pvecOld, isCalibrated, true);
     dNew = make_dict(pvecNew, isCalibrated, true);
     pNameV = intersect(keys(dOld), keys(dNew));
     for pName in pNameV
-        change_value!(pvecOld, pName, dNew[pName]);
+        change_value!(pvecOld, pName, dNew[pName]; skipInvalidSize);
     end
     return nothing
 end

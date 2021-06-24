@@ -9,7 +9,7 @@ mdl = ModelParams;
 function pvectorTest()
     @testset "Pvector" begin
         pv = ParamVector(ObjectId(:pv1));
-        println(pv);
+        # println(pv);
         @test length(pv) == 0
 
         p = Param(:p1, "param1", "sym1", [1.2 3.4; 4.5 5.6])
@@ -29,7 +29,7 @@ function pvectorTest()
 
         p = Param(:p2, "param2", "sym2", [2.2 4.4; 4.5 5.6])
         ModelParams.append!(pv, p)
-        println(pv)
+        # println(pv)
         ModelParams.remove!(pv, :p1)
         @test length(pv) == 1
         @test param_exists(pv, :p2)
@@ -50,6 +50,23 @@ function pvectorTest()
         @test pValue == p2.value
         pValue = param_value(pv, :notThere);
         @test isnothing(pValue)
+    end
+end
+
+
+function set_status_test()
+    @testset "Set status" begin
+        n = 7;
+        pvec = mdl.make_test_pvector(n);
+        set_calibration_status_all_params!(pvec, false);
+        @test n_calibrated_params(pvec, true) == (0, 0);
+        set_calibration_status_all_params!(pvec, true);
+        @test n_calibrated_params(pvec, true)[1] == n;
+
+        set_default_values_all_params!(pvec);
+        for p in pvec
+            @test value(p) ≈ mdl.default_value(p);
+        end
     end
 end
 
@@ -183,6 +200,7 @@ end
 
 @testset "ParamVector" begin
     pvectorTest();
+    set_status_test();
     iter_test()
     get_pvector_test()
     pvectorDictTest()

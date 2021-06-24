@@ -97,6 +97,28 @@ function model_test()
 end
 
 
+function set_status_test()
+    @testset "Set calibration status" begin
+        m = init_test_model();
+        nCal, _ = n_calibrated_params(m, true);
+        nFixed, _ = n_calibrated_params(m, false);
+        set_calibration_status_all_params!(m, true);
+        nCal2, _ = n_calibrated_params(m, true);
+        @test nCal2 == nCal + nFixed;
+        set_calibration_status_all_params!(m, false);
+        nCal2, _ = n_calibrated_params(m, true);
+        @test nCal2 == 0;
+
+        set_default_values_all_params!(m);
+        pV = mdl.all_params(m);
+        @test length(pV) == nCal + nFixed;
+        for p in pV
+            @test value(p) ≈ mdl.default_value(p);
+        end
+    end
+end
+
+
 function set_values_test()
     @testset "set values" begin
         m = init_test_model();
@@ -164,6 +186,7 @@ end
 @testset "Model" begin
     report_test();
     model_test();
+    set_status_test();
     set_values_test();
     dict_test()
 end

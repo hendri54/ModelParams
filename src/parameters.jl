@@ -103,6 +103,14 @@ end
 
 ## ----------  Change / update
 
+function set_calibration_status!(p :: Param{F1}, isCalibrated :: Bool) where F1
+    if isCalibrated
+        calibrate!(p);
+    else
+        fix!(p);
+    end
+end
+
 """
     $(SIGNATURES)
 
