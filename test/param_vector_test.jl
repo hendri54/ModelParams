@@ -129,7 +129,33 @@ function set_values_test()
         for key in keys(d)
             @test all(d3[key] .> d[key])
         end
+
+        p = pv[1];
+        @test p isa Param;
+        if p.defaultValue isa Real
+            lb = -10.0;
+            ub = 20.0;
+        else
+            sz = size(p.defaultValue);
+            lb = fill(-10.0, sz);
+            ub = fill(20.0, sz);
+        end
+        set_bounds!(pv, p.name; lb, ub);
+        @test p.lb == lb;
+        @test p.ub == ub;
 	end
+end
+
+
+function compare_test()
+    @testset "Compare" begin
+        pvec1 = mdl.make_test_pvector(7);
+        pvec2 = mdl.make_test_pvector(7);
+        pMiss1, pMiss2, pDiff = compare_params(pvec1, pvec2);
+        @test isempty(pMiss1);
+        @test isempty(pMiss2);
+        @test isempty(pDiff);
+    end
 end
 
 

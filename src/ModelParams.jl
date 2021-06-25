@@ -26,7 +26,7 @@ export LinearTransformation, transform_bounds, transform_param, untransform_para
 
 # Parameters
 export Param
-export calibrate!, fix!, fix_values!, set_value!, set_default_value!, update!, validate, value, is_calibrated
+export calibrate!, fix!, fix_values!, set_bounds!, set_value!, set_default_value!, update!, validate, value, is_calibrated
 
 # ParamVector
 export ParamVector
@@ -37,7 +37,7 @@ export param_table, param_value, param_default_value, report_params, retrieve, v
 export PVectorCollection, set_calibration_status_all_params!, set_default_values_all_params!
 
 # Model objects
-export check_fixed_params, check_calibrated_params, collect_pvectors, find_pvector, find_param, make_guess, perturb_guess, perturb_params, params_equal, validate
+export check_fixed_params, check_calibrated_params, collect_pvectors, compare_params, find_pvector, find_param, make_guess, perturb_guess, perturb_params, params_equal, validate
 export has_pvector, get_pvector, get_switches, param_tables, latex_param_table
 export set_values_from_dicts!
 export BoundedVector, IncreasingVector, values, set_pvector!

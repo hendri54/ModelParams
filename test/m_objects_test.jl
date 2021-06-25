@@ -17,6 +17,42 @@ function change_values_test()
         ModelParams.change_value!(m, :o2, :y, yNew);
         @test ModelParams.get_value(m, :o2, :y) .≈ yNew
         @test m.o2.y .≈ yNew
+
+        pvec = get_pvector(m.o2);
+        @test pvec isa ParamVector;
+        p = pvec[1];
+        @test p isa Param;
+        if p.defaultValue isa Real
+            lb = -10.0;
+            ub = 20.0;
+        else
+            sz = size(p.defaultValue);
+            lb = fill(-10.0, sz);
+            ub = fill(20.0, sz);
+        end
+        set_bounds!(m.o2, p.name; lb, ub);
+        @test p.lb == lb;
+        @test p.ub == ub;
+
+    end
+end
+
+
+function compare_params_test()
+    @testset "Compare params" begin
+        m1 = init_test_model();
+        m2 = init_test_model();
+        pMiss1, pMiss2, pDiff = compare_params(m1, m2);
+        @test isempty(pMiss1);
+        @test isempty(pMiss2);
+        @test isempty(pDiff);
+
+        o2 = find_only_object(m1, :o2);
+        mdl.change_value!(get_pvector(o2), :a, 3.3);
+        pMiss1, pMiss2, pDiff = compare_params(m1, m2);
+        @test isempty(pMiss1);
+        @test isempty(pMiss2);
+        @test pDiff[get_object_id(o2)][:a] == [:value]
     end
 end
 
@@ -83,6 +119,7 @@ end
 
 @testset "Model Objects" begin
     find_test();
+    compare_params_test();
     change_values_test();
     param_tables_test();
     # sync_test();

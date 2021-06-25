@@ -172,13 +172,6 @@ List of calibrated or not calibrated parameters. Returns vector of `Param`.
 """
 function calibrated_params(pvec :: ParamVector, isCalibrated :: Bool)
     return all_params(pvec; isCalibrated)
-    # pList = Vector{Param}();
-    # for (k, p) in pvec.pv
-    #     if p.isCalibrated == isCalibrated
-    #         push!(pList, p);
-    #     end
-    # end
-    # return pList
 end
 
 """
@@ -203,7 +196,6 @@ end
 Number of calibrated parameters and their total element count.
 """
 function n_calibrated_params(pvec :: ParamVector, isCalibrated :: Bool)
-    # idxV = indices_calibrated(pvec, isCalibrated);
     pList = calibrated_params(pvec, isCalibrated);
     nParams = length(pList);
     nElem = 0;
@@ -388,6 +380,69 @@ function find_close_to_bounds(pvec :: ParamVector; rtol = 0.01)
     end
     return pCloseV
 end
+
+
+## -------------  Compare
+
+
+function compare_params(pvec1 :: ParamVector, pvec2 :: ParamVector; 
+    ignoreCalibrationStatus :: Bool = true)
+
+    pMiss1 = missing_params(pvec1, pvec2);
+    pMiss2 = missing_params(pvec2, pvec1);
+    pDiff = find_param_diffs(pvec1, pvec2; ignoreCalibrationStatus = true);
+    return pMiss1, pMiss2, pDiff
+end
+
+
+# List params that are in p2V but not in p1V
+function missing_params(pvec1 :: ParamVector, pvec2 :: ParamVector)
+    missList = Vector{Symbol}();
+    for p in pvec2
+        pName = name(p);
+        if !param_exists(pvec1, pName)
+            push!(missList, pName);
+        end
+    end
+    return missList
+end
+
+# List all params that are in both vectors, but differ
+function find_param_diffs(pvec1 :: ParamVector, pvec2 :: ParamVector;
+    ignoreCalibrationStatus :: Bool = true)
+
+    diffList = Dict{Symbol, Any}();
+    for p1 in pvec1
+        pName = name(p1);
+        if param_exists(pvec2, pName)
+            diffs = param_diffs(p1, retrieve(pvec2, pName); ignoreCalibrationStatus);
+            if !isempty(diffs)
+                diffList[pName] = diffs;
+            end
+        end
+    end
+    return diffList
+end
+
+function param_diffs(p1 :: Param{F1}, p2 :: Param{F2};
+    ignoreCalibrationStatus :: Bool = true) where {F1, F2}
+
+    diffs = Vector{Symbol}();
+    if (F1 == F2)  
+        if !isequal(value(p1), value(p2))
+            push!(diffs, :value);
+        end
+    else
+        push!(diffs, :type);
+    end
+    if !ignoreCalibrationStatus
+        if is_calibrated(p1) != is_calibrated(p2)
+            push!(diffs, :calibration);
+        end
+    end
+    return diffs
+end
+
 
 
 ## --------------  Dicts and Vectors

@@ -59,7 +59,7 @@ function model_test()
 
         # Using in a single convenience method
         vv = mdl.make_guess(m);
-        @test mdl.sync_from_vector!([m.o1, m.o2], vv);
+        @test mdl.sync_from_vector!([m.o1, m.o2, m.o2.o3], vv);
         @test mdl.check_calibrated_params(m.o1, m.o1.pvec);
         @test mdl.check_fixed_params(m.o1, m.o1.pvec);
         @test mdl.check_calibrated_params(m.o2, m.o2.pvec);

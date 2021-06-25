@@ -9,7 +9,7 @@ function get_pvector(switches :: ModelSwitches)
 end
 
 Lazy.@forward ModelSwitches.pvec (
-    is_calibrated, calibrate!, fix!, param_value, param_default_value
+    is_calibrated, calibrate!, fix!, param_value, param_default_value, retrieve
     );
 
 
@@ -56,6 +56,17 @@ function get_pvector(o)
         pvec = ParamVector(o.objId);
     end
     return pvec :: ParamVector
+end
+
+
+"""
+	$(SIGNATURES)
+
+Retrieve a `Param`.
+"""
+function retrieve(o, pName :: Symbol)
+    pvec = get_pvector(o);
+    return retrieve(pvec, pName)
 end
 
 
@@ -135,6 +146,17 @@ end
 
 
 ## -----------  Change values
+
+
+"""
+	$(SIGNATURES)
+
+Set bounds for a parameter. Input must support `retrieve` for a `Param`.
+"""
+function set_bounds!(pvec, pName :: Symbol; lb = nothing, ub = nothing)
+    p = retrieve(pvec, pName);
+    set_bounds!(p; lb, ub);
+end
 
 """
 	$(SIGNATURES)
@@ -256,6 +278,7 @@ end
 	$(SIGNATURES)
 
 Return all `Param`s in a `ModelObject`. Optionally filtered by calibration status.
+Returns `Vector{Param}`. Note that names of parameters may not be unique.
 """
 function all_params(x :: ModelObject; isCalibrated = nothing)
     pvecV = collect_pvectors(x);
@@ -265,6 +288,40 @@ function all_params(x :: ModelObject; isCalibrated = nothing)
         isempty(pvecList)  ||  append!(pList, pvecList);
     end
     return pList
+end
+
+
+"""
+	$(SIGNATURES)
+
+Compare parameters across objects. Optionally filtered on calibration status.
+Returns list of 
+- missing on o1
+- missing in o2
+- different between the objects
+
+Each is a `Dict` that contains another `Dict` for each `ObjectId` with differences.
+"""
+function compare_params(o1, o2; ignoreCalibrationStatus :: Bool = true)
+    pvec1V = collect_pvectors(o1);
+    pvec2V = collect_pvectors(o2);
+
+    pMiss1 = Dict{ObjectId, Any}();
+    pMiss2 = Dict{ObjectId, Any}();
+    pDiff = Dict{ObjectId, Any}();
+    for (objId, pvec1) in pvec1V
+        if has_pvector(pvec2V, objId)
+            pvec2 = find_pvector(pvec2V, objId);
+            miss1, miss2, dif = compare_params(pvec1, pvec2; ignoreCalibrationStatus);
+            isempty(miss1)  ||  (pMiss1[objId] = miss1);
+            isempty(miss2)  ||  (pMiss2[objId] = miss2);
+            isempty(dif)    ||  (pDiff[objId] = dif);
+        else
+            @warn "ParamVector $objId not found."
+        end
+    end
+
+    return pMiss1, pMiss2, pDiff
 end
 
 

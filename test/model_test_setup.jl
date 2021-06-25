@@ -1,5 +1,5 @@
 # Set up model for testing
-using ModelParams
+using ModelObjectsLH, ModelParams
 
 import ModelParams.has_pvector
 
@@ -31,11 +31,40 @@ function init_obj1(objId)
     return o1
 end
 
+mutable struct Obj3Switches <: ModelSwitches
+    pvec :: ParamVector
+end
+
+function init_obj3_switches(objId :: ObjectId)
+    # objId = ObjectId(:obj3);
+    px = Param(:x, "x", "x", 0.5, 0.6, 0.0, 1.0, true);
+    py = Param(:y, "y", "y", [1.0, 2.0], [2.0, 3.0], [0.0, 0.0], [9.0, 9.0], false);
+    pvec = ParamVector(objId, [px, py]);
+    return Obj3Switches(pvec)
+end
+
+ModelObjectsLH.get_object_id(switches :: Obj3Switches) = get_object_id(switches.pvec);
+
+mutable struct Obj3 <: ModelObject
+    objId :: ObjectId
+    switches :: Obj3Switches
+    x :: Float64
+    y :: Vector{Float64}
+end
+
+ModelParams.get_pvector(o :: Obj3) = o.switches.pvec;
+
+function init_obj3(objId :: ObjectId)
+    switches = init_obj3_switches(objId);
+    return Obj3(get_object_id(switches), switches, 0.5, [1.0, 2.0]);
+end
+
 mutable struct Obj2 <: ModelObject
     objId :: ObjectId
     a :: Float64
     y :: Float64
     b :: Array{Float64,2}
+    o3 :: Obj3
     pvec :: ParamVector
 end
 
@@ -53,7 +82,8 @@ function init_obj2(objId)
     pb = Param(:b, "b obj2", "b2", valueB, valueB .+ 1.0,
         valueB .- 5.0, valueB .+ 5.0, true);
     pvector = ParamVector(objId, [pa, py, pb]);
-    o2 = Obj2(objId, pa.value, py.value, pb.value, pvector);
+    obj3 = init_obj3(make_child_id(objId, :obj3));
+    o2 = Obj2(objId, pa.value, py.value, pb.value, obj3, pvector);
     ModelParams.set_own_values_from_pvec!(o2, true);
     return o2
 end

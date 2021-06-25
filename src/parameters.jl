@@ -18,7 +18,7 @@ function validate(p :: Param{F1}) where F1
     return nothing
 end
 
-name(p :: Param) = p.name;
+name(p :: Param{F1}) where F1 = p.name;
 
 """
 	$(SIGNATURES)
@@ -134,6 +134,18 @@ end
 
 
 """
+	$(SIGNATURES)
+
+Set bounds for a `Param`.
+"""
+function set_bounds!(p :: Param{F1}; lb = nothing, ub = nothing) where F1
+    isnothing(lb)  ||  (p.lb = lb);
+    isnothing(ub)  ||  (p.ub = ub);
+    @assert size(p.lb) == size(p.ub) == size(p.defaultValue);
+end
+
+
+"""
     $(SIGNATURES)
     
 Set parameter value. Used during calibration.
@@ -175,6 +187,26 @@ function update!(p :: Param{F1}; value = nothing, defaultValue = nothing,
     end
     return nothing
 end
+
+
+# """
+# 	$(SIGNATURES)
+
+# Compare two Params. Report differences as Vector{Symbol}
+# """
+# function param_diffs(p1 :: Param{F1}, p2 :: Param{F2};
+#     ignoreCalibrationStatus :: Bool = true) where {F1, F2}
+
+#     diffs = Vector{Symbol}();
+#     if (F1 == F2)  
+#         if !isequal(value(p1), value(p2))
+#             push!(diffs, :value);
+#         end
+#     else
+#         push!(diffs, :type);
+#     end
+#     return diffs
+# end
 
 
 # -----------
