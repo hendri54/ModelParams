@@ -152,43 +152,82 @@ Intended for reporting at the end (or during) a calibration run. Not formatted f
 Each table row looks like:
 "Description (name): value"
 """
-function report_params(o :: ModelObject, isCalibrated :: Bool; io :: IO = stdout,
+function report_params(o :: ModelObject, isCalibrated :: Bool; 
+    io :: IO = stdout,
     closeToBounds :: Bool = false)
 
-    pvecV = collect_pvectors(o);
-    if isempty(pvecV)
-        return nothing
-    end
-    for (objId, pvec) in pvecV.d
-        oId = get_object_id(pvec);
-        nParents = n_parents(oId);
-        # Print the ObjectId, even if the object contains no params.
-        # Its children might.
-        report_obj_id(io, oId);
-        tbM = param_table(pvec, isCalibrated; closeToBounds = closeToBounds);
-        if !isnothing(tbM)
-            for ir = 1 : length(tbM)
-                println(io, 
-                    indent_string(nParents + 1), 
-                    get_description(tbM, ir),  
-                    " (",  get_name(tbM, ir), "):  ", 
-                    get_value(tbM, ir));
+    # One model object + children at a time. So it can be skipped if no entries.
+    mV = collect_model_objects(o; flatten = false);
+    for m in mV
+        lineV = report_params_one(m, isCalibrated;  closeToBounds);
+        if !isempty(lineV)
+            for line in lineV
+                println(io, line);
             end
         end
     end
-    return nothing
 end
+
+# This is for a Vector, such as [o2, o2.child1, o2.child2, o2.child2.gc1]
+function report_params_one(mV :: Vector{T}, isCalibrated; closeToBounds) where T
+    lineV = Vector{String}();
+    for m in mV
+        mLineV = report_params_one(m, isCalibrated; closeToBounds);
+        if !isempty(mLineV)
+            append!(lineV, mLineV);
+        end
+    end
+    return lineV
+end
+
+function report_params_one(m, isCalibrated; closeToBounds)
+    # pvecV = collect_pvectors(o);
+    # if !isempty(pvecV)
+    #     for (oId, pvec) in pvecV.d
+    if has_pvector(m)
+        pvec = get_pvector(m);
+        lineV = report_pvec_params(pvec, isCalibrated; closeToBounds);
+        # for line in lineV
+        #     println(io, line);
+        # end
+    else
+        lineV = Vector{String}();
+    end
+    #     end
+    # end
+    return lineV
+end
+
+function report_pvec_params(pvec :: ParamVector, isCalibrated; closeToBounds)
+    oId = get_object_id(pvec);
+    nParents = n_parents(oId);
+    # Print the ObjectId, even if the object contains no params.
+    # Its children might.
+    lineV = [report_obj_id(oId)];
+    tbM = param_table(pvec, isCalibrated;  closeToBounds);
+    if !isnothing(tbM)
+        for ir = 1 : length(tbM)
+            push!(lineV, 
+                indent_string(nParents + 1) * 
+                get_description(tbM, ir) *
+                " (" * get_name(tbM, ir) * "):  " *
+                get_value(tbM, ir));
+        end
+    end
+    return lineV
+end
+
 
 indent_string(n) = "   " ^ n;
 
 # Report ObjectId with indent depending on no of parents
-function report_obj_id(io, oId :: ObjectId; nParents = n_parents(oId))
-    print(io, indent_string(nParents), string(own_name(oId)));
+function report_obj_id(oId :: ObjectId; nParents = n_parents(oId))
     if isempty(description(oId))
-        println(io, " ");
+        descrStr = "";
     else
-        println(io, ":  ",  description(oId));
+        descrStr = ":  " * description(oId);
     end
+    return indent_string(nParents) * string(own_name(oId)) * descrStr;
 end
 
 
@@ -230,9 +269,13 @@ end
 Make a Latex parameter table for a set of model objects identified by their ObjectIds. Not all objects have ParamVectors.
 
 Returns the table body only as a vector of String. Each element is a line in a Latex table. This can be embedded into a 3 column latex table with headers "Symbol & Description & Value".
+
+# Arguments
+- warnWhenMissing: Warn when an `ObjectId` does not have a parameter table (no own calibrated parameters). Default: `false`.
 """
 function latex_param_table(o :: ModelObject, isCalibrated :: Bool,
-    objIdV :: AbstractVector{ObjectId}, descrV :: AbstractVector{String})
+    objIdV :: AbstractVector{ObjectId}, descrV :: AbstractVector{String};
+    warnWhenMissing :: Bool = false)
 
     @assert size(objIdV) == size(descrV)
 
@@ -246,23 +289,10 @@ function latex_param_table(o :: ModelObject, isCalibrated :: Bool,
             if !isnothing(newLineV)
                 append!(lineV, newLineV);
             end
-        else
+        elseif warnWhenMissing
             @warn "$objId not found in $o"
         end
     end
-
-    # pvecV = collect_pvectors(o);
-    # if !isempty(pvecV)
-    #     for (j, objId) ∈ enumerate(objIdV)
-    #         _, pv = find_pvector(pvecV, objId);
-    #         if !isnothing(pv)
-    #             newLineV = latex_param_table(pv, isCalibrated, descrV[j]);
-    #             if !isnothing(newLineV)
-    #                 append!(lineV, newLineV);
-    #             end
-    #         end
-    #     end
-    # end
     return lineV
 end
 
