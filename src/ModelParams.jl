@@ -160,7 +160,7 @@ function report_params(o :: ModelObject, isCalibrated :: Bool;
     mV = collect_model_objects(o; flatten = false);
     for m in mV
         lineV = report_params_one(m, isCalibrated;  closeToBounds);
-        if !isempty(lineV)
+        if length(lineV) > 1
             for line in lineV
                 println(io, line);
             end
@@ -171,8 +171,12 @@ end
 # This is for a Vector, such as [o2, o2.child1, o2.child2, o2.child2.gc1]
 function report_params_one(mV :: Vector{T}, isCalibrated; closeToBounds) where T
     lineV = Vector{String}();
-    for m in mV
+    for (j, m) in enumerate(mV)
         mLineV = report_params_one(m, isCalibrated; closeToBounds);
+        # First object Id is always reported, so structure is visible.
+        if !isempty(mLineV)  ||  (j == 1)
+            push!(lineV, report_obj_id(get_object_id(m)));
+        end
         if !isempty(mLineV)
             append!(lineV, mLineV);
         end
@@ -181,29 +185,20 @@ function report_params_one(mV :: Vector{T}, isCalibrated; closeToBounds) where T
 end
 
 function report_params_one(m, isCalibrated; closeToBounds)
-    # pvecV = collect_pvectors(o);
-    # if !isempty(pvecV)
-    #     for (oId, pvec) in pvecV.d
     if has_pvector(m)
         pvec = get_pvector(m);
         lineV = report_pvec_params(pvec, isCalibrated; closeToBounds);
-        # for line in lineV
-        #     println(io, line);
-        # end
     else
         lineV = Vector{String}();
     end
-    #     end
-    # end
     return lineV
 end
 
+# Return empty if no matching parameters found.
 function report_pvec_params(pvec :: ParamVector, isCalibrated; closeToBounds)
     oId = get_object_id(pvec);
     nParents = n_parents(oId);
-    # Print the ObjectId, even if the object contains no params.
-    # Its children might.
-    lineV = [report_obj_id(oId)];
+    lineV = Vector{String}();
     tbM = param_table(pvec, isCalibrated;  closeToBounds);
     if !isnothing(tbM)
         for ir = 1 : length(tbM)
