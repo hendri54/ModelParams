@@ -25,8 +25,8 @@ function Base.isapprox(g1 :: Guess{T}, g2 :: Guess{T}; atol = 1e-8) where T
     return true
 end
 
-lb(g :: Guess{F1}) where F1 = F1(TransformationLb);
-ub(g :: Guess{F1}) where F1 = F1(TransformationUb);
+lb(g :: Guess{F1}) where F1 = fill(F1(TransformationLb), (n_values(g), ));
+ub(g :: Guess{F1}) where F1 = fill(F1(TransformationUb), (n_values(g), ));
 
 
 function validate_guess(g :: Guess{F1}) where F1

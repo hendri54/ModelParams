@@ -16,7 +16,7 @@ module ModelParams
 import Base.show, Base.isempty, Base.isequal
 import Base.append!, Base.length, Base.getindex, Base.values
 import Random: AbstractRNG
-using ArgCheck, DataStructures, DocStringExtensions, Formatting, Lazy, Parameters, PrettyTables
+using ArgCheck, DataStructures, DocStringExtensions, Formatting, Infiltrator, Lazy, Parameters, PrettyTables
 using ModelObjectsLH
 using EconometricsLH # : RegressionTable, get_all_coeff_se, get_coeff_se_multiple, have_same_regressors
 

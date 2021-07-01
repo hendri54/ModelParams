@@ -122,7 +122,8 @@ function check_own_param_values(x :: ModelObject, pvec, isCalibrated :: Bool)
         if ~isValid
             valid = false;
             propValue = getproperty(x, pName);
-            @warn "Invalid value: $pName: $pValue vs. $propValue"
+            @warn "Invalid value: $pName: $pValue vs. $propValue";
+            # @infiltrate;  # ++++++
         end
     end
     return valid
