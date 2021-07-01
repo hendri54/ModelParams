@@ -86,11 +86,27 @@ function validate(o :: T1) where T1 <: ModelObject
     return isValid
 end
 
-
+function validate_all_params(o :: ModelObject; silent = true)
+    return validate_pvec(collect_pvectors(o); silent);
+end
 
 
 
 ## -----------  Check that params are consistent with `ParamVector`s
+
+function check_param_values(x :: ModelObject, isCalibrated :: Bool)
+    isValid = true;
+    for o in collect_model_objects(x)
+        if !check_own_param_values(o, get_pvector(o), isCalibrated);
+            isValid = false;
+        end
+    end
+    return isValid
+end
+
+check_calibrated_params(x :: ModelObject) = check_param_values(x, true);
+check_fixed_params(x :: ModelObject) = check_param_values(x, false);
+
 
 """
     $(SIGNATURES)
@@ -98,8 +114,8 @@ end
 Check that param vector values are consistent with object values.
 Does not reach into child objects.
 """
-function check_param_values(x :: ModelObject, pvec, isCalibrated :: Bool)
-    d = make_dict(pvec, isCalibrated);
+function check_own_param_values(x :: ModelObject, pvec, isCalibrated :: Bool)
+    d = make_dict(pvec; isCalibrated, useValues = isCalibrated);
     valid = true;
     for (pName, pValue) in d
         isValid = getproperty(x, pName) ≈ pValue;
@@ -118,8 +134,8 @@ end
 Check that calibrated param vector values are consistent with object values.
 Does not reach into child objects.   
 """
-check_calibrated_params(x :: ModelObject, pvec) = 
-    check_param_values(x, pvec, true);
+check_own_calibrated_params(x :: ModelObject, pvec) = 
+    check_own_param_values(x, pvec, true);
 
 """
     $(SIGNATURES)
@@ -127,8 +143,8 @@ check_calibrated_params(x :: ModelObject, pvec) =
 Check that all fixed parameters have the correct values
 Does not reach into child objects.
 """
-check_fixed_params(x :: ModelObject, pvec) =
-    check_param_values(x, pvec, false);
+check_own_fixed_params(x :: ModelObject, pvec) =
+    check_own_param_values(x, pvec, false);
 
 
 """
@@ -141,7 +157,9 @@ This is mainly useful for testing (e.g., loading parameters).
 function params_equal(x1 :: ModelObject, x2 :: ModelObject)
     guess1 = make_guess(x1);
     guess2 = make_guess(x2);
-    return isapprox(guess1, guess2; atol = 1e-6)
+    v1 = get_values(x1, guess1);
+    v2 = get_values(x2, guess2);
+    return isapprox(v1, v2; atol = 1e-6)
 end
 
 
@@ -198,7 +216,7 @@ end
 # Does not reach into child objects.
 function set_own_values_from_pvec!(x :: ModelObject, isCalibrated :: Bool)
     pvec = get_pvector(x);
-    d = make_dict(pvec, isCalibrated, true);
+    d = make_dict(pvec; isCalibrated, useValues = isCalibrated);
     set_own_values_from_dict!(x, d);
     return nothing
 end
@@ -228,9 +246,22 @@ end
 function set_own_default_values!(x :: ModelObject, isCalibrated :: Bool)
     pvec = get_pvector(x);
     # Last arg: use default values
-    d = make_dict(pvec, isCalibrated, false);
+    d = make_dict(pvec; isCalibrated, useValues = false);
     set_own_values_from_dict!(x, d);
     return nothing
+end
+
+"""
+	$(SIGNATURES)
+
+Sync all values from all objects' param vectors into objects.
+"""
+function sync_values!(x :: ModelObject)
+    for o in collect_model_objects(x)
+        if has_pvector(o)
+            sync_own_values!(o);
+        end
+    end
 end
 
 
@@ -322,6 +353,17 @@ function compare_params(o1, o2; ignoreCalibrationStatus :: Bool = true)
     end
 
     return pMiss1, pMiss2, pDiff
+end
+
+
+"""
+	$(SIGNATURES)
+
+Dict with parameter info for an entire `ModelObject` and its children.
+"""
+function make_dict(o :: ModelObject, isCalibrated :: Bool)
+    pvecV = collect_pvectors(o);
+    return make_dict(pvecV; isCalibrated, useValues = true);
 end
 
 

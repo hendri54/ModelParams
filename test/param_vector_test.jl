@@ -89,7 +89,7 @@ end
 function pvectorDictTest()
     @testset "Pvector Dict" begin
         pv = mdl.make_test_pvector(3);
-        d = make_dict(pv, true)
+        d = make_dict(pv; isCalibrated = true, useValues = true);
         p1 = retrieve(pv, :p1);
         p3 = retrieve(pv, :p3);
         @test d[:p1] == p1.value
@@ -99,17 +99,17 @@ function pvectorDictTest()
         # Make vector and its inverse (make Dict from vector)
         isCalibrated = true;
         # Vector contains transformed parameters
-        vv = make_vector(pv, isCalibrated);
-        @test isa(ModelParams.values(vv),  Vector{Float64})
+        vv = mdl.make_value_vector(pv, isCalibrated, 1);
+        @test isa(get_values(pv, vv),  Vector{Float64})
         p1Value = transform_param(pv.pTransform, p1);
         p3Value = transform_param(pv.pTransform, p3);
-        @test ModelParams.values(vv) == vcat(vec(p1Value), vec(p3Value))
-        @test all(ModelParams.lb(vv) .≈ pv.pTransform.lb)
+        @test get_values(pv, vv) == vcat(vec(p1Value), vec(p3Value))
+        # @test all(ModelParams.lb(vv) .≈ pv.pTransform.lb)
 
-        pDict, _ = vector_to_dict(pv, vv, isCalibrated);
-        @test length(pDict) == 2
-        @test pDict[:p1] == p1.value
-        @test pDict[:p3] == p3.value
+        # pDict, _ = vector_to_dict(pv, vv, isCalibrated);
+        # @test length(pDict) == 2
+        # @test pDict[:p1] == p1.value
+        # @test pDict[:p3] == p3.value
     end
 end
 
@@ -118,13 +118,13 @@ function set_values_test()
     @testset "Set values" begin
         isCalibrated = true;
         pv = mdl.make_test_pvector(7);
-        d = make_dict(pv, isCalibrated);
+        d = make_dict(pv; isCalibrated, useValues = true);
         # Change values in `pv`
         pv2 = mdl.make_test_pvector(7; offset = 1.0);
-        # d2 = make_dict(pv2, isCalibrated);
+        # d2 = make_dict(pv2; isCalibrated, useValues = true);
         ModelParams.set_own_values_from_pvec!(pv, pv2, true);
         # Check that values are now higher using a `Dict`
-        d3 = make_dict(pv, isCalibrated);
+        d3 = make_dict(pv; isCalibrated, useValues = true);
         @test isequal(keys(d), keys(d3))
         for key in keys(d)
             @test all(d3[key] .> d[key])

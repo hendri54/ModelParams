@@ -5,14 +5,14 @@ Tranform parameter into bounds specified by `LinearTransformation`.
 Out of bounds values are pushed inside bounds with a warning.
 """
 function transform_param(tr :: LinearTransformation{F1}, p :: Param) where F1
-    value = enforce_bounds(p.value, p.lb, p.ub);
+    value = enforce_bounds(p.value, lb(p), ub(p));
     # if any(p.value .> p.ub)  ||  any(p.value .< p.lb)
     #     @warn "Values out of bounds for $(p.name)."
     #     value = min.(p.ub, max.(p.lb, p.value));
     # else
     #     value = p.value;
     # end
-    return tr.lb .+ (tr.ub .- tr.lb) .* (value .- p.lb) ./ (p.ub .- p.lb);
+    return lb(tr) .+ (ub(tr) .- lb(tr)) .* (value .- p.lb) ./ (p.ub .- p.lb);
 end
 
 function enforce_bounds(valueIn :: F1, lb :: F1, ub :: F1) where F1 <: Real
@@ -46,9 +46,9 @@ Undo parameter transformation.
 """
 function untransform_param(tr :: LinearTransformation{F1}, p :: Param, value) where F1
     @assert size(value) == size(p.value)  "Size mismatch: $(size(value)) vs $(size(p.value)) for $p"
-    @assert all(value .<= tr.ub)  "Values to high: $value  vs  $(tr.ub)"
-    @assert all(value .>= tr.lb)
-    outV = p.lb .+ (p.ub .- p.lb) .* (value .- tr.lb) ./ (tr.ub .- tr.lb);
+    @assert all(value .<= ub(tr))  "Values to high: $value  vs  $(ub(tr))"
+    @assert all(value .>= lb(tr))
+    outV = p.lb .+ (p.ub .- p.lb) .* (value .- lb(tr)) ./ (ub(tr) .- lb(tr));
     @assert size(outV) == size(value)
     return outV
 end
@@ -62,7 +62,7 @@ end
 Bounds on transformed parameters.
 """
 function transform_bounds(tr :: LinearTransformation{F1}) where F1
-    return tr.lb, tr.ub
+    return lb(tr), ub(tr)
 end
 
 # -------

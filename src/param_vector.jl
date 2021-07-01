@@ -12,8 +12,18 @@ end
 function ParamVector(id :: ObjectId, pv)
     return ParamVector(id, 
         make_ordered_dict(pv), 
-        LinearTransformation(lb = 1.0, ub = 2.0))
+        LinearTransformation{ValueType}())
 end
+
+
+function validate_pvec(pvec :: ParamVector; silent = true)
+    isValid = true;
+    for p in pvec
+        isValid = isValid &&  validate(p; silent);
+    end
+    return isValid
+end
+
 
 function make_ordered_dict(v)
     d = OrderedDict{Symbol, Param}();
@@ -453,7 +463,7 @@ end
 Collect values or default values into Dict.
 Used to go back and forth between guess and model parameters.
 """
-function make_dict(pvec :: ParamVector, isCalibrated :: Bool,
+function make_dict(pvec :: ParamVector; isCalibrated :: Bool,
     useValues :: Bool)
 
     pd = Dict{Symbol, Any}()
@@ -470,102 +480,63 @@ end
 
 
 # Typically, useValues when calibrated; defaults otherwise
-make_dict(pvec :: ParamVector, isCalibrated :: Bool) = 
-    make_dict(pvec, isCalibrated, isCalibrated)
+# make_dict(pvec :: ParamVector; isCalibrated :: Bool) = 
+#     make_dict(pvec; isCalibrated, useValues = isCalibrated)
 
 
-"""
-    $(SIGNATURES)
 
-Make vector of values, lb, ub for optimization algorithm.
-Vectors are transformed using the `ParameterTransformation` specified in the `ParamVector`.
-Returns a `ValueVector`.
-"""
-function make_vector(pvec :: ParamVector, isCalibrated :: Bool)
-    T1 = ValueType;
-    pList = calibrated_params(pvec, isCalibrated);
-    n, nElem = n_calibrated_params(pvec, isCalibrated);
-    valueV = Vector{T1}(undef, nElem);
-    pNameV = Vector{Symbol}(undef, nElem);
+# """
+#     $(SIGNATURES)
 
-    idxLast = 0;
-    for p in pList
-        pValue = transform_param(pvec.pTransform,  p);
-        pLen = length(pValue);
-        pIdxV = idxLast .+ (1 : pLen);
-        idxLast += pLen;
-        if pLen == 1
-            valueV[pIdxV] .= pValue;
-        else
-            valueV[pIdxV] .= vec(pValue);
-        end
-        pNameV[pIdxV] .= p.name;
-        # # Append works for scalars, vectors, and matrices (that get flattened)
-        # # Need to qualify - otherwise local append! is called
-        # Base.append!(valueV, pValue);
-    end
-    @assert idxLast == nElem;
+#     Make a vector of values into a Dict
 
-    # Transformation bounds (these are returned b/c the parameters are transformed)
-    lbV = fill(pvec.pTransform.lb, size(valueV));
-    ubV = fill(pvec.pTransform.ub, size(valueV));
-    vv = ValueVector(valueV, lbV, ubV, pNameV);
-    return vv
-end
-
-
-"""
-    $(SIGNATURES)
-
-    Make a vector of values into a Dict
-
-    The inverse of `make_vector`.
-    Used to go back from vector to model parameters.
+#     The inverse of `make_guess`.
+#     Used to go back from vector to model parameters.
     
-    Undoes the parameter transformation from `make_vector`.
+#     Undoes the parameter transformation from `make_guess`.
     
-    OUT
-        pd :: Dict
-            maps param names (symbols) to values
-        iEnd :: Integer
-            last element of `v` used up
-"""
-function vector_to_dict(pvec :: ParamVector, vVec :: ValueVector,
-    isCalibrated :: Bool; startIdx = 1)
+#     OUT
+#         pd :: Dict
+#             maps param names (symbols) to values
+#         iEnd :: Integer
+#             last element of `v` used up
+# """
+# function vector_to_dict(pvec :: ParamVector, vVec :: ValueVector,
+#     isCalibrated :: Bool; startIdx = 1)
 
-    n = length(pvec);
-    @assert n > 0  "$pvec vector is empty"
-    pList = calibrated_params(pvec, isCalibrated);
-    v = values(vVec);
-    pNameV = pnames(vVec);
+#     n = length(pvec);
+#     @assert n > 0  "$pvec vector is empty"
+#     pList = calibrated_params(pvec, isCalibrated);
+#     v = get_values(vVec);
+#     pNameV = pnames(vVec);
 
-    pd = Dict{Symbol, Any}();
-    # Last index of `v` used so far
-    iEnd = startIdx - 1;
-    for p in pList
-        nElem = length(p.defaultValue);
-        if isa(p.defaultValue, AbstractFloat)
-            vIdxV = iEnd + 1;
-            pValue = v[vIdxV];
-        elseif isa(p.defaultValue, AbstractArray)
-            vIdxV = iEnd .+ (1 : nElem);
-            pValue = reshape(v[vIdxV], size(p.defaultValue));
-        else
-            pType = typeof(p.defaultValue);
-            error("Unexpected type: $pType")
-        end
-        iEnd += nElem;
-        pd[name(p)] = untransform_param(pvec.pTransform, p, pValue);
-        @assert all(isequal.(name(p),  pNameV[vIdxV]))  """
-            Name mismatch:  $(get_object_id(pvec)) $(name(p))
-            Values: $pValue
-            Indices: $vIdxV
-            Names expected: $(pNameV[vIdxV])
-            $startIdx
-            """
-    end
-    return pd, iEnd
-end
+#     pd = Dict{Symbol, Any}();
+#     # Last index of `v` used so far
+#     iEnd = startIdx - 1;
+#     for p in pList
+#         nElem = length(p.defaultValue);
+#         if isa(p.defaultValue, AbstractFloat)
+#             vIdxV = iEnd + 1;
+#             pValue = v[vIdxV];
+#         elseif isa(p.defaultValue, AbstractArray)
+#             vIdxV = iEnd .+ (1 : nElem);
+#             pValue = reshape(v[vIdxV], size(p.defaultValue));
+#         else
+#             pType = typeof(p.defaultValue);
+#             error("Unexpected type: $pType")
+#         end
+#         iEnd += nElem;
+#         pd[name(p)] = untransform_param(pvec.pTransform, p, pValue);
+#         @assert all(isequal.(name(p),  pNameV[vIdxV]))  """
+#             Name mismatch:  $(get_object_id(pvec)) $(name(p))
+#             Values: $pValue
+#             Indices: $vIdxV
+#             Names expected: $(pNameV[vIdxV])
+#             $startIdx
+#             """
+#     end
+#     return pd, iEnd
+# end
 
 
 """
@@ -595,8 +566,8 @@ function set_own_values_from_pvec!(pvecOld :: ParamVector,  pvecNew :: ParamVect
     skipInvalidSize :: Bool = false
     )
 
-    dOld = make_dict(pvecOld, isCalibrated, true);
-    dNew = make_dict(pvecNew, isCalibrated, true);
+    dOld = make_dict(pvecOld; isCalibrated, useValues = true);
+    dNew = make_dict(pvecNew; isCalibrated, useValues = true);
     pNameV = intersect(keys(dOld), keys(dNew));
     for pName in pNameV
         change_value!(pvecOld, pName, dNew[pName]; skipInvalidSize);

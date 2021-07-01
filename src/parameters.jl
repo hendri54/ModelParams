@@ -6,16 +6,26 @@ function Param(name :: Symbol, description :: T2, symbol :: T2, defaultValue :: 
 end
 
 
-function validate(p :: Param{F1}) where F1
+function validate(p :: Param{F1}; silent = true) where F1
     sizeV = size(p.defaultValue);
+    isValid = true;
     if !Base.isempty(p.value)
-        @assert size(p.value) == sizeV
+        (size(p.value) == sizeV)  ||  (isValid = false);
     end
     if !Base.isempty(p.lb)
-        @assert size(p.lb) == sizeV
-        @assert size(p.ub) == sizeV
+        (size(p.lb) == sizeV)  ||  (isValid = false);
+        (size(p.ub) == sizeV)  ||  (isValid = false);
     end
-    return nothing
+    if !isValid  &&  !silent
+        @warn """
+            Invalid Param $p
+            default value:  $(p.defaultValue)
+            value:          $(p.value)
+            lb:             $(p.lb)
+            ub:             $(p.ub)
+        """
+    end
+    return isValid
 end
 
 name(p :: Param{F1}) where F1 = p.name;

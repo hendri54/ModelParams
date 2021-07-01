@@ -11,10 +11,11 @@ include("model_test_setup.jl")
     include("parameters_test.jl")
     include("param_vector_test.jl");
     include("pvector_collection_test.jl");
-    include("m_objects_test.jl")
-    include("model_test.jl")
     include("increasing_vector_test.jl")
-    include("bounded_increasing_vector_test.jl")
+    include("bounded_increasing_vector_test.jl");
+    include("guess_test.jl");
+    include("m_objects_test.jl");
+    include("model_test.jl");
 end
 
 

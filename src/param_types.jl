@@ -55,7 +55,7 @@ Base.@kwdef mutable struct ParamVector
     # pv :: Vector{Param} = Vector{Param{Any}}()
     pv :: OrderedDict{Symbol, Param} = OrderedDict{Symbol, Param}()
     "Governs scaling of parameters into guess vectors for optimization"
-    pTransform :: ParamTransformation = LinearTransformation(lb = 1.0, ub = 2.0)
+    pTransform :: ParamTransformation = LinearTransformation{ValueType}()
 end
 
 

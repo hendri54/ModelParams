@@ -38,7 +38,8 @@ end
 function init_obj3_switches(objId :: ObjectId)
     # objId = ObjectId(:obj3);
     px = Param(:x, "x", "x", 0.5, 0.6, 0.0, 1.0, true);
-    py = Param(:y, "y", "y", [1.0, 2.0], [2.0, 3.0], [0.0, 0.0], [9.0, 9.0], false);
+    yV = [1.0, 2.0];
+    py = Param(:y, "y", "y", yV, yV .+ 1.0, [0.0, 0.0], [9.0, 9.0], false);
     pvec = ParamVector(objId, [px, py]);
     return Obj3Switches(pvec)
 end
@@ -102,7 +103,9 @@ function init_test_model()
     objName = ObjectId(:testModel, "Test model");
     o1 = init_obj1(ModelParams.make_child_id(objName, :o1, "Child object 1"));
     o2 = init_obj2(ModelParams.make_child_id(objName, :o2, "Child object 2"));
-    return TestModel(objName, o1, o2, 9.87, 87.73)
+    m = TestModel(objName, o1, o2, 9.87, 87.73);
+    sync_values!(m);
+    return m
 end
 
 # ------------------

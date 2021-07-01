@@ -30,32 +30,34 @@ export calibrate!, fix!, fix_values!, set_bounds!, set_value!, set_default_value
 
 # ParamVector
 export ParamVector
-export param_exists, make_dict, make_vector, n_calibrated_params
-export param_table, param_value, param_default_value, report_params, retrieve, vector_to_dict
+export param_exists, make_dict, n_calibrated_params
+export param_table, param_value, param_default_value, report_params, retrieve
 
 # PVectorCollection
 export PVectorCollection, set_calibration_status_all_params!, set_default_values_all_params!
 
 # Model objects
-export check_fixed_params, check_calibrated_params, collect_pvectors, compare_params, find_pvector, find_param, make_guess, perturb_guess, perturb_params, params_equal, validate
+export check_fixed_params, check_calibrated_params, check_own_fixed_params, check_own_calibrated_params, validate_all_params
+export collect_pvectors, compare_params, find_pvector, find_param, make_guess, perturb_guess_vector, perturb_params, params_equal, validate
 export has_pvector, get_pvector, get_switches, param_tables, latex_param_table
-export set_values_from_dicts!
+export set_values_from_dicts!, sync_own_values!, sync_values!
 export BoundedVector, IncreasingVector, values, set_pvector!
 
 # ParamTable
 export ParamTable, get_symbol, get_description, get_values, set_row!, latex_param_table
 
-# ValueVector
-export ValueVector, set_values, values, lb, ub
-
 
 const ValueType = Float64;
+# Bounds for parameter transformations into guess vectors.
+const TransformationLb = 1;
+const TransformationUb = 2;
 
 include("param_table.jl");
 include("types.jl");
 # General purpose code copied from `CommonLH`
 include("helpers.jl");
 include("value_vector.jl");
+include("guess.jl");
 
 # Parameters
 include("bounded_vector.jl");
@@ -69,18 +71,6 @@ include("obj_pvectors.jl");
 
 ## ------------  Main user interface functions
 
-"""
-    $(SIGNATURES)
-
-Make vector of parameters and bounds for an object
-Including nested objects
-"""
-function make_guess(m :: ModelObject)
-    pvecV = collect_pvectors(m);
-    @assert !isempty(pvecV)  "$m contains no ParamVectors"
-    vv = make_vector(pvecV, true);
-    return vv :: ValueVector
-end
 
 
 """
@@ -90,29 +80,52 @@ Perturb guesses at indices `dIdx` by amount `dGuess`.
 Ensure that guesses stay in bounds.
 The user typically calls the method that accepts a `ValueVector` instead.
 """
-function perturb_guess(m :: ModelObject, guessV :: Vector, dGuess; dIdx = nothing)
-    vv = make_guess(m);
+function perturb_guess_vector(m :: ModelObject, g :: Guess{F1},
+    guessV :: AbstractVector{F1}, dGuess; dIdx = nothing) where F1
+
+    # vv = make_guess(m);
     if isnothing(dIdx)
         guess2V = guessV .+ dGuess;
     else
         guess2V = copy(guessV);
         guess2V[dIdx] = guessV[dIdx] .+ dGuess;
     end
-    guess2V = min.(max.(guess2V, lb(vv) .+ 0.0001),  ub(vv) .- 0.0001);
+    enforce_bounds!(m, g, guess2V);
     return guess2V
 end
 
-"""
-	$(SIGNATURES)
+function enforce_bounds!(m :: ModelObject, g :: Guess{F1}, 
+    guessV :: AbstractVector{F1}) where F1
+    pvecV = collect_pvectors(m);
 
-Perturb a guess, provided as a `ValueVector`. Return a new `ValueVector`.
-"""
-function perturb_guess(m :: ModelObject, guess :: ValueVector, dGuess;
-    dIdx = nothing)
-
-    guessV = perturb_guess(m, values(guess), dGuess; dIdx = dIdx);
-    return ValueVector(guessV, lb(guess), ub(guess), pnames(guess))
+    for (_, pvec) in pvecV
+        enforce_bounds!(pvec, g, guessV);
+    end
 end
+
+function enforce_bounds!(pvec :: ParamVector, g :: Guess{F1}, guessV :: AbstractVector{F1}) where F1
+    for (j, v) in enumerate(guessV)
+        if v < lb(pvec.pTransform)
+            guessV[j] = lb(pvec.pTransform);
+        end
+        if v > ub(pvec.pTransform)
+            guessV[j] = ub(pvec.pTransform);
+        end
+    end
+end
+
+
+# """
+# 	$(SIGNATURES)
+
+# Perturb a guess, provided as a `ValueVector`. Return a new `ValueVector`.
+# """
+# function perturb_guess(m :: ModelObject, guess :: ValueVector, dGuess;
+#     dIdx = nothing)
+
+#     guessV = perturb_guess(m, get_values(guess), dGuess; dIdx = dIdx);
+#     return ValueVector(guessV, lb(guess), ub(guess), pnames(guess))
+# end
 
 
 """
@@ -120,26 +133,14 @@ end
 
 Perturb calibrated model parameters. Including child objects.
 """
-function perturb_params(m :: ModelObject, dGuess; dIdx = nothing)
-    guess = make_guess(m);
-    guess2 = perturb_guess(m, guess, dGuess; dIdx = dIdx);
-    set_params_from_guess!(m, guess2);
+function perturb_params(m :: ModelObject, g :: Guess{F1}, dGuess; dIdx = nothing) where F1
+    guessV = get_values(m, g);
+    guess2V = perturb_guess_vector(m, g, guessV, dGuess; dIdx = dIdx);
+    set_params_from_guess!(m, g, guess2V);
     return nothing
 end
 
 
-"""
-    $(SIGNATURES)
-
-Make vector of guesses into model parameters. For object and children.
-This changes the values in `m` and in its `pvector`.
-"""
-function set_params_from_guess!(m :: ModelObject, guess :: ValueVector)
-    objV = collect_model_objects(m);
-    # Copy param vectors into model
-    return sync_from_vector!(objV, guess);
-end
-    
 
 
 """
