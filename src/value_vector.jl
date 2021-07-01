@@ -10,7 +10,8 @@ export ParamInfo
 #     return ParamInfo{T1}(pName, startIdx, valueV, fill(lbV, sz), fill(ubV, sz));
 # end
 
-function Base.isapprox(p1 :: ParamInfo{F1}, p2 :: ParamInfo{F1}; atol :: Real = 1e-8) where F1
+function Base.isapprox(p1 :: ParamInfo{F1}, p2 :: ParamInfo{F1}; 
+    atol :: Real = 1e-8) where F1
     return isequal(p1.pName, p2.pName)  &&
         # isapprox(p1.valueV, p2.valueV; atol)  &&
         isapprox(p1.lbV, p2.lbV; atol)  &&
@@ -100,6 +101,39 @@ function make_test_value_vector(n)
     return vv
 end
 
+
+function validate_param_match(pvec :: ParamVector, vv :: ValueVector{F1}) where F1
+    isValid = true;
+    nCal, _ = n_calibrated_params(pvec, true);
+    if length(vv) != nCal
+        isValid = false;
+        @warn """
+            No of calibrated params differs for $pvec
+            pvec: $(nCal)
+            vv:   $(length(vv))
+            """;
+    end
+
+    if isValid  &&  (length(vv) > 0)
+        pList = calibrated_params(pvec, true);
+        for p in pList
+            pName = name(p);
+            if haskey(vv.d, pName)
+                pInfo = vv.d[pName];
+                if size(p.defaultValue) != size(lb(pInfo))
+                    isValid = false;
+                    @warn "Size mismatch for $pName";
+                end
+            else
+                isValid = false;
+                @warn "Param $pName missing from ValueVector";
+            end
+        end
+    end
+    return isValid
+end
+
+
 function validate_vv(vv :: ValueVector{F1}) where F1
     isValid = true;
     isValid = isValid  &&  validate_indices(vv);
@@ -132,7 +166,7 @@ end
 
 Base.isempty(vv :: ValueVector{F1}) where F1 = 
     n_values(vv) == 0;
-    
+Base.length(vv :: ValueVector{F1}) where F1 = length(vv.d);
     
 """
 	$(SIGNATURES)

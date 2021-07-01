@@ -30,6 +30,9 @@ function model_test()
         m = init_test_model();
         isCalibrated = true;
 
+        g = mdl.make_guess(m);
+        @test validate_guess(m, g);
+
         objV = [m.o1, m.o2, m.o2.o3];
         # These are the values that we expect to get back in the end
         dictV = [make_dict(get_pvector(obj); isCalibrated, useValues = true)  for obj in objV];
@@ -64,7 +67,6 @@ function model_test()
         # into dicts which are then put into the objects
 
         # Using in a single convenience method
-        g = mdl.make_guess(m);
         vVec = get_values(m, g);
         @test isa(vVec, Vector{Float64});
         @test validate_all_params(m; silent = false);

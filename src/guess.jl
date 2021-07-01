@@ -29,6 +29,13 @@ lb(g :: Guess{F1}) where F1 = fill(F1(TransformationLb), (n_values(g), ));
 ub(g :: Guess{F1}) where F1 = fill(F1(TransformationUb), (n_values(g), ));
 
 
+function validate_guess(x :: ModelObject, g :: Guess{F1}) where F1
+    isValid = validate_guess(g);
+    isValid = isValid  &&  validate_param_match(x, g);
+    return isValid
+end
+
+
 function validate_guess(g :: Guess{F1}) where F1
     isValid = true;
     n = n_values(g);
@@ -45,8 +52,39 @@ function validate_guess(g :: Guess{F1}) where F1
     return isValid
 end
 
+# Check that parameters in Guess match calibrated parameters in ModelObject
+function validate_param_match(x :: ModelObject, g :: Guess{F1}) where F1
+    isValid = true;
+    pvecV = collect_pvectors(x);
+    if n_value_vectors(g) != length(pvecV)
+        @warn "No of ParamVectors differs: $x";
+        isValid = false;
+    end
+    if isValid
+        for (_, pvec) in pvecV
+            objId = get_object_id(pvec);
+            nCal, _ = n_calibrated_params(pvec, true);
+            if haskey(g.d, objId)
+                vVec = g.d[objId];
+                isValid = isValid  &&  validate_param_match(pvec, vVec);
+            elseif (nCal > 0) 
+                @warn """
+                    Guess has no entry for ParamVector with calibrated params
+                    $objId
+                    """;
+                isValid = false;
+            end
+        end
+    end
+    return isValid
+end
+
+
+
 get_value_vector(guess :: Guess{T}, objId :: ObjectId) where T = 
     guess.d[objId];
+
+n_value_vectors(g :: Guess{T1}) where T1 = length(g.d);
 
 
 """

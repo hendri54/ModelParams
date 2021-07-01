@@ -115,11 +115,11 @@ Check that param vector values are consistent with object values.
 Does not reach into child objects.
 """
 function check_own_param_values(x :: ModelObject, pvec, isCalibrated :: Bool)
-    d = make_dict(pvec; isCalibrated, useValues = isCalibrated);
+    d = make_dict(pvec; isCalibrated = isCalibrated, useValues = isCalibrated);
     valid = true;
     for (pName, pValue) in d
         isValid = getproperty(x, pName) ≈ pValue;
-        if ~isValid
+        if !isValid
             valid = false;
             propValue = getproperty(x, pName);
             @warn "Invalid value: $pName: $pValue vs. $propValue";
@@ -217,7 +217,7 @@ end
 # Does not reach into child objects.
 function set_own_values_from_pvec!(x :: ModelObject, isCalibrated :: Bool)
     pvec = get_pvector(x);
-    d = make_dict(pvec; isCalibrated, useValues = isCalibrated);
+    d = make_dict(pvec; isCalibrated = isCalibrated, useValues = isCalibrated);
     set_own_values_from_dict!(x, d);
     return nothing
 end
@@ -247,7 +247,7 @@ end
 function set_own_default_values!(x :: ModelObject, isCalibrated :: Bool)
     pvec = get_pvector(x);
     # Last arg: use default values
-    d = make_dict(pvec; isCalibrated, useValues = false);
+    d = make_dict(pvec; isCalibrated = isCalibrated, useValues = false);
     set_own_values_from_dict!(x, d);
     return nothing
 end
