@@ -38,7 +38,8 @@ export PVectorCollection, set_calibration_status_all_params!, set_default_values
 
 # Model objects
 export check_fixed_params, check_calibrated_params, check_own_fixed_params, check_own_calibrated_params, validate_all_params
-export collect_pvectors, compare_params, find_pvector, find_param, make_guess, perturb_guess_vector, perturb_params, params_equal, validate
+export collect_pvectors, compare_params, check_params_match
+export find_pvector, find_param, make_guess, perturb_guess_vector, perturb_params, params_equal, validate
 export has_pvector, get_pvector, get_switches, param_tables, latex_param_table
 export set_values_from_dicts!, sync_own_values!, sync_values!
 export BoundedVector, IncreasingVector, values, set_pvector!

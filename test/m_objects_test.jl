@@ -1,3 +1,7 @@
+using ModelObjectsLH, ModelParams, Test
+
+mdl = ModelParams;
+
 function find_test()
     @testset "Find" begin
         m = init_test_model()
@@ -48,11 +52,19 @@ function compare_params_test()
         @test isempty(pDiff);
 
         o2 = find_only_object(m1, :o2);
+        allowedV = [get_object_id(o2)];
+        @test check_params_match(m1, m2, allowedV);
+
         mdl.change_value!(get_pvector(o2), :a, 3.3);
         pMiss1, pMiss2, pDiff = compare_params(m1, m2);
         @test isempty(pMiss1);
         @test isempty(pMiss2);
         @test pDiff[get_object_id(o2)][:a] == [:value]
+        @test check_params_match(m1, m2, allowedV);
+
+        o3 = find_only_object(m1, :obj3);
+        mdl.change_value!(get_pvector(o3), :x, 0.888);
+        @test !check_params_match(m1, m2, allowedV);
     end
 end
 

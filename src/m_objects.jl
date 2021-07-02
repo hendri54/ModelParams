@@ -368,4 +368,65 @@ function make_dict(o :: ModelObject, isCalibrated :: Bool)
 end
 
 
+"""
+	$(SIGNATURES)
+
+Check that param values match across two model objects (including children). 
+Allow for differences in the objects listed by own name (Symbol) in `differentIdV`.
+"""
+function check_params_match(m1, m2, 
+    allowedIdV :: AbstractVector{ObjectId};
+    ignoreCalibrationStatus = true)
+    
+    isValid = true;
+    miss1, miss2, pDiff = compare_params(m1, m2; ignoreCalibrationStatus);
+    if !isempty(miss1)
+        isValid = false;
+        @warn "Missing params in m1:  $miss1";
+    end
+    if !isempty(miss2)
+        isValid = false;
+        @warn "Missing params in m2:  $miss2";
+    end
+
+    # Check that differences occur only in permitted objects.
+    diffIdV = collect(keys(pDiff));
+    if !isempty(diffIdV)
+        for oId in diffIdV
+            if !any_isequal(oId, allowedIdV)
+                isValid = false;
+                @warn "Param differences in $oId";
+            end
+        end
+    end
+    return isValid
+end
+
+# function collect_object_ids(m, differentIdV)
+#     return [get_object_id(find_only_object(m, oName))  
+#         for oName in differentIdV];
+#     # for oName in differentIdV
+#     #     o = find_object(m, oName);
+#     #     if isempty(o)
+#     #         isValid = false;
+#     #         @warn "Object $oName not found";
+#     #     else 
+#     #         oId = get_object_id(o);
+#     #     end
+#     # end    
+# end
+
+# Because broadcasting ObjectId not implemented yet.
+function any_isequal(oId, oIdV)
+    found = false;
+    for oId2 in oIdV
+        if isequal(oId, oId2)
+            found = true;
+            break;
+        end
+    end
+    return found
+end
+
+
 # -----------------
