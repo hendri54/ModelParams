@@ -62,6 +62,7 @@ include("guess.jl");
 
 # Parameters
 include("bounded_vector.jl");
+include("calibrated_array.jl");
 include("transformations.jl");
 include("parameters.jl");
 include("param_vector.jl");

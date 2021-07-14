@@ -149,5 +149,28 @@ mutable struct BoundedVector{T1} <: ModelObject
 end
 
 
+"""
+	$(SIGNATURES)
+
+Array with some fixed and some calibrated parameters.
+"""
+mutable struct CalibratedArraySwitches{T1, N} <: ModelSwitches
+    pvec :: ParamVector
+    defaultValueM :: Array{T1, N}
+    lbM :: Array{T1, N}
+    ubM :: Array{T1, N}
+    isCalM :: Array{Bool, N}
+end
+
+mutable struct CalibratedArray{T1, N} <: ModelObject
+    objId :: ObjectId
+    switches :: CalibratedArraySwitches{T1, N}
+    calValueV :: Vector{T1}
+    # This gets allocated once and then updated with calibrated 
+    # values from calValueV
+    valueM :: Array{T1, N}
+end
+
+
 
 # -----------
