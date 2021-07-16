@@ -1,3 +1,7 @@
+Lazy.@forward ModelSwitches.pvec (
+    is_calibrated, calibrate!, fix!, param_value, param_default_value, retrieve
+    );
+
 has_pvector(switches :: ModelSwitches) = false;
 
 function get_pvector(switches :: ModelSwitches)
@@ -8,10 +12,6 @@ function get_pvector(switches :: ModelSwitches)
     end
 end
 
-Lazy.@forward ModelSwitches.pvec (
-    is_calibrated, calibrate!, fix!, param_value, param_default_value, retrieve
-    );
-
 
 """
 	$(SIGNATURES)
@@ -21,6 +21,14 @@ By default, ModelObjects are assumed to have `ParamVector`s.
 """
 has_pvector(o :: ModelObject) = true;
 has_pvector(o) = false;
+
+function ModelObjectsLH.get_object_id(switches :: ModelSwitches)
+    if has_pvector(switches)
+        return get_object_id(get_pvector(switches))
+    else
+        return nothing
+    end
+end
 
 
 """

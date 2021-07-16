@@ -271,6 +271,12 @@ function set_default_values_all_params!(pvec :: ParamVector)
 end
 
 
+function set_default_value!(pvec :: ParamVector, pName :: Symbol, v)
+    p = retrieve(pvec, pName);
+    set_default_value!(p, v);
+end
+
+
 """
 	$(SIGNATURES)
 

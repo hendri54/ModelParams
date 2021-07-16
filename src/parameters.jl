@@ -137,8 +137,12 @@ end
 
 Change calibration status to `false`
 """
-function fix!(p :: Param{F1}) where F1
-    p.isCalibrated = false
+function fix!(p :: Param{F1}; value = nothing) where F1
+    p.isCalibrated = false;
+    if !isnothing(value)
+        set_value!(p, value);
+        set_default_value!(p, value);
+    end
     return nothing
 end
 

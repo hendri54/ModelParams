@@ -239,9 +239,9 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[ModelObjectsLH]]
 deps = ["DocStringExtensions"]
-git-tree-sha1 = "a475584bd82099af278e43edc9d39a9d9aead692"
+git-tree-sha1 = "91caaee44c3d92b8c36228da98abb1f0241e1235"
 uuid = "41cbb5d9-4a7a-4d38-8546-f9486737fd3b"
-version = "0.1.5"
+version = "0.1.6"
 
 [[MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"

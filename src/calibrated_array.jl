@@ -8,14 +8,23 @@ function CalibratedArraySwitches(objId :: ObjectId,
     isCalM = Array{Bool, N}(isCalInM);
     @assert size(defaultValueM) == size(lbM) == size(ubM) == size(isCalM);
 
-    # handle the case where all values are fixed +++++
+    doCal = true;
     valueV = defaultValueM[isCalM];
+    if all(.!isCalM)
+        doCal = false;
+    end
     p = Param(:calValueV, "Calibrated values", "calValueV", 
-        valueV, valueV, lbM[isCalM], ubM[isCalM], true);
+        valueV, valueV, lbM[isCalM], ubM[isCalM], doCal);
     pvec = ParamVector(objId, [p]);
     return CalibratedArraySwitches(pvec, defaultValueM, lbM, ubM, isCalM)
 end
 
+
+"""
+	$(SIGNATURES)
+
+Array with a mix of calibrated and fixed elements.
+"""
 function CalibratedArray(switches :: CalibratedArraySwitches{T1, N}) where {T1, N}
     calValueV = switches.defaultValueM[switches.isCalM];
     valueM = copy(switches.defaultValueM);
@@ -24,16 +33,38 @@ function CalibratedArray(switches :: CalibratedArraySwitches{T1, N}) where {T1, 
 end
 
 
+function make_test_calibrated_array_switches(N :: Integer; allFixed = false)
+    rng = MersenneTwister(23);
+    objId = ObjectId(:test);
+    sizeV = 2 : (1 + N);
+    sz = (sizeV..., );
+
+    T1 = Float64;
+    defaultValueM = randn(rng, T1, sz);
+    lbM = defaultValueM .- one(T1);
+    ubM = defaultValueM .+ one(T1);
+    if allFixed
+        isCalM = trues(size(lbM));
+    else
+        isCalM = defaultValueM .> 0.0;
+    end
+
+    switches = CalibratedArraySwitches(objId, defaultValueM, lbM, ubM, isCalM);
+    return switches
+end
+
+
 ## -------------  Basics
 
 Lazy.@forward CalibratedArray.switches (
-    Base.size,
-    get_pvector
+    Base.size
 );
 
-ModelObjectsLH.get_object_id(switches :: CalibratedArraySwitches{T1, N}) where {T1, N} = get_object_id(switches.pvec);
-get_pvector(switches :: CalibratedArraySwitches{T1, N}) where {T1, N} =
-    switches.pvec;
+has_pvector(::CalibratedArraySwitches{T1, N}) where {T1, N} = true;
+
+# ModelObjectsLH.get_object_id(switches :: CalibratedArraySwitches{T1, N}) where {T1, N} = get_object_id(switches.pvec);
+# get_pvector(switches :: CalibratedArraySwitches{T1, N}) where {T1, N} =
+#     switches.pvec;
 Base.size(switches :: CalibratedArraySwitches{T1, N}) where {T1, N} = 
     size(switches.defaultValueM);
 
@@ -49,16 +80,22 @@ function validate_ca(ca :: CalibratedArray{T1, N}) where {T1, N}
 end
 
 function check_values(ca :: CalibratedArray{T1, N}) where {T1, N}
+    isValid = check_calibrated_values(ca)  &&  check_fixed_values(ca);
+    return isValid
+end
+
+function check_calibrated_values(ca :: CalibratedArray{T1, N}) where {T1, N}
     idxV = map_indices(ca);
+    isempty(idxV)  &&  return true;
+
     calValueV = ca.valueM[idxV];
     isValid = isapprox(calValueV, ca.calValueV);
 
     pvec = get_pvector(ca);
     isValid = isValid  &&  isapprox(calValueV, param_value(pvec, :calValueV));
-
-    isValid = isValid  &&  check_fixed_values(ca);
     return isValid
 end
+
 
 function check_fixed_values(ca :: CalibratedArray{T1, N}) where {T1, N}
     valueM = values(ca);
@@ -83,15 +120,19 @@ end
 # Linear index into arrays for each calibrated value.
 function map_indices(ca :: CalibratedArray{T1, N}) where {T1, N}
     nCal = sum(ca.switches.isCalM);
-    idxV = zeros(Int, nCal);
-    j2 = 0;
-    for (j, isCal) in enumerate(ca.switches.isCalM)
-        if isCal
-            j2 += 1;
-            idxV[j2] = j;
+    if nCal > 0
+        idxV = zeros(Int, nCal);
+        j2 = 0;
+        for (j, isCal) in enumerate(ca.switches.isCalM)
+            if isCal
+                j2 += 1;
+                idxV[j2] = j;
+            end
         end
+        @assert j2 == length(ca.calValueV);
+    else
+        idxV = Vector{Int}();
     end
-    @assert j2 == length(ca.calValueV);
     return idxV
 end
 
