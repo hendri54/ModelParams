@@ -26,11 +26,11 @@ function change_values_test()
         @test pvec isa ParamVector;
         p = pvec[1];
         @test p isa Param;
-        if p.defaultValue isa Real
+        if default_value(p) isa Real
             lb = -10.0;
             ub = 20.0;
         else
-            sz = size(p.defaultValue);
+            sz = size(default_value(p));
             lb = fill(-10.0, sz);
             ub = fill(20.0, sz);
         end

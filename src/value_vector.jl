@@ -120,7 +120,7 @@ function validate_param_match(pvec :: ParamVector, vv :: ValueVector{F1}) where 
             pName = name(p);
             if haskey(vv.d, pName)
                 pInfo = vv.d[pName];
-                if size(p.defaultValue) != size(lb(pInfo))
+                if size(default_value(p)) != size(lb(pInfo))
                     isValid = false;
                     @warn "Size mismatch for $pName";
                 end
@@ -247,7 +247,7 @@ function get_values(pvec :: ParamVector, vv :: ValueVector{F1}) where F1
     valueV = Vector{F1}();
     for (pName, pInfo) in vv.d
         p = retrieve(pvec, pName);
-        @assert size(lb(pInfo)) == size(p.defaultValue);
+        @assert size(lb(pInfo)) == size(default_value(p));
         append!(valueV, transform_param(pvec.pTransform, p));
     end
 

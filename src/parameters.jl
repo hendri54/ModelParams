@@ -7,10 +7,10 @@ end
 
 
 function validate(p :: Param{F1}; silent = true) where F1
-    sizeV = size(p.defaultValue);
+    sizeV = size(default_value(p));
     isValid = true;
-    if !Base.isempty(p.value)
-        (size(p.value) == sizeV)  ||  (isValid = false);
+    if !Base.isempty(value(p))
+        (size(value(p)) == sizeV)  ||  (isValid = false);
     end
     if !Base.isempty(p.lb)
         (size(p.lb) == sizeV)  ||  (isValid = false);
@@ -19,8 +19,8 @@ function validate(p :: Param{F1}; silent = true) where F1
     if !isValid  &&  !silent
         @warn """
             Invalid Param $p
-            default value:  $(p.defaultValue)
-            value:          $(p.value)
+            default value:  $(default_value(p))
+            value:          $(value(p))
             lb:             $(p.lb)
             ub:             $(p.ub)
         """
@@ -74,11 +74,11 @@ end
 
 # Summary of the value
 function value_string(p :: Param{F1}) where F1
-    pType = eltype(p.value);
-    if isa(p.value, Real)
-        outStr = string(round(p.value, digits = 3));
-    elseif isa(p.value, Array)
-        outStr = "Array{$pType} of size $(size(p.value))";
+    pType = eltype(value(p));
+    if isa(value(p), Real)
+        outStr = string(round(value(p), digits = 3));
+    elseif isa(value(p), Array)
+        outStr = "Array{$pType} of size $(size(value(p)))";
     else
         outStr = "of type $pType";
     end
@@ -93,7 +93,7 @@ end
 
 
 function short_string(p :: Param{F1}) where F1
-    vStr = formatted_value(p.value);
+    vStr = formatted_value(value(p));
     return "$(p.name): $vStr"
 end
 
@@ -105,7 +105,7 @@ Short summary of parameter and its value.
 Can be used to generate a simple table of calibrated parameters.
 """
 function report_param(p :: Param{F1}) where F1
-    vStr = formatted_value(p.value);
+    vStr = formatted_value(value(p));
     println("\t$(p.description):\t$(p.name) = $vStr")
 end
 
@@ -137,11 +137,11 @@ end
 
 Change calibration status to `false`
 """
-function fix!(p :: Param{F1}; value = nothing) where F1
+function fix!(p :: Param{F1}; pValue = nothing) where F1
     p.isCalibrated = false;
-    if !isnothing(value)
-        set_value!(p, value);
-        set_default_value!(p, value);
+    if !isnothing(pValue)
+        set_value!(p, pValue);
+        set_default_value!(p, pValue);
     end
     return nothing
 end
@@ -155,7 +155,7 @@ Set bounds for a `Param`.
 function set_bounds!(p :: Param{F1}; lb = nothing, ub = nothing) where F1
     isnothing(lb)  ||  (p.lb = lb);
     isnothing(ub)  ||  (p.ub = ub);
-    @assert size(p.lb) == size(p.ub) == size(p.defaultValue);
+    @assert size(p.lb) == size(p.ub) == size(default_value(p));
 end
 
 
@@ -165,14 +165,14 @@ end
 Set parameter value. Used during calibration.
 """
 function set_value!(p :: Param{F1}, vIn) where F1
-    @assert size(p.defaultValue) == size(vIn)  "Size invalid for $(p.name): $(size(vIn)). Expected $(size(p.defaultValue))"
-    oldValue = p.value;
+    @assert size(default_value(p)) == size(vIn)  "Size invalid for $(p.name): $(size(vIn)). Expected $(size(default_value(p)))"
+    oldValue = value(p);
     p.value = deepcopy(vIn);
     return oldValue
 end
 
 function set_default_value!(p :: Param{F1}, vIn) where F1
-    @assert size(p.defaultValue) == size(vIn)  "Size invalid for $(p.name): $(size(vIn)). Expected $(size(p.defaultValue))"
+    @assert size(default_value(p)) == size(vIn)  "Size invalid for $(p.name): $(size(vIn)). Expected $(size(default_value(p)))"
     p.defaultValue = vIn
 end
 
@@ -194,7 +194,7 @@ function update!(p :: Param{F1}; value = nothing, defaultValue = nothing,
         p.ub = ub;
     end
     if !isnothing(defaultValue)
-        p.defaultValue = defaultValue;
+        default_value(p) = defaultValue;
     end
     if !isnothing(isCalibrated)
         p.isCalibrated = isCalibrated;

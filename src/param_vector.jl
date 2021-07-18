@@ -210,7 +210,7 @@ function n_calibrated_params(pvec :: ParamVector, isCalibrated :: Bool)
     nParams = length(pList);
     nElem = 0;
     for p in pList
-        nElem += length(p.value);
+        nElem += length(value(p));
     end
     return nParams, nElem
 end
@@ -310,13 +310,13 @@ function change_value!(pvec :: ParamVector, pName :: Symbol, newValue;
     )
     @assert param_exists(pvec, pName)  "$pName does not exist";
     p = retrieve(pvec, pName);
-    if size(p.defaultValue) == size(newValue)  
+    if size(default_value(p)) == size(newValue)  
         oldValue = set_value!(p, newValue);
     else
         @warn("""
             Wrong size for $pName in $pvec
             Given: $(size(newValue))
-            Expected: $(size(p.defaultValue))
+            Expected: $(size(default_value(p)))
             """);
         if skipInvalidSize
             oldValue = value(p);
@@ -476,9 +476,9 @@ function make_dict(pvec :: ParamVector; isCalibrated :: Bool,
     pList = calibrated_params(pvec, isCalibrated);
     for p in pList
         if useValues
-            pd[p.name] = p.value;
+            pd[p.name] = value(p);
         else
-            pd[p.name] = p.defaultValue;
+            pd[p.name] = default_value(p);
         end
     end
     return pd
@@ -520,15 +520,15 @@ end
 #     # Last index of `v` used so far
 #     iEnd = startIdx - 1;
 #     for p in pList
-#         nElem = length(p.defaultValue);
-#         if isa(p.defaultValue, AbstractFloat)
+#         nElem = length(default_value(p));
+#         if isa(default_value(p), AbstractFloat)
 #             vIdxV = iEnd + 1;
 #             pValue = v[vIdxV];
-#         elseif isa(p.defaultValue, AbstractArray)
+#         elseif isa(default_value(p), AbstractArray)
 #             vIdxV = iEnd .+ (1 : nElem);
-#             pValue = reshape(v[vIdxV], size(p.defaultValue));
+#             pValue = reshape(v[vIdxV], size(default_value(p)));
 #         else
-#             pType = typeof(p.defaultValue);
+#             pType = typeof(default_value(p));
 #             error("Unexpected type: $pType")
 #         end
 #         iEnd += nElem;

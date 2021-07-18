@@ -117,6 +117,15 @@ function values(ca :: CalibratedArray{T1, N}) where {T1, N}
     return ca.valueM;
 end
 
+# Update calibrated array values in object from calibrated vector values.
+function update_values!(ca :: CalibratedArray{T1, N}) where {T1, N}
+    ca.valueM .= ca.switches.defaultValueM;
+    idxV = map_indices(ca);
+    for (j, idx) in enumerate(idxV)
+        ca.valueM[idx] = ca.calValueV[j];
+    end
+end
+
 # Linear index into arrays for each calibrated value.
 function map_indices(ca :: CalibratedArray{T1, N}) where {T1, N}
     nCal = sum(ca.switches.isCalM);
@@ -136,13 +145,5 @@ function map_indices(ca :: CalibratedArray{T1, N}) where {T1, N}
     return idxV
 end
 
-# Update calibrated array values in object from calibrated vector values.
-function update_values!(ca :: CalibratedArray{T1, N}) where {T1, N}
-    ca.valueM .= ca.switches.defaultValueM;
-    idxV = map_indices(ca);
-    for (j, idx) in enumerate(idxV)
-        ca.valueM[idx] = ca.calValueV[j];
-    end
-end
 
 # ---------------

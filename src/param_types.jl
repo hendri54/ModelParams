@@ -1,3 +1,5 @@
+abstract type AbstractParam end
+
 """
     Param
 
@@ -5,7 +7,7 @@ Holds information about one potentially calibrated parameter (array).
 Default value must always be set. Determines size of inputs.
 Everything else can be either empty or must have the same size.
 """
-mutable struct Param{T1 <: Any}
+mutable struct Param{T1 <: Any} <: AbstractParam
     name :: Symbol
     description :: String
     symbol :: String
@@ -53,7 +55,7 @@ Base.@kwdef mutable struct ParamVector
     objId :: ObjectId
     # A Dict would be natural, but it helps to preserve the order of the params
     # pv :: Vector{Param} = Vector{Param{Any}}()
-    pv :: OrderedDict{Symbol, Param} = OrderedDict{Symbol, Param}()
+    pv :: OrderedDict{Symbol, AbstractParam} = OrderedDict{Symbol, AbstractParam}()
     "Governs scaling of parameters into guess vectors for optimization"
     pTransform :: ParamTransformation = LinearTransformation{ValueType}()
 end

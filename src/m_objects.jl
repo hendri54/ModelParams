@@ -131,7 +131,6 @@ function check_own_param_values(x :: ModelObject, pvec, isCalibrated :: Bool)
             valid = false;
             propValue = getproperty(x, pName);
             @warn "Invalid value: $pName: $pValue vs. $propValue";
-            # @infiltrate;  # ++++++
         end
     end
     return valid
@@ -218,7 +217,7 @@ function get_value(x :: ModelObject, oName :: Symbol, pName :: Symbol)
     @assert length(pvec) > 0  "No ParamVector in $oName / $pName"
     @assert param_exists(pvec, pName)  "$pName not found";
     p = retrieve(pvec, pName);
-    return p.value
+    return value(p)
 end
 
 ## Set fields in struct from param vector (using values, not defaults)

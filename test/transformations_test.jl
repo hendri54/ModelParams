@@ -9,9 +9,9 @@ function transform_test(tr, pValue)
         guess = transform_param(tr, p);
         @test all(guess .<= mdl.ub(tr));
         @test all(guess .>= mdl.lb(tr));
-        value = untransform_param(tr, p, guess);
-        @test all(value .≈ pValue)
-        @test size(value) == size(pValue)
+        pValue2 = untransform_param(tr, p, guess);
+        @test all(pValue2 .≈ pValue)
+        @test size(pValue2) == size(pValue)
     end
 end
 

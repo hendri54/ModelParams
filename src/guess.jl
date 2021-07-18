@@ -287,7 +287,7 @@ function set_value_from_pinfo!(pvec :: ParamVector,
     isCalibrated = true) where {F1, T}
 
     p = retrieve(pvec, pInfo.pName);
-    @assert size(p.defaultValue) == size(lb(pInfo));
+    @assert size(default_value(p)) == size(lb(pInfo));
     @assert !isnothing(p)  "Param $(pInfo.pName) not found in $pvec";
     if is_calibrated(p) == isCalibrated
         valV = reshape_vector(pInfo, guessV[indices(pInfo)]);

@@ -26,7 +26,7 @@ export LinearTransformation, transform_bounds, transform_param, untransform_para
 
 # Parameters
 export Param
-export calibrate!, fix!, fix_values!, set_bounds!, set_value!, set_default_value!, update!, validate, value, is_calibrated
+export calibrate!, fix!, fix_values!, set_bounds!, set_value!, set_default_value!, update!, validate, default_value, value, is_calibrated
 
 # ParamVector
 export ParamVector
@@ -106,14 +106,15 @@ function enforce_bounds!(m :: ModelObject, g :: Guess{F1},
 end
 
 function enforce_bounds!(pvec :: ParamVector, g :: Guess{F1}, guessV :: AbstractVector{F1}) where F1
-    for (j, v) in enumerate(guessV)
-        if v < lb(pvec.pTransform)
-            guessV[j] = lb(pvec.pTransform);
-        end
-        if v > ub(pvec.pTransform)
-            guessV[j] = ub(pvec.pTransform);
-        end
-    end
+    clamp!(guessV, lb(pvec.pTransform), ub(pvec.pTransform));
+    # for (j, v) in enumerate(guessV)
+    #     if v < lb(pvec.pTransform)
+    #         guessV[j] = lb(pvec.pTransform);
+    #     end
+    #     if v > ub(pvec.pTransform)
+    #         guessV[j] = ub(pvec.pTransform);
+    #     end
+    # end
 end
 
 
