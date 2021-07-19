@@ -25,7 +25,7 @@ using EconometricsLH # : RegressionTable, get_all_coeff_se, get_coeff_se_multipl
 export LinearTransformation, transform_bounds, transform_param, untransform_param
 
 # Parameters
-export Param
+export AbstractParam, Param
 export calibrate!, fix!, fix_values!, set_bounds!, set_value!, set_default_value!, update!, validate, default_value, value, is_calibrated
 
 # ParamVector
@@ -63,6 +63,7 @@ include("guess.jl");
 # Parameters
 include("bounded_vector.jl");
 include("calibrated_array.jl");
+include("cal_array_param.jl");
 include("transformations.jl");
 include("parameters.jl");
 include("param_vector.jl");
@@ -314,13 +315,13 @@ end
 
 Number of calibrated parameters in object and its children. Also returns the number of elements (scalar values) in these parameters.
 """
-function n_calibrated_params(o :: T1, isCalibrated :: Bool) where T1 <: ModelObject
+function n_calibrated_params(o :: ModelObject; isCalibrated :: Bool = true) 
     pvecV = collect_pvectors(o);
     nParam = 0;
     nElem = 0;
     if !isempty(pvecV)
         for (_, pvec) in pvecV
-            nParam2, nElem2 = n_calibrated_params(pvec, isCalibrated);
+            nParam2, nElem2 = n_calibrated_params(pvec; isCalibrated);
             nParam += nParam2;
             nElem += nElem2;
         end

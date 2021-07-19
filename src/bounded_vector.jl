@@ -170,7 +170,7 @@ end
 
 function param_table(iv :: BoundedVector{T1}, isCalibrated :: Bool) where T1
     p = retrieve(iv.pvec, :dxV);
-    if isCalibrated == p.isCalibrated
+    if isCalibrated == is_calibrated(p)
         pt = ParamTable(1);
         set_row!(pt, 1, string(p.name), p.symbol, p.description, 
             formatted_value(values(iv)));

@@ -26,14 +26,14 @@ end
 
 
 function make_ordered_dict(v)
-    d = OrderedDict{Symbol, Param}();
+    d = OrderedDict{Symbol, AbstractParam}();
     for p in v
         d[p.name] = p;
     end
     return d
 end
 
-make_ordered_dict(v :: OrderedDict{Symbol, Param}) = v;
+make_ordered_dict(v :: OrderedDict{Symbol, AbstractParam}) = v;
 
 
 function Base.show(io :: IO,  pvec :: ParamVector)
@@ -55,7 +55,7 @@ Base.isempty(pvec :: ParamVector) = Base.isempty(pvec.pv);
 
 
 # Check that param vector matches model object
-function check_match(pvec :: ParamVector, objId :: ObjectId)
+function object_id_matches(pvec :: ParamVector, objId :: ObjectId)
     return isequal(pvec.objId, objId)
 end
 
@@ -91,10 +91,10 @@ Base.eltype(pvec :: ParamVector) = Param;
 
 
 """
-    retrieve
+    $(SIGNATURES)
 
 Returns a named parameter and its index in the `ParamVector`.
-First occurrence. Returns 0 if not found.
+First occurrence. Returns `nothing` if not found.
 """
 function retrieve(pvec :: ParamVector, pName :: Symbol)
     return get(pvec.pv, pName, nothing);
@@ -156,6 +156,10 @@ function param_default_value(pvec :: ParamVector, pName :: Symbol)
     end
 end
 
+function calibrated_value(pvec :: ParamVector, pName :: Symbol)
+    return calibrated_value(retrieve(pvec, pName));
+end
+
 
 # """
 # 	$(SIGNATURES)
@@ -180,7 +184,7 @@ end
 
 List of calibrated or not calibrated parameters. Returns vector of `Param`.
 """
-function calibrated_params(pvec :: ParamVector, isCalibrated :: Bool)
+function calibrated_params(pvec :: ParamVector; isCalibrated :: Bool = true)
     return all_params(pvec; isCalibrated)
 end
 
@@ -190,9 +194,9 @@ end
 Vector of all parameters, including nested objects. Optionally filter by calibration status.
 """
 function all_params(pvec :: ParamVector; isCalibrated = nothing)
-    pList = Vector{Param}();
+    pList = Vector{AbstractParam}();
     for (k, p) in pvec.pv
-        if isnothing(isCalibrated)  ||   (p.isCalibrated == isCalibrated)
+        if isnothing(isCalibrated)  ||   (is_calibrated(p) == isCalibrated)
             push!(pList, p);
         end
     end
@@ -203,14 +207,25 @@ end
 """
     $(SIGNATURES)
 
-Number of calibrated parameters and their total element count.
+Number of calibrated or fixed parameters and their total element count.
 """
-function n_calibrated_params(pvec :: ParamVector, isCalibrated :: Bool)
-    pList = calibrated_params(pvec, isCalibrated);
+function n_calibrated_params(pvec :: ParamVector; isCalibrated :: Bool = true)
+    pList = calibrated_params(pvec; isCalibrated);
     nParams = length(pList);
     nElem = 0;
     for p in pList
-        nElem += length(value(p));
+        if isCalibrated
+            pVal = calibrated_value(p);
+            @assert !isnothing(pVal)  "calibrated value nothing: $pvec / $p";
+            nCal = length(pVal);
+        else
+            nCal = 0;
+        end
+        if isCalibrated
+            nElem += nCal;
+        else
+            nElem += (length((value(p))) - nCal);
+        end
     end
     return nParams, nElem
 end
@@ -223,7 +238,7 @@ end
 
 Append a `Param` to a `ParamVector`
 """
-function append!(pvec :: ParamVector,  p :: Param)
+function append!(pvec :: ParamVector,  p :: AbstractParam)
     @assert !param_exists(pvec, p.name)  "$(p.name) already exists";
     pvec.pv[p.name] = p;
     return nothing
@@ -245,14 +260,14 @@ end
 
 Replace a parameter with a new parameter `p`. Without changing the order.
 """
-function replace!(pvec :: ParamVector, p :: Param)
+function replace!(pvec :: ParamVector, p :: AbstractParam)
     pvec.pv[p.name] = p;
     return nothing
 end
 
 
 function set_calibration_status_all_params!(pvec :: ParamVector, isCalibrated :: Bool)
-    for p in calibrated_params(pvec, !isCalibrated)
+    for p in calibrated_params(pvec; isCalibrated = !isCalibrated)
         set_calibration_status!(p, isCalibrated);
     end
 end
@@ -310,20 +325,22 @@ function change_value!(pvec :: ParamVector, pName :: Symbol, newValue;
     )
     @assert param_exists(pvec, pName)  "$pName does not exist";
     p = retrieve(pvec, pName);
-    if size(default_value(p)) == size(newValue)  
-        oldValue = set_value!(p, newValue);
-    else
-        @warn("""
-            Wrong size for $pName in $pvec
-            Given: $(size(newValue))
-            Expected: $(size(default_value(p)))
-            """);
-        if skipInvalidSize
-            oldValue = value(p);
-        else 
-            error("Stopped");
-        end
-    end
+    oldValue = set_value!(p, newValue; skipInvalidSize);
+
+    # if size(default_value(p)) == size(newValue)  
+    #     oldValue = set_value!(p, newValue; skipInvalidSize);
+    # else
+    #     @warn("""
+    #         Wrong size for $p in $pvec
+    #         Given: $(size(newValue))
+    #         Expected: $(size(default_value(p)))
+    #         """);
+    #     if skipInvalidSize
+    #         oldValue = value(p);
+    #     else 
+    #         error("Stopped");
+    #     end
+    # end
     return oldValue
 end
 
@@ -367,7 +384,7 @@ function param_table(pvec :: ParamVector, isCalibrated :: Bool;
     if closeToBounds
         pList = find_close_to_bounds(pvec);
     else
-        pList = calibrated_params(pvec, isCalibrated);
+        pList = calibrated_params(pvec; isCalibrated);
     end
     n = length(pList);
 
@@ -387,7 +404,7 @@ end
 
 # Find parameters that are close to bounds
 function find_close_to_bounds(pvec :: ParamVector; rtol = 0.01)
-    pList = calibrated_params(pvec, true);
+    pList = calibrated_params(pvec);
     pCloseV = Vector{Param}();
     for p in pList
         if close_to_bounds(p; rtol = rtol)
@@ -440,16 +457,14 @@ function find_param_diffs(pvec1 :: ParamVector, pvec2 :: ParamVector;
     return diffList
 end
 
-function param_diffs(p1 :: Param{F1}, p2 :: Param{F2};
-    ignoreCalibrationStatus :: Bool = true) where {F1, F2}
+param_diffs(p1, p2) = [:type];
+
+function param_diffs(p1 :: T1, p2 :: T1;
+    ignoreCalibrationStatus :: Bool = true) where T1 <: AbstractParam
 
     diffs = Vector{Symbol}();
-    if (F1 == F2)  
-        if !isequal(value(p1), value(p2))
-            push!(diffs, :value);
-        end
-    else
-        push!(diffs, :type);
+    if !isequal(value(p1), value(p2))
+        push!(diffs, :value);
     end
     if !ignoreCalibrationStatus
         if is_calibrated(p1) != is_calibrated(p2)
@@ -466,20 +481,29 @@ end
 """
     $(SIGNATURES)
 
-Collect values or default values into Dict.
+Collect calibrated values or default values into Dict.
 Used to go back and forth between guess and model parameters.
+All values are stored, even if only some are calibrated.
+
+# Arguments
+- `valueType`: `:defaultValue`, `:value`, or `:calibratedValue`. Determines which of those is stored.
 """
-function make_dict(pvec :: ParamVector; isCalibrated :: Bool,
-    useValues :: Bool)
+function make_dict(pvec :: ParamVector; isCalibrated :: Bool, valueType :: Symbol)
 
     pd = Dict{Symbol, Any}()
-    pList = calibrated_params(pvec, isCalibrated);
+    pList = calibrated_params(pvec; isCalibrated);
     for p in pList
-        if useValues
-            pd[p.name] = value(p);
+        if valueType == :value
+            v = value(p);
+        elseif valueType == :defaultValue
+            v = default_value(p);
+        elseif valueType == :calibratedValue
+            v = calibrated_value(p);
         else
-            pd[p.name] = default_value(p);
+            error("Unknown valueType: $valueType");
         end
+        # Copy is important. Otherwise changing the values later will change the dict.
+        pd[p.name] = copy(v);
     end
     return pd
 end
@@ -572,12 +596,22 @@ function set_own_values_from_pvec!(pvecOld :: ParamVector,  pvecNew :: ParamVect
     skipInvalidSize :: Bool = false
     )
 
-    dOld = make_dict(pvecOld; isCalibrated, useValues = true);
-    dNew = make_dict(pvecNew; isCalibrated, useValues = true);
-    pNameV = intersect(keys(dOld), keys(dNew));
-    for pName in pNameV
-        change_value!(pvecOld, pName, dNew[pName]; skipInvalidSize);
+    for (pName, p) in pvecNew.pv
+        if param_exists(pvecOld, pName)  &&  is_calibrated(p)
+            pOld = retrieve(pvecOld, pName);
+            if is_calibrated(pOld)
+                newValue = calibrated_value(p);
+                set_calibrated_value!(pOld, newValue; skipInvalidSize);
+            end
+        end
     end
+
+    # dOld = make_dict(pvecOld; isCalibrated, useValues = true);
+    # dNew = make_dict(pvecNew; isCalibrated, useValues = true);
+    # pNameV = intersect(keys(dOld), keys(dNew));
+    # for pName in pNameV
+    #     change_value!(pvecOld, pName, dNew[pName]; skipInvalidSize);
+    # end
     return nothing
 end
 
@@ -591,7 +625,11 @@ function make_test_pvector(n :: Integer; objId :: Symbol = :obj1,
 
     pv = ParamVector(ObjectId(objId));
     for i1 = 1 : n
-        p = init_parameter(i1; offset = offset);
+        if i1 == 1
+            p = make_test_cal_array(:p1, 2; offset);
+        else
+            p = init_parameter(i1; offset = offset);
+        end
         if isodd(i1)
             calibrate!(p);
         end

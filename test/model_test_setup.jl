@@ -40,7 +40,11 @@ function init_obj3_switches(objId :: ObjectId)
     px = Param(:x, "x", "x", 0.5, 0.6, 0.0, 1.0, true);
     yV = [1.0, 2.0];
     py = Param(:y, "y", "y", yV, yV .+ 1.0, [0.0, 0.0], [9.0, 9.0], false);
-    pvec = ParamVector(objId, [px, py]);
+    v = [1.0 2.0 3.0; 1.1 2.1 3.1];
+    isCalM = [true false true; false true false];
+    pca = CalArray(:ca, "CalArray", "CalArray", v, v .+ 0.1, v .- 2.0, v .+ 2.0,
+        isCalM);
+    pvec = ParamVector(objId, [px, py, pca]);
     return Obj3Switches(pvec)
 end
 
@@ -51,13 +55,15 @@ mutable struct Obj3 <: ModelObject
     switches :: Obj3Switches
     x :: Float64
     y :: Vector{Float64}
+    ca :: Matrix{Float64}
 end
 
 ModelParams.get_pvector(o :: Obj3) = o.switches.pvec;
 
 function init_obj3(objId :: ObjectId)
     switches = init_obj3_switches(objId);
-    return Obj3(get_object_id(switches), switches, 0.5, [1.0, 2.0]);
+    ca = retrieve(switches.pvec, :ca);
+    return Obj3(get_object_id(switches), switches, 0.5, [1.0, 2.0], default_value(ca));
 end
 
 mutable struct Obj2 <: ModelObject

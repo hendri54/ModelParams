@@ -104,7 +104,7 @@ end
 
 function validate_param_match(pvec :: ParamVector, vv :: ValueVector{F1}) where F1
     isValid = true;
-    nCal, _ = n_calibrated_params(pvec, true);
+    nCal, _ = n_calibrated_params(pvec);
     if length(vv) != nCal
         isValid = false;
         @warn """
@@ -115,12 +115,12 @@ function validate_param_match(pvec :: ParamVector, vv :: ValueVector{F1}) where 
     end
 
     if isValid  &&  (length(vv) > 0)
-        pList = calibrated_params(pvec, true);
+        pList = calibrated_params(pvec);
         for p in pList
             pName = name(p);
             if haskey(vv.d, pName)
                 pInfo = vv.d[pName];
-                if size(default_value(p)) != size(lb(pInfo))
+                if size(calibrated_value(p)) != size(lb(pInfo))
                     isValid = false;
                     @warn "Size mismatch for $pName";
                 end
@@ -247,7 +247,7 @@ function get_values(pvec :: ParamVector, vv :: ValueVector{F1}) where F1
     valueV = Vector{F1}();
     for (pName, pInfo) in vv.d
         p = retrieve(pvec, pName);
-        @assert size(lb(pInfo)) == size(default_value(p));
+        @assert size(lb(pInfo)) == size(calibrated_value(p));
         append!(valueV, transform_param(pvec.pTransform, p));
     end
 

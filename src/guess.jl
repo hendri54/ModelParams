@@ -63,7 +63,7 @@ function validate_param_match(x :: ModelObject, g :: Guess{F1}) where F1
     if isValid
         for (_, pvec) in pvecV
             objId = get_object_id(pvec);
-            nCal, _ = n_calibrated_params(pvec, true);
+            nCal, _ = n_calibrated_params(pvec);
             if haskey(g.d, objId)
                 vVec = g.d[objId];
                 isValid = isValid  &&  validate_param_match(pvec, vVec);
@@ -149,7 +149,7 @@ This should be done only once to guarantee that order never changes.
 function make_guess(m :: ModelObject)
     pvecV = collect_pvectors(m);
     @assert !isempty(pvecV)  "$m contains no ParamVectors"
-    vv = make_guess(pvecV, true);
+    vv = make_guess(pvecV);
     return vv
 end
 
@@ -159,11 +159,11 @@ end
 Make vector from a list of param vectors.
 Output contains values, lower bounds, upper bounds.
 """
-function make_guess(pvv :: PVectorCollection, isCalibrated :: Bool)
+function make_guess(pvv :: PVectorCollection)
     vv = Guess{ValueType}();
     startIdx = 1;
     for (objId, pv) in pvv
-        vVec = make_value_vector(pv, isCalibrated, startIdx);
+        vVec = make_value_vector(pv, startIdx);
         vv.d[objId] = vVec;
         startIdx += n_values(vVec);
     end
@@ -178,11 +178,10 @@ Make vector of values, lb, ub for optimization algorithm.
 Vectors are transformed using the `ParameterTransformation` specified in the `ParamVector`.
 Returns a `ValueVector`.
 """
-function make_value_vector(pvec :: ParamVector, isCalibrated :: Bool,
-    startIdx :: Integer)
+function make_value_vector(pvec :: ParamVector,  startIdx :: Integer)
     T1 = ValueType;
-    pList = calibrated_params(pvec, isCalibrated);
-    n, nElem = n_calibrated_params(pvec, isCalibrated);
+    pList = calibrated_params(pvec);
+    n, nElem = n_calibrated_params(pvec);
 
     vv = ValueVector{T1}();
     idxLast = startIdx - 1;
@@ -287,12 +286,12 @@ function set_value_from_pinfo!(pvec :: ParamVector,
     isCalibrated = true) where {F1, T}
 
     p = retrieve(pvec, pInfo.pName);
-    @assert size(default_value(p)) == size(lb(pInfo));
+    @assert size(calibrated_value(p)) == size(lb(pInfo));
     @assert !isnothing(p)  "Param $(pInfo.pName) not found in $pvec";
     if is_calibrated(p) == isCalibrated
         valV = reshape_vector(pInfo, guessV[indices(pInfo)]);
         v = untransform_param(pvec.pTransform, p, valV);
-        set_value!(p, v);
+        set_calibrated_value!(p, v);
     end
 end
 

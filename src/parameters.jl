@@ -28,7 +28,12 @@ function validate(p :: Param{F1}; silent = true) where F1
     return isValid
 end
 
-name(p :: Param{F1}) where F1 = p.name;
+
+## -----------  Access
+
+Base.size(p :: AbstractParam) = size(default_value(p));
+
+name(p :: AbstractParam) = p.name;
 
 """
 	$(SIGNATURES)
@@ -43,19 +48,23 @@ is_calibrated(p :: Param{F1}) where F1 = p.isCalibrated;
 Retrieve value of a `Param`.
 """
 value(p :: Param{F1}) where F1 = p.value;
-default_value(p :: Param{F1}) where F1 = p.defaultValue;
-lb(p :: Param{F1}) where F1 = p.lb;
-ub(p :: Param{F1}) where F1 = p.ub;
-lsymbol(p :: Param{F1}) where F1 = p.symbol;
+calibrated_value(p :: Param{F1}) where F1 = 
+    is_calibrated(p) ? value(p) : nothing;
+default_value(p :: AbstractParam) = p.defaultValue;
+lb(p :: AbstractParam) = p.lb;
+ub(p :: AbstractParam) = p.ub;
+calibrated_lb(p :: AbstractParam) = lb(p);
+calibrated_ub(p :: AbstractParam) = ub(p);
+lsymbol(p :: AbstractParam) = p.symbol;
 
 # Is a parameter value close to lower or upper bounds?
-close_to_lb(p :: Param{F1}; rtol = 0.01) where F1 = 
+close_to_lb(p :: AbstractParam; rtol = 0.01)  = 
     any((value(p) .- lb(p)) ./ (ub(p) .- lb(p)) .< rtol);
 
-close_to_ub(p :: Param{F1}; rtol = 0.01) where F1 = 
+close_to_ub(p :: AbstractParam; rtol = 0.01)  = 
     any((ub(p) .- value(p)) ./ (ub(p) .- lb(p)) .< rtol);
 
-close_to_bounds(p :: Param{F1}; rtol = 0.01) where F1 = 
+close_to_bounds(p :: AbstractParam; rtol = 0.01) where F1 = 
     close_to_lb(p; rtol = rtol) || close_to_ub(p; rtol = rtol);
 
 
@@ -63,8 +72,8 @@ close_to_bounds(p :: Param{F1}; rtol = 0.01) where F1 =
 
 # Short string that summarizes the `Param`
 # For reporting parameters in a table
-function show_string(p :: Param{F1}) where F1
-    if p.isCalibrated
+function show_string(p :: AbstractParam)
+    if is_calibrated(p)
         calStr = "calibrated";
     else
         calStr = "fixed";
@@ -73,7 +82,7 @@ function show_string(p :: Param{F1}) where F1
 end
 
 # Summary of the value
-function value_string(p :: Param{F1}) where F1
+function value_string(p :: AbstractParam)
     pType = eltype(value(p));
     if isa(value(p), Real)
         outStr = string(round(value(p), digits = 3));
@@ -86,15 +95,13 @@ function value_string(p :: Param{F1}) where F1
 end
 
 
-function show(io :: IO,  p :: Param{F1}) where F1
+Base.show(io :: IO,  p :: Param{F1}) where F1 = 
     print(io, "Param:  " * show_string(p));
-    return nothing
-end
 
 
-function short_string(p :: Param{F1}) where F1
+function short_string(p :: AbstractParam)
     vStr = formatted_value(value(p));
-    return "$(p.name): $vStr"
+    return "$(name(p)): $vStr"
 end
 
 
@@ -104,16 +111,16 @@ end
 Short summary of parameter and its value. 
 Can be used to generate a simple table of calibrated parameters.
 """
-function report_param(p :: Param{F1}) where F1
+function report_param(p :: AbstractParam)
     vStr = formatted_value(value(p));
-    println("\t$(p.description):\t$(p.name) = $vStr")
+    println("\t$(p.description):\t$(name(p)) = $vStr")
 end
 
 
 
 ## ----------  Change / update
 
-function set_calibration_status!(p :: Param{F1}, isCalibrated :: Bool) where F1
+function set_calibration_status!(p :: AbstractParam, isCalibrated :: Bool) 
     if isCalibrated
         calibrate!(p);
     else
@@ -152,10 +159,10 @@ end
 
 Set bounds for a `Param`.
 """
-function set_bounds!(p :: Param{F1}; lb = nothing, ub = nothing) where F1
+function set_bounds!(p :: AbstractParam; lb = nothing, ub = nothing) 
     isnothing(lb)  ||  (p.lb = lb);
     isnothing(ub)  ||  (p.ub = ub);
-    @assert size(p.lb) == size(p.ub) == size(default_value(p));
+    @assert size(ModelParams.lb(p)) == size(ModelParams.ub(p)) == size(default_value(p));
 end
 
 
@@ -164,14 +171,29 @@ end
     
 Set parameter value. Used during calibration.
 """
-function set_value!(p :: Param{F1}, vIn) where F1
-    @assert size(default_value(p)) == size(vIn)  "Size invalid for $(p.name): $(size(vIn)). Expected $(size(default_value(p)))"
+function set_value!(p :: AbstractParam, vIn;
+    skipInvalidSize = false) where F1
+
     oldValue = value(p);
-    p.value = deepcopy(vIn);
+    if size(default_value(p)) == size(vIn)  
+        p.value = deepcopy(vIn);
+    else
+        @warn("""
+            Wrong size for $p
+            Given: $(size(vIn))
+            Expected: $(size(default_value(p)))
+            """);
+        if !skipInvalidSize
+            error("Stopped");
+        end
+    end
     return oldValue
 end
 
-function set_default_value!(p :: Param{F1}, vIn) where F1
+set_calibrated_value!(p :: AbstractParam, vIn; skipInvalidSize = false) = 
+    set_value!(p, vIn; skipInvalidSize);
+
+function set_default_value!(p :: AbstractParam, vIn) 
     @assert size(default_value(p)) == size(vIn)  "Size invalid for $(p.name): $(size(vIn)). Expected $(size(default_value(p)))"
     p.defaultValue = vIn
 end
@@ -182,22 +204,19 @@ end
 
 Update a parameter with optional arguments.
 """
-function update!(p :: Param{F1}; value = nothing, defaultValue = nothing,
-    lb = nothing, ub = nothing, isCalibrated = nothing) where F1
+function update!(p :: AbstractParam; value = nothing, defaultValue = nothing,
+    lb = nothing, ub = nothing, isCalibrated = nothing) 
     if !isnothing(value)
         set_value!(p, value)
     end
-    if !isnothing(lb)
-        p.lb = lb;
-    end
-    if !isnothing(ub)
-        p.ub = ub;
+    if (!isnothing(lb))  ||  (!isnothing(ub))
+        set_bounds!(p; lb, ub);
     end
     if !isnothing(defaultValue)
-        default_value(p) = defaultValue;
+        set_default_value!(p, defaultValue);
     end
     if !isnothing(isCalibrated)
-        p.isCalibrated = isCalibrated;
+        set_calibration_status!(p, isCalibrated);
     end
     return nothing
 end

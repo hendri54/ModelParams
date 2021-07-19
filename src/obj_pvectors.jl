@@ -122,18 +122,21 @@ The value is the `ParamVector` made into a Dict.
 Objects without calibrated params have no entries.
 
 This is a format that can be saved without using user defined types. There is hope this can be serialized.
+
+All values are stored for parameters where some values are calibrated and others are fixed.
 """
 function make_dict(pvv :: PVectorCollection; isCalibrated :: Bool = true)
     n = length(pvv);
     if n < 1
         return nothing
     end
+    isCalibrated  ?  (vType = :value)  :  (vType = :defaultValue);
 
     d = nothing;
     for (objId, pv) in pvv.d
         # pv = pvv[j];
         key = make_string(objId);
-        pd = make_dict(pv; isCalibrated, useValues = isCalibrated);
+        pd = make_dict(pv; isCalibrated, valueType = vType);
         if isnothing(d)
             d = Dict([key => pd]);
         else

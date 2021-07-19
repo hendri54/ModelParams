@@ -174,5 +174,16 @@ mutable struct CalibratedArray{T1, N} <: ModelObject
 end
 
 
+mutable struct CalArray{T1, N} <: AbstractParam
+    name :: Symbol
+    description :: String
+    symbol :: String
+    value :: Array{T1, N}
+    defaultValue :: Array{T1, N}
+    lb :: Array{T1, N}
+    ub :: Array{T1, N}
+    isCalM :: Array{Bool, N}
+end
+
 
 # -----------

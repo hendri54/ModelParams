@@ -123,10 +123,18 @@ Check that param vector values are consistent with object values.
 Does not reach into child objects.
 """
 function check_own_param_values(x :: ModelObject, pvec, isCalibrated :: Bool)
-    d = make_dict(pvec; isCalibrated = isCalibrated, useValues = isCalibrated);
+    # d = make_dict(pvec; isCalibrated = isCalibrated, useValues = isCalibrated);
+    pList = calibrated_params(pvec; isCalibrated);
     valid = true;
-    for (pName, pValue) in d
-        isValid = getproperty(x, pName) ≈ pValue;
+    # for (pName, pValue) in d
+    for p in pList
+        pName = name(p);
+        if isCalibrated
+            pValue = value(p);
+        else
+            pValue = default_value(p);
+        end
+        isValid = (getproperty(x, pName) ≈ pValue);
         if !isValid
             valid = false;
             propValue = getproperty(x, pName);
@@ -222,11 +230,31 @@ end
 
 ## Set fields in struct from param vector (using values, not defaults)
 # Does not reach into child objects.
-function set_own_values_from_pvec!(x :: ModelObject, isCalibrated :: Bool)
+function set_own_values_from_pvec!(x :: ModelObject, isCalibrated :: Bool;
+    alwaysUseDefaultValue = false)
     pvec = get_pvector(x);
-    d = make_dict(pvec; isCalibrated = isCalibrated, useValues = isCalibrated);
-    set_own_values_from_dict!(x, d);
+    # d = make_dict(pvec; isCalibrated = isCalibrated, useValues = isCalibrated);
+    # set_own_values_from_dict!(x, d);
+
+    pList = calibrated_params(pvec; isCalibrated);
+    for p in pList
+        set_own_value_from_param!(x, p; alwaysUseDefaultValue);
+    end
     return nothing
+end
+
+# Ignores if no corresponding property exists in x.
+function set_own_value_from_param!(x :: ModelObject, p :: AbstractParam;
+    alwaysUseDefaultValue = false)
+    pName = name(p);
+    if pName ∈ propertynames(x)
+        if is_calibrated(p)  &&  (!alwaysUseDefaultValue)
+            val = value(p);
+        else
+            val = default_value(p);
+        end
+        setfield!(x, pName, val);
+    end
 end
 
 
@@ -252,10 +280,11 @@ end
 ## Set default values from param vector
 # Typically for non-calibrated parameters
 function set_own_default_values!(x :: ModelObject, isCalibrated :: Bool)
-    pvec = get_pvector(x);
-    # Last arg: use default values
-    d = make_dict(pvec; isCalibrated = isCalibrated, useValues = false);
-    set_own_values_from_dict!(x, d);
+    set_own_values_from_pvec!(x, isCalibrated; alwaysUseDefaultValue = true);
+    # pvec = get_pvector(x);
+    # # Last arg: use default values
+    # d = make_dict(pvec; isCalibrated = isCalibrated, useValues = false);
+    # set_own_values_from_dict!(x, d);
     return nothing
 end
 
@@ -321,7 +350,7 @@ Returns `Vector{Param}`. Note that names of parameters may not be unique.
 """
 function all_params(x :: ModelObject; isCalibrated = nothing)
     pvecV = collect_pvectors(x);
-    pList = Vector{Param}();
+    pList = Vector{AbstractParam}();
     for (_, pvec) in pvecV
         pvecList = all_params(pvec; isCalibrated);
         isempty(pvecList)  ||  append!(pList, pvecList);
@@ -371,7 +400,7 @@ Dict with parameter info for an entire `ModelObject` and its children.
 """
 function make_dict(o :: ModelObject, isCalibrated :: Bool)
     pvecV = collect_pvectors(o);
-    return make_dict(pvecV; isCalibrated, useValues = true);
+    return make_dict(pvecV; isCalibrated, valueType = :value);
 end
 
 

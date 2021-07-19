@@ -96,10 +96,10 @@ function modelTest()
 
     ModelParams.report_params(m, true);
     ModelParams.report_params(m, false);
-    nParam, nElem = ModelParams.n_calibrated_params(m, true);
+    nParam, nElem = ModelParams.n_calibrated_params(m; isCalibrated = true);
     @test nParam > 1
     @test nElem > nParam
-    nParam, nElem = ModelParams.n_calibrated_params(m, false);
+    nParam, nElem = ModelParams.n_calibrated_params(m; isCalibrated = false);
     @test nParam >= 1
     @test nElem > nParam
 
@@ -124,9 +124,9 @@ function modelTest()
 
 
     # For each model object: make vector of param values
-    vv1 = make_guess(m.o1.pvec, isCalibrated);
+    vv1 = make_guess(m.o1.pvec);
     @test isa(ModelParams.values(vv1), Vector{Float64})
-    vv2 = make_guess(m.o2.pvec, isCalibrated);
+    vv2 = make_guess(m.o2.pvec);
     @test isa(ModelParams.values(vv2), Vector{Float64})
 
     # This is passed to optimizer as guess
@@ -134,7 +134,7 @@ function modelTest()
     @test isa(vAll, Vector{Float64})
 
     # Same in one step for all param vectors
-    vv = ModelParams.make_guess([m.o1.pvec, m.o2.pvec], isCalibrated);
+    vv = ModelParams.make_guess([m.o1.pvec, m.o2.pvec]);
     @test vAll ≈ ModelParams.values(vv)
     @test ModelParams.lb(vv) ≈ [ModelParams.lb(vv1); ModelParams.lb(vv2)]
     @test ModelParams.ub(vv) ≈ [ModelParams.ub(vv1); ModelParams.ub(vv2)]

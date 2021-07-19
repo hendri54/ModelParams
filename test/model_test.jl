@@ -13,10 +13,10 @@ function report_test()
         ModelParams.report_params(m, true);
         println("-----  Model parameters: fixed")
         ModelParams.report_params(m, false);
-        nParam, nElem = ModelParams.n_calibrated_params(m, true);
+        nParam, nElem = ModelParams.n_calibrated_params(m; isCalibrated = true);
         @test nParam > 1
         @test nElem > nParam
-        nParam, nElem = ModelParams.n_calibrated_params(m, false);
+        nParam, nElem = ModelParams.n_calibrated_params(m; isCalibrated = false);
         @test nParam >= 1
         @test nElem > nParam
     end
@@ -35,7 +35,7 @@ function model_test()
 
         objV = [m.o1, m.o2, m.o2.o3];
         # These are the values that we expect to get back in the end
-        dictV = [make_dict(get_pvector(obj); isCalibrated, useValues = true)  for obj in objV];
+        dictV = [make_dict(get_pvector(obj); isCalibrated, valueType = :value)  for obj in objV];
 
         @test check_calibrated_params(m);
         @test check_fixed_params(m);
@@ -130,13 +130,13 @@ end
 function set_status_test()
     @testset "Set calibration status" begin
         m = init_test_model();
-        nCal, _ = n_calibrated_params(m, true);
-        nFixed, _ = n_calibrated_params(m, false);
+        nCal, _ = n_calibrated_params(m; isCalibrated = true);
+        nFixed, _ = n_calibrated_params(m; isCalibrated = false);
         set_calibration_status_all_params!(m, true);
-        nCal2, _ = n_calibrated_params(m, true);
+        nCal2, _ = n_calibrated_params(m; isCalibrated = true);
         @test nCal2 == nCal + nFixed;
         set_calibration_status_all_params!(m, false);
-        nCal2, _ = n_calibrated_params(m, true);
+        nCal2, _ = n_calibrated_params(m; isCalibrated = true);
         @test nCal2 == 0;
 
         set_default_values_all_params!(m);
