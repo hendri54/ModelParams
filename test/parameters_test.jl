@@ -63,6 +63,7 @@ function array_test(p)
         isCal = is_calibrated(p);
         mdl.set_calibration_status!(p, !isCal);
         @test is_calibrated(p) == !isCal;
+        
         lbnd = mdl.lb(p) .+ 0.1;
         ubnd = mdl.ub(p) .+ 0.2;
         set_bounds!(p; lb = lbnd, ub = ubnd);
@@ -83,7 +84,9 @@ end
     vec1_test();
     for p in (
         make_test_array_param(),
-        mdl.make_test_cal_array(:x, 2)
+        mdl.make_test_cal_array(:x, 2),
+        mdl.make_test_bvector(:x; increasing = :increasing),
+        mdl.make_test_bvector(:x; increasing = :decreasing),
         )
         array_test(p);
     end

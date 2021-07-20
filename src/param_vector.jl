@@ -395,7 +395,7 @@ function param_table(pvec :: ParamVector, isCalibrated :: Bool;
         dataM = ParamTable(n);
         for (j, p) in enumerate(pList)
             set_row!(dataM, j, string(name(p)), lsymbol(p), 
-                p.description, formatted_value(p.value));
+                p.description, formatted_value(value(p)));
         end
     end
     return dataM
@@ -405,7 +405,7 @@ end
 # Find parameters that are close to bounds
 function find_close_to_bounds(pvec :: ParamVector; rtol = 0.01)
     pList = calibrated_params(pvec);
-    pCloseV = Vector{Param}();
+    pCloseV = Vector{AbstractParam}();
     for p in pList
         if close_to_bounds(p; rtol = rtol)
             push!(pCloseV, p);

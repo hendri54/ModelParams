@@ -34,6 +34,10 @@ lb(iv :: BoundedVector{T1}) where T1 = iv.lb;
 ub(iv :: BoundedVector{T1}) where T1 = iv.ub;
 Base.length(iv :: BoundedVector{T1}) where T1 =  Base.length(iv.dxV);
 
+# Scalar bounds across all elements
+scalar_lb(iv :: BoundedVector{T1}) where T1 = iv.lb;
+scalar_ub(iv :: BoundedVector{T1}) where T1 = iv.ub;
+
 
 function calibrate_values!(iv :: BoundedVector{T1}) where T1
     calibrate!(iv, :dxV);
@@ -68,28 +72,42 @@ function values(iv :: BoundedVector{T1}) where T1
 end
 
 
-function dx_to_values(iv :: BoundedVector{T1}, dxV) where T1
-    n = length(iv);
+function dx_to_values(iv :: Union{BoundedVector{T1}, BVector{T1}}, dxV) where T1
+    # n = length(iv);
     if is_increasing(iv)
-        valueV = zeros(T1, n);
-        valueV[1] = lb(iv) + dxV[1] * (ub(iv) - lb(iv));
-        if n > 1
-            for j = 2 : n
-                valueV[j] = valueV[j-1] + dxV[j] * (ub(iv) - valueV[j-1]);
-            end
-        end
+        valueV = dx_to_values_increasing(dxV, scalar_lb(iv), scalar_ub(iv))
     elseif is_decreasing(iv)
-        valueV = zeros(T1, n);
-        valueV[1] = ub(iv) - dxV[1] * (ub(iv) - lb(iv));
-        if n > 1
-            for j = 2 : n
-                valueV[j] = valueV[j-1] - dxV[j] * (valueV[j-1] - lb(iv));
-            end
-        end
+        valueV = dx_to_values_decreasing(dxV, scalar_lb(iv), scalar_ub(iv))
     elseif is_nonmonotone(iv)
         valueV = copy(dxV);
     else
         error("Invalid");
+    end
+    return valueV
+end
+
+function dx_to_values_increasing(dxV, lb, ub)
+    T1 = eltype(dxV);
+    n = length(dxV);
+    valueV = zeros(T1, n);
+    valueV[1] = lb + dxV[1] * (ub - lb);
+    if n > 1
+        for j = 2 : n
+            valueV[j] = valueV[j-1] + dxV[j] * (ub - valueV[j-1]);
+        end
+    end
+    return valueV
+end
+
+function dx_to_values_decreasing(dxV, lb, ub)
+    T1 = eltype(dxV);
+    n = length(dxV);
+    valueV = zeros(T1, n);
+    valueV[1] = ub - dxV[1] * (ub - lb);
+    if n > 1
+        for j = 2 : n
+            valueV[j] = valueV[j-1] - dxV[j] * (valueV[j-1] - lb);
+        end
     end
     return valueV
 end
@@ -118,26 +136,14 @@ function set_default_value!(iv :: BoundedVector{T1},
 end
 
 
-function values_to_dx(iv :: BoundedVector{T1}, valueV :: AbstractVector{T1}) where T1
+function values_to_dx(iv :: Union{BVector{T1}, BoundedVector{T1}}, valueV :: AbstractVector{T1}) where T1
     @assert check_values(iv, valueV);
     n = length(iv);
 
     if is_increasing(iv)
-        dxV = zeros(T1, n);
-        dxV[1] = (valueV[1] - lb(iv)) / (ub(iv) - lb(iv));
-        if n > 1
-            for j = 2 : n
-                dxV[j] = (valueV[j] - valueV[j-1]) / (ub(iv) - valueV[j-1]);
-            end
-        end
+        dxV = values_to_dx_increasing(valueV, scalar_lb(iv), scalar_ub(iv));
     elseif is_decreasing(iv)
-        dxV = zeros(T1, n);
-        dxV[1] = (ub(iv) - valueV[1]) / (ub(iv) - lb(iv));
-        if n > 1
-            for j = 2 : n
-                dxV[j] = (valueV[j-1] - valueV[j]) / (valueV[j-1] - lb(iv));
-            end
-        end
+        dxV = values_to_dx_decreasing(valueV, scalar_lb(iv), scalar_ub(iv));
     elseif is_nonmonotone(iv)
         dxV = copy(valueV);
     else
@@ -146,8 +152,32 @@ function values_to_dx(iv :: BoundedVector{T1}, valueV :: AbstractVector{T1}) whe
     return dxV
 end
 
+function values_to_dx_increasing(valueV :: AbstractVector{T1}, lb, ub) where T1
+    n = length(valueV);
+    dxV = zeros(T1, n);
+    dxV[1] = (valueV[1] - lb) / (ub - lb);
+    if n > 1
+        for j = 2 : n
+            dxV[j] = (valueV[j] - valueV[j-1]) / (ub - valueV[j-1]);
+        end
+    end
+    return dxV
+end
 
-function check_values(iv :: BoundedVector{T1}, valueV :: AbstractVector{T1}) where T1
+function values_to_dx_decreasing(valueV :: AbstractVector{T1}, lb, ub) where T1
+    n = length(valueV);
+    dxV = zeros(T1, n);
+    dxV[1] = (ub - valueV[1]) / (ub - lb);
+    if n > 1
+        for j = 2 : n
+            dxV[j] = (valueV[j-1] - valueV[j]) / (valueV[j-1] - lb);
+        end
+    end
+    return dxV
+end
+
+
+function check_values(iv :: Union{BVector{T1}, BoundedVector{T1}}, valueV :: AbstractVector{T1}) where T1
     isValid = true;
     isValid = isValid  &&  isequal(length(valueV), length(iv));
     if any(valueV .< lb(iv))

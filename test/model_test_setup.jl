@@ -3,6 +3,8 @@ using ModelObjectsLH, ModelParams
 
 import ModelParams.has_pvector
 
+mdl = ModelParams;
+
 mutable struct Obj1 <: ModelObject
     objId :: ObjectId
     x :: Float64
@@ -71,6 +73,7 @@ mutable struct Obj2 <: ModelObject
     a :: Float64
     y :: Float64
     b :: Array{Float64,2}
+    bvec :: Vector{Float64}
     o3 :: Obj3
     pvec :: ParamVector
 end
@@ -88,9 +91,10 @@ function init_obj2(objId)
     valueB = 2.0 .+ [3.3 4.4; 5.5 7.6];
     pb = Param(:b, "b obj2", "b2", valueB, valueB .+ 1.0,
         valueB .- 5.0, valueB .+ 5.0, true);
-    pvector = ParamVector(objId, [pa, py, pb]);
+    pBvec = mdl.make_test_bvector(:bvec; isCalibrated = true, increasing = :increasing);
+    pvector = ParamVector(objId, [pa, py, pb, pBvec]);
     obj3 = init_obj3(make_child_id(objId, :obj3));
-    o2 = Obj2(objId, pa.value, py.value, pb.value, obj3, pvector);
+    o2 = Obj2(objId, pa.value, py.value, pb.value, ModelParams.value(pBvec), obj3, pvector);
     ModelParams.set_own_values_from_pvec!(o2, true);
     return o2
 end

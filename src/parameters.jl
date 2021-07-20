@@ -32,15 +32,17 @@ end
 ## -----------  Access
 
 Base.size(p :: AbstractParam) = size(default_value(p));
+Base.length(p :: AbstractParam) = length(default_value(p));
 
 name(p :: AbstractParam) = p.name;
+lsymbol(p :: AbstractParam) = p.symbol;
 
 """
 	$(SIGNATURES)
 
 Is this parameter calibrated?
 """
-is_calibrated(p :: Param{F1}) where F1 = p.isCalibrated;
+is_calibrated(p :: AbstractParam) = p.isCalibrated;
 
 """
 	$(SIGNATURES)
@@ -48,14 +50,16 @@ is_calibrated(p :: Param{F1}) where F1 = p.isCalibrated;
 Retrieve value of a `Param`.
 """
 value(p :: Param{F1}) where F1 = p.value;
-calibrated_value(p :: Param{F1}) where F1 = 
-    is_calibrated(p) ? value(p) : nothing;
+   
 default_value(p :: AbstractParam) = p.defaultValue;
 lb(p :: AbstractParam) = p.lb;
 ub(p :: AbstractParam) = p.ub;
+
+# This is what the numerical optimizer sees (only the calibrated entries).
+calibrated_value(p :: Param{F1}) where F1 = 
+    is_calibrated(p) ? value(p) : nothing;
 calibrated_lb(p :: AbstractParam) = lb(p);
 calibrated_ub(p :: AbstractParam) = ub(p);
-lsymbol(p :: AbstractParam) = p.symbol;
 
 # Is a parameter value close to lower or upper bounds?
 close_to_lb(p :: AbstractParam; rtol = 0.01)  = 
@@ -162,14 +166,14 @@ Set bounds for a `Param`.
 function set_bounds!(p :: AbstractParam; lb = nothing, ub = nothing) 
     isnothing(lb)  ||  (p.lb = lb);
     isnothing(ub)  ||  (p.ub = ub);
-    @assert size(ModelParams.lb(p)) == size(ModelParams.ub(p)) == size(default_value(p));
+    @assert size(ModelParams.lb(p)) == size(ModelParams.ub(p)) == size(p);
 end
 
 
 """
     $(SIGNATURES)
     
-Set parameter value. Used during calibration.
+Set parameter value. Not used during calibration.
 """
 function set_value!(p :: AbstractParam, vIn;
     skipInvalidSize = false) where F1
@@ -190,6 +194,7 @@ function set_value!(p :: AbstractParam, vIn;
     return oldValue
 end
 
+# This is used during the calibration
 set_calibrated_value!(p :: AbstractParam, vIn; skipInvalidSize = false) = 
     set_value!(p, vIn; skipInvalidSize);
 

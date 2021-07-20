@@ -1,5 +1,4 @@
 export CalArray
-export validate_ca
 
 function make_test_cal_array(name:: Symbol, N :: Integer; 
     allFixed = false, offset = 0.0)

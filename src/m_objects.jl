@@ -346,7 +346,7 @@ end
 	$(SIGNATURES)
 
 Return all `Param`s in a `ModelObject`. Optionally filtered by calibration status.
-Returns `Vector{Param}`. Note that names of parameters may not be unique.
+Returns `Vector{AbstractParam}`. Note that names of parameters may not be unique.
 """
 function all_params(x :: ModelObject; isCalibrated = nothing)
     pvecV = collect_pvectors(x);
