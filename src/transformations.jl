@@ -26,11 +26,22 @@ Undo parameter transformation. Calibrated values only.
 function untransform_param(tr :: LinearTransformation{F1}, 
     p :: AbstractParam, pValue) where F1
 
-    @assert size(pValue) == size(calibrated_value(p))  "Size mismatch: $(size(pValue)) vs $(size(calibrated_value(p))) for $p"
-    @assert all(pValue .<= ub(tr))  "Values to high: $pValue  vs  $(ub(tr))"
-    @assert all(pValue .>= lb(tr))
-    outV = calibrated_lb(p) .+ (calibrated_ub(p) .- calibrated_lb(p)) .* (pValue .- lb(tr)) ./ (ub(tr) .- lb(tr));
-    @assert size(outV) == size(pValue)
+    @assert size(pValue) == size(calibrated_value(p))  "Size mismatch: $(size(pValue)) vs $(size(calibrated_value(p))) for $p";
+
+    if any(pValue .> ub(tr))  ||  any(pValue .< lb(tr))
+        @warn """
+            Values for $p out of bounds:
+            $pValue
+            """;
+    end
+    # @assert all(pValue .<= ub(tr))  "Values to high: $pValue  vs  $(ub(tr))"
+    # @assert all(pValue .>= lb(tr))
+
+    outV = clamp.(
+        calibrated_lb(p) .+ (calibrated_ub(p) .- calibrated_lb(p)) .* (pValue .- lb(tr)) ./ (ub(tr) .- lb(tr)),
+        calibrated_lb(p), calibrated_ub(p));
+    
+    @assert size(outV) == size(pValue);
     return outV
 end
 
