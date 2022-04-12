@@ -1,3 +1,4 @@
+# This effectively hard-wires the name of the ParamVector! +++
 Lazy.@forward ModelSwitches.pvec (
     is_calibrated, calibrate!, fix!, param_value, param_default_value, retrieve
     );

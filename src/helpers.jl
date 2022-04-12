@@ -46,4 +46,31 @@ function formatted_value(v :: Array{T1}) where T1 <: AbstractFloat
     vStr = formatted_value(v[1]) * " ... " * formatted_value(v[end])
 end
 
+
+function calibrated_string(isCal :: Bool; fixedValue = nothing,
+    nValues = nothing) 
+    if isCal
+        if isnothing(nValues)
+            x = "calibrated";
+        else
+            x = "calibrated ($nValues values)";
+        end
+    elseif isnothing(fixedValue)
+        x = "fixed";
+    else
+        x = "fixed at " * formatted_value(fixedValue);
+    end
+    return x
+end
+
+function calibrated_string(p :: Param)
+    v = default_value(p);
+    return calibrated_string(is_calibrated(p); fixedValue = v, nValues = length(v));
+end
+
+function calibrated_string(pv :: ParamVector, vName :: Symbol)
+    return calibrated_string(retrieve(pv, vName));
+end
+
+
 # ----------------------

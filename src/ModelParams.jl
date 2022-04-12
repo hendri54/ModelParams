@@ -47,6 +47,9 @@ export BoundedVector, IncreasingVector, values, set_pvector!
 # ParamTable
 export ParamTable, get_symbol, get_description, get_values, set_row!, latex_param_table
 
+# Helpers
+export calibrated_string;
+
 
 const ValueType = Float64;
 # Bounds for parameter transformations into guess vectors.
