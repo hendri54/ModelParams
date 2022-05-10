@@ -99,10 +99,39 @@ function init_obj2(objId)
     return o2
 end
 
+
+## -----------  Obj4 
+# Object that directly contains `Params` and has not directly stored values.
+
+mutable struct Obj4 <: ModelObject
+    objId :: ObjectId
+    alpha :: Param{Float64}
+    beta  :: Param{Vector{Float64}}
+    gamma :: Param{Float64}
+end
+
+ModelParams.has_pvector(::Obj4) = true;
+ModelParams.get_pvector(o :: Obj4) = 
+    ParamVector(o.objId, [o.alpha, o.beta, o.gamma]);
+ModelParams.pvalue(o :: Obj4, pName :: Symbol) = 
+    ModelParams.value(getfield(o, pName));
+ModelParams.param_loc(::Obj4) = ModelParams.ParamsInObject();
+
+function init_obj4(objId)
+    Obj4(objId, 
+        Param(:alpha, "alpha", "alpha", 1.0, 2.0, 0.0, 5.0, true),
+        Param(:beta, "beta", "beta", 
+            [1.0, 1.1], [2.0, 2.1], zeros(2), fill(5.0, 2), true),
+        Param(:gamma, "gamma", "gamma", 1.5, 2.5, 0.0, 5.0, false)
+        );
+end
+
+
 mutable struct TestModel <: ModelObject
     objId :: ObjectId
     o1 :: Obj1
     o2 :: Obj2
+    o4 :: Obj4
     a :: Float64
     y :: Float64
 end
@@ -113,7 +142,8 @@ function init_test_model()
     objName = ObjectId(:testModel, "Test model");
     o1 = init_obj1(ModelParams.make_child_id(objName, :o1, "Child object 1"));
     o2 = init_obj2(ModelParams.make_child_id(objName, :o2, "Child object 2"));
-    m = TestModel(objName, o1, o2, 9.87, 87.73);
+    o4 = init_obj4(ModelParams.make_child_id(objName, :o4, "Child object 4"));
+    m = TestModel(objName, o1, o2, o4, 9.87, 87.73);
     sync_values!(m);
     return m
 end

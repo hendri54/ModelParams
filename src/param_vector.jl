@@ -234,6 +234,18 @@ end
 ## ------------  Modify
 
 """
+	$(SIGNATURES)
+
+Set bounds for a parameter. Input must support `retrieve` for a `Param`.
+"""
+function set_bounds!(pvec, pName :: Symbol; lb = nothing, ub = nothing)
+    p = retrieve(pvec, pName);
+    set_bounds!(p; lb, ub);
+end
+
+
+
+"""
     $(SIGNATURES)
 
 Append a `Param` to a `ParamVector`

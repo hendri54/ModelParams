@@ -1,4 +1,4 @@
-using ModelParams, Test
+using ModelParams, Random, Test
 
 mdl = ModelParams;
 
@@ -48,7 +48,11 @@ function vec1_test()
         p1 = Param(:p1, "param1", "\$p_{1}\$", pValue, pValue .+ 0.1, 
             fill(0.1, 1), fill(5.0, 1), true);
         show(p1);
-        @test isequal(pValue, mdl.value(p1))
+        @test isequal(pValue, mdl.value(p1));
+
+        set_random_value!(p1, MersenneTwister(12));
+        newValue = ModelParams.value(p1);
+        @test size(newValue) == size(pValue);
     end
 end
 
@@ -69,6 +73,13 @@ function array_test(p)
         set_bounds!(p; lb = lbnd, ub = ubnd);
         @test mdl.lb(p) ≈ lbnd;
         @test mdl.ub(p) ≈ ubnd;
+
+        pValue = ModelParams.value(p);
+        if p isa Param
+            set_random_value!(p, MersenneTwister(12));
+            newValue = ModelParams.value(p);
+            @test size(newValue) == size(pValue);
+        end
     end
 end
 

@@ -106,6 +106,36 @@ function find_param(pvv :: PVectorCollection, pName)
     return d
 end
 
+"""
+	$(SIGNATURES)
+
+Find the only `Param` in `o` and its children with name `pName`.
+Errors if `pName` occurs multiple times or never.
+"""
+function find_only_param(o :: ModelObject, pName)
+    d = find_param(o, pName);
+    @argcheck length(d) == 1;
+    d1 = first(d);
+    p = d1[2];
+    return p
+end
+
+
+"""
+	$(SIGNATURES)
+
+Find value of a `Param` that occurs only once in `o` and its children.
+Errors if `pName` occurs multiple times or never.
+"""
+function param_value(o :: ModelObject, pName :: Symbol)
+    p = find_only_param(o, pName);
+    return value(p)
+end
+
+function is_calibrated(o :: ModelObject, pName :: Symbol)
+    p = find_only_param(o, pName);
+    return is_calibrated(p)
+end
 
 
 ## --------------  Vectors and Dicts

@@ -9,9 +9,9 @@ function report_test()
     @testset "Reporting" begin
         m = init_test_model()
 
-        println("-----  Model parameters: calibrated")
+        println("-----  Model parameters: calibrated");
         ModelParams.report_params(m, true);
-        println("-----  Model parameters: fixed")
+        println("-----  Model parameters: fixed");
         ModelParams.report_params(m, false);
         nParam, nElem = ModelParams.n_calibrated_params(m; isCalibrated = true);
         @test nParam > 1

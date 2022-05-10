@@ -17,27 +17,36 @@ end
 function change_values_test()
     @testset "Change values by hand" begin
         m = init_test_model();
-        yNew = m.o2.y .+ 0.5;
-        ModelParams.change_value!(m, :o2, :y, yNew);
-        @test ModelParams.get_value(m, :o2, :y) .≈ yNew
-        @test m.o2.y .≈ yNew
+        for (oName, pName) ∈ ((:o2, :y), (:obj3, :y), (:o4, :beta))
+            vOld = mdl.get_value(m, oName, pName);
+            vNew = vOld .+ 0.5;
+            ModelParams.change_value!(m, oName, pName, vNew);
+            @test ModelParams.get_value(m, oName, pName) ≈ vNew;
+            obj = find_only_object(m, oName);
+            p = retrieve(obj, pName);
+            @test ModelParams.value(p) ≈ vNew;
 
-        pvec = get_pvector(m.o2);
-        @test pvec isa ParamVector;
-        p = pvec[1];
-        @test p isa Param;
-        if default_value(p) isa Real
-            lb = -10.0;
-            ub = 20.0;
-        else
-            sz = size(default_value(p));
-            lb = fill(-10.0, sz);
-            ub = fill(20.0, sz);
+            @test pvalue(obj, pName) ≈ vNew;
+            set_pvalue!(obj, pName, vNew .+ 0.1);
+            @test pvalue(obj, pName) ≈ vNew .+ 0.1;
+            set_pvalue!(obj, pName, vNew);
+
+            pvec = get_pvector(obj);
+            @test pvec isa ParamVector;
+            p = pvec[1];
+            @test p isa Param;
+            if default_value(p) isa Real
+                lb = -10.0;
+                ub = 20.0;
+            else
+                sz = size(default_value(p));
+                lb = fill(-10.0, sz);
+                ub = fill(20.0, sz);
+            end
+            set_bounds!(obj, p.name; lb, ub);
+            @test p.lb == lb;
+            @test p.ub == ub;
         end
-        set_bounds!(m.o2, p.name; lb, ub);
-        @test p.lb == lb;
-        @test p.ub == ub;
-
     end
 end
 

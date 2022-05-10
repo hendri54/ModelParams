@@ -26,7 +26,7 @@ export LinearTransformation, transform_bounds, transform_param, untransform_para
 
 # Parameters
 export AbstractParam, Param
-export calibrate!, fix!, fix_values!, set_bounds!, set_value!, set_default_value!, update!, validate, default_value, value, is_calibrated
+export calibrate!, fix!, fix_values!, set_bounds!, set_value!, set_default_value!, set_random_value!, update!, validate, default_value, value, is_calibrated
 
 # ParamVector
 export ParamVector
@@ -39,7 +39,7 @@ export PVectorCollection, set_calibration_status_all_params!, set_default_values
 # Model objects
 export check_fixed_params, check_calibrated_params, check_own_fixed_params, check_own_calibrated_params, validate_all_params
 export collect_pvectors, compare_params, check_params_match
-export find_pvector, find_param, make_guess, perturb_guess_vector, perturb_params, params_equal, validate
+export find_pvector, find_only_param, find_param, pvalue, set_pvalue!, make_guess, perturb_guess_vector, perturb_params, params_equal, validate;
 export has_pvector, get_pvector, get_switches, param_tables, latex_param_table
 export set_values_from_dicts!, sync_own_values!, sync_values!
 export BoundedVector, IncreasingVector, values, set_pvector!
@@ -69,6 +69,8 @@ include("bvector.jl");
 # include("calibrated_array.jl");
 include("cal_array_param.jl");
 include("transformations.jl");
+
+include("abstract_params.jl");
 include("parameters.jl");
 include("param_vector.jl");
 
