@@ -20,8 +20,8 @@ end
 
 Base.isapprox(p1 :: ParamInfo{F1}, p2 :: ParamInfo{F2}) where {F1, F2} = false;
 
-lb(pInfo :: ParamInfo{F1}) where F1 = pInfo.lbV;
-ub(pInfo :: ParamInfo{F1}) where F1 = pInfo.ubV;
+param_lb(pInfo :: ParamInfo{F1}) where F1 = pInfo.lbV;
+param_ub(pInfo :: ParamInfo{F1}) where F1 = pInfo.ubV;
 n_values(pInfo :: ParamInfo{F1}) where F1 = length(pInfo.lbV);
 indices(pInfo :: ParamInfo{F1}) where F1 <: Real = pInfo.startIdx;
 indices(pInfo :: ParamInfo{F1}) where F1 = 
@@ -120,7 +120,7 @@ function validate_param_match(pvec :: ParamVector, vv :: ValueVector{F1}) where 
             pName = name(p);
             if haskey(vv.d, pName)
                 pInfo = vv.d[pName];
-                if size(calibrated_value(p)) != size(lb(pInfo))
+                if size(calibrated_value(p)) != size(param_lb(pInfo))
                     isValid = false;
                     @warn "Size mismatch for $pName";
                 end
@@ -247,7 +247,7 @@ function get_values(pvec :: ParamVector, vv :: ValueVector{F1}) where F1
     valueV = Vector{F1}();
     for (pName, pInfo) in vv.d
         p = retrieve(pvec, pName);
-        @assert size(lb(pInfo)) == size(calibrated_value(p));
+        @assert size(param_lb(pInfo)) == size(calibrated_value(p));
         append!(valueV, transform_param(pvec.pTransform, p));
     end
 

@@ -129,7 +129,7 @@ Errors if `pName` occurs multiple times or never.
 """
 function param_value(o :: ModelObject, pName :: Symbol)
     p = find_only_param(o, pName);
-    return value(p)
+    return pvalue(p)
 end
 
 function is_calibrated(o :: ModelObject, pName :: Symbol)

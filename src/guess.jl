@@ -198,8 +198,8 @@ function make_value_vector(pvec :: ParamVector,  startIdx :: Integer)
 end
 
 function make_bounds(pTransform, sz)
-    lbnd = lb(pTransform);
-    ubnd = ub(pTransform);
+    lbnd = param_lb(pTransform);
+    ubnd = param_ub(pTransform);
     if !isempty(sz)
         lbnd = fill(lbnd, sz);
         ubnd = fill(ubnd, sz);
@@ -286,7 +286,7 @@ function set_value_from_pinfo!(pvec :: ParamVector,
     isCalibrated = true) where {F1, T}
 
     p = retrieve(pvec, pInfo.pName);
-    @assert size(calibrated_value(p)) == size(lb(pInfo));
+    @assert size(calibrated_value(p)) == size(param_lb(pInfo));
     @assert !isnothing(p)  "Param $(pInfo.pName) not found in $pvec";
     if is_calibrated(p) == isCalibrated
         valV = reshape_vector(pInfo, guessV[indices(pInfo)]);
@@ -297,7 +297,7 @@ end
 
 
 function random_guess(g :: Guess{F1}, rng :: AbstractRNG) where F1
-    lb(g) .+ (ub(g) .- lb(g)) .* rand(rng, n_values(g));
+    param_lb(g) .+ (param_ub(g) .- param_lb(g)) .* rand(rng, n_values(g));
 end
 
 

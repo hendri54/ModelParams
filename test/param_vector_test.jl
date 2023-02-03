@@ -39,7 +39,7 @@ function pvectorTest()
         p2 = Param(:p2, "param2", "sym2", 1.0);
         ModelParams.replace!(pv, p2);
         p22 = retrieve(pv, :p2);
-        @test ModelParams.value(p22) == 1
+        @test pvalue(p22) == 1
 
         # Retrieve non-existing
         p3 = retrieve(pv, :notThere);
@@ -65,7 +65,7 @@ function set_status_test()
 
         set_default_values_all_params!(pvec);
         for p in pvec
-            @test value(p) ≈ mdl.default_value(p);
+            @test pvalue(p) ≈ mdl.default_value(p);
         end
     end
 end
@@ -93,7 +93,7 @@ function pvectorDictTest()
         d = make_dict(pv; isCalibrated = true, valueType = :value);
         for pName in keys(d)
             p1 = retrieve(pv, pName);
-            @test d[pName] == mdl.value(p1);
+            @test d[pName] == pvalue(p1);
         end
         # p1 = retrieve(pv, :p1);
         # p3 = retrieve(pv, :p3);
@@ -151,8 +151,8 @@ function set_values_test()
             ubnd = fill(20.0, sz);
         end
         set_bounds!(pv, p.name; lb = lbnd, ub = ubnd);
-        @test mdl.lb(p) == lbnd;
-        @test mdl.ub(p) == ubnd;
+        @test param_lb(p) == lbnd;
+        @test param_ub(p) == ubnd;
 	end
 end
 

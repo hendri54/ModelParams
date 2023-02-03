@@ -80,8 +80,6 @@ Efficiency: If `Param` stored directly in `ModelObject`, use getproperty. +++
 """
 function retrieve(o, pName :: Symbol)
     return retrieve(param_loc(o), o, pName);
-    # pvec = get_pvector(o);
-    # return retrieve(pvec, pName)
 end
 
 retrieve(::ParamsInObject, o, pName :: Symbol) = getfield(o, pName);
@@ -144,7 +142,7 @@ end
 function check_own_param_value(x, p, isCalibrated)
     pName = name(p);
     if isCalibrated
-        pValue = value(p);
+        pValue = pvalue(p);
     else
         pValue = default_value(p);
     end
@@ -248,7 +246,7 @@ function pvalue(x :: ModelObject, pName :: Symbol)
 end
 
 pvalue(::ParamsInObject, x :: ModelObject, pName :: Symbol) = 
-    value(getfield(x, pName));
+    pvalue(getfield(x, pName));
 
 pvalue(::ParamsInVector, x :: ModelObject, pName :: Symbol) = 
     getfield(x, pName);
@@ -297,7 +295,7 @@ function get_value(x :: ModelObject, oName :: Symbol, pName :: Symbol)
     @assert length(pvec) > 0  "No ParamVector in $oName / $pName"
     @assert param_exists(pvec, pName)  "$pName not found";
     p = retrieve(pvec, pName);
-    return value(p)
+    return pvalue(p)
 end
 
 ## Set fields in struct from param vector (using values, not defaults)
@@ -320,7 +318,7 @@ function set_own_value_from_param!(x :: ModelObject, p :: AbstractParam;
     pName = name(p);
     if pName ∈ propertynames(x)
         if is_calibrated(p)  &&  (!alwaysUseDefaultValue)
-            val = value(p);
+            val = pvalue(p);
         else
             val = default_value(p);
         end
@@ -423,6 +421,57 @@ function all_params(x :: ModelObject; isCalibrated = nothing)
         isempty(pvecList)  ||  append!(pList, pvecList);
     end
     return pList
+end
+
+
+"""
+	$(SIGNATURES)
+
+Report parameters that differ across objects. Returns a table with columns:
+- objectId
+- param name
+- values in both objects
+
+Can be written to various formats using `pretty_table`.
+
+Currently ignores values in o2 that do not exist in o1.
+Size differences in parameters are permitted.
+"""
+function report_param_differences(o1, o2)
+    pvec1V = collect_pvectors(o1);
+    pvec2V = collect_pvectors(o2);
+
+    tbM = Matrix{String}(undef, 0, 4);
+    for (objId, pvec1) in pvec1V
+        if has_pvector(pvec2V, objId)
+            idStr = repeat("  ", n_parents(objId)) * string(own_name(objId));
+            pvec2 = find_pvector(pvec2V, objId);
+
+            for p1 in pvec1
+                pName = name(p1);
+                v1 = pvalue(p1);
+                rowV = nothing;
+                if param_exists(pvec2, pName)
+                    p2 = retrieve(pvec2, pName);
+                    v2 = pvalue(p2);
+                    if (size(v1) != size(v2))  ||  (!isapprox(v1, v2; atol = 1e-3))
+                        rowV = param_diff_row(idStr, pName, p1.description, v1, v2);
+                    end
+                else
+                    rowV = param_diff_row(idStr, pName, p1.description, v1, "missing");
+                end
+                isnothing(rowV)  ||  (tbM = vcat(tbM, rowV));
+            end
+        end
+    end
+    return tbM
+end
+
+function param_diff_row(idStr, pName, pDescr, v1, v2)
+    # sV = fill(" ", 1, 3);
+    descr = pDescr[1 : min(15, length(pDescr))];
+    sV = ["$idStr / $pName"  descr  formatted_value(v1)  formatted_value(v2)];
+    return sV
 end
 
 

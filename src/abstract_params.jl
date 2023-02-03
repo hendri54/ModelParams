@@ -1,10 +1,25 @@
 ## -----------  Access
 
+# Size of calibrated params.
 Base.size(p :: AbstractParam) = size(default_value(p));
 Base.length(p :: AbstractParam) = length(default_value(p));
 
 name(p :: AbstractParam) = p.name;
 lsymbol(p :: AbstractParam) = p.symbol;
+pmeta(p :: AbstractParam) = IdentityMap(); # dummy +++++
+
+"""
+	$(SIGNATURES)
+
+Number of calibrated parameters.
+"""
+function n_calibrated(p :: AbstractParam)
+    if is_calibrated(p)
+        return length(default_value(p));
+    else
+        return 0
+    end
+end
 
 """
 	$(SIGNATURES)
@@ -13,21 +28,47 @@ Is this parameter calibrated?
 """
 is_calibrated(p :: AbstractParam) = p.isCalibrated;
 
-default_value(p :: AbstractParam) = p.defaultValue;
-lb(p :: AbstractParam) = p.lb;
-ub(p :: AbstractParam) = p.ub;
 
-calibrated_lb(p :: AbstractParam) = lb(p);
-calibrated_ub(p :: AbstractParam) = ub(p);
+"""
+	$(SIGNATURES)
+
+Default value of a parameter that is used when not calibrated.
+Returns the values that could be calibrated.
+
+rethink for params with mappings +++++
+"""
+default_value(p :: AbstractParam) = p.defaultValue;
+
+"""
+	$(SIGNATURES)
+
+Lower bound used in calibration.
+"""
+param_lb(p :: AbstractParam) = p.lb;
+
+"""
+	$(SIGNATURES)
+
+Upper bound used in calibration.
+"""
+param_ub(p :: AbstractParam) = p.ub;
+
+# Deprecated b/c of name conflicts
+# lb(p :: AbstractParam) = p.lb;
+# ub(p :: AbstractParam) = p.ub;
+
+# why needed? +++++
+calibrated_lb(p :: AbstractParam) = param_lb(p);
+calibrated_ub(p :: AbstractParam) = param_ub(p);
 
 # Is a parameter value close to lower or upper bounds?
 close_to_lb(p :: AbstractParam; rtol = 0.01)  = 
-    any((value(p) .- lb(p)) ./ (ub(p) .- lb(p)) .< rtol);
+    any((pvalue(p) .- param_lb(p)) ./ (param_ub(p) .- param_lb(p)) .< rtol);
 
 close_to_ub(p :: AbstractParam; rtol = 0.01)  = 
-    any((ub(p) .- value(p)) ./ (ub(p) .- lb(p)) .< rtol);
+    any((param_ub(p) .- pvalue(p)) ./ (param_ub(p) .- param_lb(p)) .< rtol);
 
-close_to_bounds(p :: AbstractParam; rtol = 0.01) where F1 = 
+close_to_bounds(p :: AbstractParam; rtol = 0.01) = 
     close_to_lb(p; rtol = rtol) || close_to_ub(p; rtol = rtol);
 
 
@@ -46,11 +87,11 @@ end
 
 # Summary of the value
 function value_string(p :: AbstractParam)
-    pType = eltype(value(p));
-    if isa(value(p), Real)
-        outStr = string(round(value(p), digits = 3));
-    elseif isa(value(p), Array)
-        outStr = "Array{$pType} of size $(size(value(p)))";
+    pType = eltype(pvalue(p));
+    if isa(pvalue(p), Real)
+        outStr = string(round(pvalue(p), digits = 3));
+    elseif isa(pvalue(p), Array)
+        outStr = "Array{$pType} of size $(size(pvalue(p)))";
     else
         outStr = "of type $pType";
     end
@@ -59,7 +100,7 @@ end
 
 
 function short_string(p :: AbstractParam)
-    vStr = formatted_value(value(p));
+    vStr = formatted_value(pvalue(p));
     return "$(name(p)): $vStr"
 end
 
@@ -71,7 +112,7 @@ Short summary of parameter and its value.
 Can be used to generate a simple table of calibrated parameters.
 """
 function report_param(p :: AbstractParam)
-    vStr = formatted_value(value(p));
+    vStr = formatted_value(pvalue(p));
     println("\t$(p.description):\t$(name(p)) = $vStr")
 end
 
@@ -94,7 +135,7 @@ Set bounds for a `Param`.
 function set_bounds!(p :: AbstractParam; lb = nothing, ub = nothing) 
     isnothing(lb)  ||  (p.lb = lb);
     isnothing(ub)  ||  (p.ub = ub);
-    @assert size(ModelParams.lb(p)) == size(ModelParams.ub(p)) == size(p);
+    @assert size(param_lb(p)) == size(param_ub(p)) == size(p);
 end
 
 
@@ -102,11 +143,12 @@ end
     $(SIGNATURES)
     
 Set parameter value. Not used during calibration.
+Invalid size errors, unless `skipInvalidSize == true`. Then the new value is ignored.
 """
 function set_value!(p :: AbstractParam, vIn;
     skipInvalidSize = false)
 
-    oldValue = value(p);
+    oldValue = pvalue(p);
     if size(default_value(p)) == size(vIn)  
         p.value = deepcopy(vIn);
     else
@@ -140,7 +182,7 @@ Update a parameter with optional arguments.
 function update!(p :: AbstractParam; value = nothing, defaultValue = nothing,
     lb = nothing, ub = nothing, isCalibrated = nothing) 
     if !isnothing(value)
-        set_value!(p, value)
+        set_value!(p, value);
     end
     if (!isnothing(lb))  ||  (!isnothing(ub))
         set_bounds!(p; lb, ub);
@@ -153,8 +195,6 @@ function update!(p :: AbstractParam; value = nothing, defaultValue = nothing,
     end
     return nothing
 end
-
-
 
 
 # --------------------

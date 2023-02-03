@@ -136,7 +136,7 @@ function param_value(pvec :: ParamVector, pName :: Symbol)
     if isnothing(p) 
         return nothing
     else
-        return value(p)
+        return pvalue(p)
     end
 end
 
@@ -224,7 +224,7 @@ function n_calibrated_params(pvec :: ParamVector; isCalibrated :: Bool = true)
         if isCalibrated
             nElem += nCal;
         else
-            nElem += (length((value(p))) - nCal);
+            nElem += (length((pvalue(p))) - nCal);
         end
     end
     return nParams, nElem
@@ -240,6 +240,7 @@ Set bounds for a parameter. Input must support `retrieve` for a `Param`.
 """
 function set_bounds!(pvec, pName :: Symbol; lb = nothing, ub = nothing)
     p = retrieve(pvec, pName);
+    @assert !isnothing(p)  "$pName not found in $pvec";
     set_bounds!(p; lb, ub);
 end
 
@@ -293,7 +294,7 @@ Useful for fixing parameters at previously calibrated values.
 """
 function set_default_values_all_params!(pvec :: ParamVector)
     for p in pvec
-        set_default_value!(p, value(p));
+        set_default_value!(p, pvalue(p));
     end
 end
 
@@ -407,7 +408,7 @@ function param_table(pvec :: ParamVector, isCalibrated :: Bool;
         dataM = ParamTable(n);
         for (j, p) in enumerate(pList)
             set_row!(dataM, j, string(name(p)), lsymbol(p), 
-                p.description, formatted_value(value(p)));
+                p.description, formatted_value(pvalue(p)));
         end
     end
     return dataM
@@ -475,7 +476,7 @@ function param_diffs(p1 :: T1, p2 :: T1;
     ignoreCalibrationStatus :: Bool = true) where T1 <: AbstractParam
 
     diffs = Vector{Symbol}();
-    if !isequal(value(p1), value(p2))
+    if !isequal(pvalue(p1), pvalue(p2))
         push!(diffs, :value);
     end
     if !ignoreCalibrationStatus
@@ -506,7 +507,7 @@ function make_dict(pvec :: ParamVector; isCalibrated :: Bool, valueType :: Symbo
     pList = calibrated_params(pvec; isCalibrated);
     for p in pList
         if valueType == :value
-            v = value(p);
+            v = pvalue(p);
         elseif valueType == :defaultValue
             v = default_value(p);
         elseif valueType == :calibratedValue

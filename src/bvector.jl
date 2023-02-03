@@ -38,8 +38,8 @@ is_increasing(iv :: BVector{T1}) where T1 = (iv.increasing == :increasing);
 is_decreasing(iv :: BVector{T1}) where T1 = (iv.increasing == :decreasing);
 is_nonmonotone(iv :: BVector{T1}) where T1 = (iv.increasing == :nonmonotone);
 # For consistency, this returns a Vector
-lb(iv :: BVector{T1}) where T1 = fill(iv.lb, size(iv));
-ub(iv :: BVector{T1}) where T1 = fill(iv.ub, size(iv));
+param_lb(iv :: BVector{T1}) where T1 = fill(iv.lb, size(iv));
+param_ub(iv :: BVector{T1}) where T1 = fill(iv.ub, size(iv));
 # Scalar bounds across all elements
 scalar_lb(iv :: BVector{T1}) where T1 = iv.lb;
 scalar_ub(iv :: BVector{T1}) where T1 = iv.ub;
@@ -52,8 +52,7 @@ scalar_ub(iv :: BVector{T1}) where T1 = iv.ub;
 
 Returns all values of a `BoundedVector`.
 """
-value(iv :: BVector{T1}) where T1 = 
-    dx_to_values(iv, iv.dxV);
+pvalue(iv :: BVector{T1}) where T1 = dx_to_values(iv, iv.dxV);
 
 default_value(iv :: BVector{T1}) where T1 = 
     dx_to_values(iv, iv.defaultDxV);
@@ -68,7 +67,7 @@ end
 function set_value!(iv :: BVector{T1}, vIn;
     skipInvalidSize = false) where T1
 
-    oldValue = value(iv);
+    oldValue = pvalue(iv);
     if size(iv) == size(vIn)  
         iv.dxV = values_to_dx(iv, vIn);
     else
@@ -109,7 +108,7 @@ end
 function set_bounds!(iv :: BVector{T1}; lb = nothing, ub = nothing)  where T1
     isnothing(lb)  ||  set_lower_bound!(iv, lb);
     isnothing(ub)  ||  set_upper_bound!(iv, ub);
-    @assert size(ModelParams.lb(iv)) == size(ModelParams.ub(iv)) == size(iv);
+    @assert size(param_lb(iv)) == size(param_ub(iv)) == size(iv);
 end
 
 set_lower_bound!(iv :: BVector{T1}, lb) where T1 = iv.lb = vec_to_scalar(lb);

@@ -12,8 +12,8 @@ Define a concrete type with its own parameters and method
 """
 abstract type ParamTransformation{F1 <: Real} end
 
-lb(::ParamTransformation{F1}) where F1 = F1(TransformationLb);
-ub(::ParamTransformation{F1}) where F1 = F1(TransformationUb);
+param_lb(::ParamTransformation{F1}) where F1 = F1(TransformationLb);
+param_ub(::ParamTransformation{F1}) where F1 = F1(TransformationUb);
 
 
 """

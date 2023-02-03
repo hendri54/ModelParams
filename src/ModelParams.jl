@@ -26,10 +26,11 @@ export LinearTransformation, transform_bounds, transform_param, untransform_para
 
 # Parameters
 export AbstractParam, Param
-export calibrate!, fix!, fix_values!, set_bounds!, set_value!, set_default_value!, set_random_value!, update!, validate, default_value, value, is_calibrated
+export calibrate!, fix!, fix_values!, set_bounds!, set_value!, set_default_value!, set_random_value!, update!, validate, default_value, pvalue, is_calibrated;
+export param_lb, param_ub;
 
 # ParamVector
-export ParamVector
+export ParamVector, ParamsInObject, ParamsInVector;
 export param_exists, make_dict, n_calibrated_params
 export param_table, param_value, param_default_value, report_params, retrieve
 
@@ -38,7 +39,7 @@ export PVectorCollection, set_calibration_status_all_params!, set_default_values
 
 # Model objects
 export check_fixed_params, check_calibrated_params, check_own_fixed_params, check_own_calibrated_params, validate_all_params
-export collect_pvectors, compare_params, check_params_match
+export collect_pvectors, compare_params, check_params_match, report_param_differences;
 export find_pvector, find_only_param, find_param, pvalue, set_pvalue!, make_guess, perturb_guess_vector, perturb_params, params_equal, validate;
 export has_pvector, get_pvector, get_switches, param_tables, latex_param_table
 export set_values_from_dicts!, sync_own_values!, sync_values!
@@ -57,15 +58,21 @@ const TransformationLb = 1;
 const TransformationUb = 2;
 
 include("param_table.jl");
+
 include("types.jl");
+include("transformation_types.jl");
+include("param_types.jl");
+
 # General purpose code copied from `CommonLH`
 include("helpers.jl");
 include("value_vector.jl");
 include("guess.jl");
 
 # Parameters
+include("increasing_vector.jl");
 include("bounded_vector.jl");
 include("bvector.jl");
+# include("grouped_vector.jl");
 # include("calibrated_array.jl");
 include("cal_array_param.jl");
 include("transformations.jl");
@@ -113,13 +120,13 @@ function enforce_bounds!(m :: ModelObject, g :: Guess{F1},
 end
 
 function enforce_bounds!(pvec :: ParamVector, g :: Guess{F1}, guessV :: AbstractVector{F1}) where F1
-    clamp!(guessV, lb(pvec.pTransform), ub(pvec.pTransform));
+    clamp!(guessV, param_lb(pvec.pTransform), param_ub(pvec.pTransform));
     # for (j, v) in enumerate(guessV)
-    #     if v < lb(pvec.pTransform)
-    #         guessV[j] = lb(pvec.pTransform);
+    #     if v < param_lb(pvec.pTransform)
+    #         guessV[j] = param_lb(pvec.pTransform);
     #     end
-    #     if v > ub(pvec.pTransform)
-    #         guessV[j] = ub(pvec.pTransform);
+    #     if v > param_ub(pvec.pTransform)
+    #         guessV[j] = param_ub(pvec.pTransform);
     #     end
     # end
 end
@@ -134,7 +141,7 @@ end
 #     dIdx = nothing)
 
 #     guessV = perturb_guess(m, get_values(guess), dGuess; dIdx = dIdx);
-#     return ValueVector(guessV, lb(guess), ub(guess), pnames(guess))
+#     return ValueVector(guessV, param_lb(guess), param_ub(guess), pnames(guess))
 # end
 
 

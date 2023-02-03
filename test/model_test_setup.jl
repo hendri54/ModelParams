@@ -82,19 +82,18 @@ end
 #     return Obj2(a, y, b, ParamVector(ObjectId(:pv1)))
 # end
 
-function init_obj2(objId)
+function init_obj2(objId; valueB = 2.0 .+ [3.3 4.4; 5.5 7.6])
     # objId = ObjectId(:obj2);
     pa = Param(:a, "a obj2", "a2", 12.1, 7.9, -1.1, 49.9, true);
     valueY = 9.4;
     py = Param(:y, "y obj2", "y2", valueY, valueY .+ 1.0,
         valueY .- 5.0, valueY .+ 5.0, true);
-    valueB = 2.0 .+ [3.3 4.4; 5.5 7.6];
     pb = Param(:b, "b obj2", "b2", valueB, valueB .+ 1.0,
         valueB .- 5.0, valueB .+ 5.0, true);
     pBvec = mdl.make_test_bvector(:bvec; isCalibrated = true, increasing = :increasing);
     pvector = ParamVector(objId, [pa, py, pb, pBvec]);
     obj3 = init_obj3(make_child_id(objId, :obj3));
-    o2 = Obj2(objId, pa.value, py.value, pb.value, ModelParams.value(pBvec), obj3, pvector);
+    o2 = Obj2(objId, pa.value, py.value, pb.value, pvalue(pBvec), obj3, pvector);
     ModelParams.set_own_values_from_pvec!(o2, true);
     return o2
 end
@@ -114,7 +113,7 @@ ModelParams.has_pvector(::Obj4) = true;
 ModelParams.get_pvector(o :: Obj4) = 
     ParamVector(o.objId, [o.alpha, o.beta, o.gamma]);
 ModelParams.pvalue(o :: Obj4, pName :: Symbol) = 
-    ModelParams.value(getfield(o, pName));
+    ModelParams.pvalue(getfield(o, pName));
 ModelParams.param_loc(::Obj4) = ModelParams.ParamsInObject();
 
 function init_obj4(objId)

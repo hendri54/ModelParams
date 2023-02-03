@@ -1,10 +1,11 @@
 # ModelParams.jl
 
-![Lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)<!--
-![Lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)
-![Lifecycle](https://img.shields.io/badge/lifecycle-stable-green.svg)
-![Lifecycle](https://img.shields.io/badge/lifecycle-retired-orange.svg)
-![Lifecycle](https://img.shields.io/badge/lifecycle-archived-red.svg)
-![Lifecycle](https://img.shields.io/badge/lifecycle-dormant-blue.svg) -->
-[![Build Status](https://travis-ci.com/hendri54/ModelParams.jl.svg?branch=master)](https://travis-ci.com/hendri54/ModelParams.jl)
-[![codecov.io](http://codecov.io/github/hendri54/ModelParams.jl/coverage.svg?branch=master)](http://codecov.io/github/hendri54/ModelParams.jl?branch=master)
+## Change Log 2023
+
+Feb-3:
+- removed `lb` and `ub` functions (v2.3)
+Feb-2:
+- removed `value`; now always use `pvalue`
+
+
+----------

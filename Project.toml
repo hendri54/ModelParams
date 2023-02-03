@@ -1,7 +1,7 @@
 name = "ModelParams"
 uuid = "4089ccbe-b1dc-5f86-a141-4606b18b4241"
 authors = ["hendri54 <hendricksl@protonmail.com>"]
-version = "2.2.2"
+version = "2.3"
 
 [deps]
 ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
@@ -20,12 +20,14 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 [compat]
 ArgCheck = "^2"
 DataStructures = "0.17, 0.18"
-DocStringExtensions = "0.8"
+DocStringExtensions = "0.8, 0.9"
+EconometricsLH = "1"
 Formatting = "0.4"
 Infiltrator = "1"
 Lazy = "0.14, 0.15"
+ModelObjectsLH = "1"
 Parameters = "0.11, 0.12"
-PrettyTables = "1"
+PrettyTables = "1, 2"
 julia = "^1.5"
 
 [extras]

@@ -7,8 +7,8 @@ function make_increasing_vector()
         dWageV, dWageV, dWageV .* 0.05, dWageV .* 10, true);
 
 	ownId = ObjectId(:test1);
-    pvec = ParamVector(ownId,  [wageInter, dWage]);
-	return IncreasingVector(ownId, pvec, x0, dWageV)
+    # pvec = ParamVector(ownId,  [wageInter, dWage]);
+	return IncreasingVector(ownId, wageInter, dWage)
 end
 
 
@@ -17,8 +17,8 @@ end
 		iv = make_increasing_vector();
 		xV = values(iv);
 		@test all(diff(xV) .> 0.0)
-		@test xV[1] ≈ iv.x0
-		@test xV[end] ≈ iv.x0 + sum(iv.dxV)
+		@test xV[1] ≈ pvalue(iv.x0)
+		@test xV[end] ≈ pvalue(iv.x0) + sum(pvalue(iv.dxV))
 	end
 # end
 

@@ -1,9 +1,10 @@
-include("transformation_types.jl");
-include("param_types.jl")
 
 # Where are parameters stored? In a `ParamVector` or in the object directly?
 struct ParamsInVector end
 struct ParamsInObject end
+
+
+struct IdentityMap end;
 
 
 """

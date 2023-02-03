@@ -24,7 +24,7 @@ function change_values_test()
             @test ModelParams.get_value(m, oName, pName) ≈ vNew;
             obj = find_only_object(m, oName);
             p = retrieve(obj, pName);
-            @test ModelParams.value(p) ≈ vNew;
+            @test pvalue(p) ≈ vNew;
 
             @test pvalue(obj, pName) ≈ vNew;
             set_pvalue!(obj, pName, vNew .+ 0.1);
@@ -74,6 +74,19 @@ function compare_params_test()
         o3 = find_only_object(m1, :obj3);
         mdl.change_value!(get_pvector(o3), :x, 0.888);
         @test !check_params_match(m1, m2, allowedV);
+
+        tbM = report_param_differences(m1, m2);
+        @test tbM isa Matrix{String};
+        @test size(tbM, 1) > 1;
+
+        # Param differences with params that differ in size
+        oldSize = size(o2.b);
+        newValue = [1.1 2.2];
+        @test oldSize != size(newValue);
+        o2New = init_obj2(get_object_id(o2); valueB = newValue);
+        m2.o2 = o2New;
+        tbM = report_param_differences(m1, m2);
+        @test size(tbM, 1) > 1;
     end
 end
 

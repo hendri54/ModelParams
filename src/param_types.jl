@@ -82,44 +82,41 @@ end
 
 ## ----------  Parameters
 
+# """
+# 	$(SIGNATURES)
+
+# Vector of values that are grouped together. There are `N` categories and `G` groups. Each category belongs to any number of groups. 
+
+# The value for category `j` is the sum of an intercept and the group values for all groups that `j` belongs to.
+
+# If the intercept is calibrated, the value for group 1 is fixed at 0.
+
+# Scalar is a special case with only one group.
+# """
+# mutable struct GroupedVector{T1}
+#     objId :: ObjectId
+#     # Groups that each category belongs to
+#     catGroupV :: Vector{Vector{Int}}
+#     # Is each group calibrated?
+#     groupCalV :: Vector{Bool}
+#     fixedValV :: Vector{T1}
+#     v0 :: Param{T1}
+#     # One value for each calibrated group.
+#     vGroupV :: Param{Vector{T1}}
+# end
+
+
 """
 	IncreasingVector
 
 Encodes an increasing vector of fixed length. Its values are calibrated.
+Vectors of length 2 are permitted (i.e., `dxV` is `Vector` of length 1).
 """
 mutable struct IncreasingVector{T1} <: ModelObject
 	objId :: ObjectId
-	pvec :: ParamVector
-	x0 :: T1
-	dxV :: Vector{T1}
-end
-
-"""
-	$(SIGNATURES)
-
-Retrieve values of an `IncreasingVector`.
-"""
-values(iv :: IncreasingVector{T1}) where T1 =
-	iv.x0 .+ cumsum(vcat(zero(T1), iv.dxV));
-
-values(iv :: IncreasingVector{T1}, idx) where T1 =
-    values(iv)[idx];
-
-Base.length(iv :: IncreasingVector) = Base.length(iv.dxV) + 1;
-
-
-# Displays parameters in levels, not as intercept and increments.
-function param_table(iv :: IncreasingVector{T1}, isCalibrated :: Bool) where T1
-    if isCalibrated
-        # This is where we get the description and symbol from
-        p = iv.pvec[2];
-        pt = ParamTable(1);
-        set_row!(pt, 1, string(p.name), p.symbol, p.description, 
-            formatted_value(values(iv)));
-    else
-        pt = nothing;
-    end
-    return pt
+	# pvec :: ParamVector
+	x0 :: Param{T1}
+	dxV :: Param{Vector{T1}}
 end
 
 

@@ -56,8 +56,8 @@ function model_test()
         # push!(pvv, m.o2.pvec);
         # vv = mdl.make_guess(pvv, isCalibrated);
         # @test vAll ≈ mdl.values(vv)
-        # @test mdl.lb(vv) ≈ [mdl.lb(vv1); mdl.lb(vv2)]
-        # @test mdl.ub(vv) ≈ [mdl.ub(vv1); mdl.ub(vv2)]
+        # @test param_lb(vv) ≈ [param_lb(vv1); param_lb(vv2)]
+        # @test param_ub(vv) ≈ [param_ub(vv1); param_ub(vv2)]
 
         # Now we run the optimizer, which changes `vAll`
 
@@ -143,7 +143,7 @@ function set_status_test()
         pV = mdl.all_params(m);
         @test length(pV) == nCal + nFixed;
         for p in pV
-            @test value(p) ≈ mdl.default_value(p);
+            @test pvalue(p) ≈ mdl.default_value(p);
         end
     end
 end

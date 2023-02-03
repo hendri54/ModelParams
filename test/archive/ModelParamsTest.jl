@@ -136,8 +136,8 @@ function modelTest()
     # Same in one step for all param vectors
     vv = ModelParams.make_guess([m.o1.pvec, m.o2.pvec]);
     @test vAll ≈ ModelParams.values(vv)
-    @test ModelParams.lb(vv) ≈ [ModelParams.lb(vv1); ModelParams.lb(vv2)]
-    @test ModelParams.ub(vv) ≈ [ModelParams.ub(vv1); ModelParams.ub(vv2)]
+    @test param_lb(vv) ≈ [param_lb(vv1); param_lb(vv2)]
+    @test param_ub(vv) ≈ [param_ub(vv1); param_ub(vv2)]
 
     # Now we run the optimizer, which changes `vAll`
 

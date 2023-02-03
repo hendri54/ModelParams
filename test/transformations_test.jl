@@ -7,8 +7,8 @@ function transform_test(tr, pValue)
             -ones(size(pValue)), ones(size(pValue)),
             true);
         guess = transform_param(tr, p);
-        @test all(guess .<= mdl.ub(tr));
-        @test all(guess .>= mdl.lb(tr));
+        @test all(guess .<= param_ub(tr));
+        @test all(guess .>= param_lb(tr));
         pValue2 = untransform_param(tr, p, guess);
         @test all(pValue2 .≈ pValue)
         @test size(pValue2) == size(pValue)

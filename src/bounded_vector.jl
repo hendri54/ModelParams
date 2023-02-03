@@ -30,8 +30,8 @@ end
 is_increasing(iv :: BoundedVector{T1}) where T1 = (iv.increasing == :increasing);
 is_decreasing(iv :: BoundedVector{T1}) where T1 = (iv.increasing == :decreasing);
 is_nonmonotone(iv :: BoundedVector{T1}) where T1 = (iv.increasing == :nonmonotone);
-lb(iv :: BoundedVector{T1}) where T1 = iv.lb;
-ub(iv :: BoundedVector{T1}) where T1 = iv.ub;
+param_lb(iv :: BoundedVector{T1}) where T1 = iv.lb;
+param_ub(iv :: BoundedVector{T1}) where T1 = iv.ub;
 Base.length(iv :: BoundedVector{T1}) where T1 =  Base.length(iv.dxV);
 
 # Scalar bounds across all elements
@@ -70,6 +70,8 @@ function values(iv :: BoundedVector{T1}) where T1
     valueV = dx_to_values(iv, iv.dxV);
     return valueV
 end
+
+pvalue(iv :: BoundedVector{T1}) where T1 = values(iv);
 
 
 function dx_to_values(iv :: Union{BoundedVector{T1}, BVector{T1}}, dxV) where T1
@@ -180,15 +182,15 @@ end
 function check_values(iv :: Union{BVector{T1}, BoundedVector{T1}}, valueV :: AbstractVector{T1}) where T1
     isValid = true;
     isValid = isValid  &&  isequal(length(valueV), length(iv));
-    if any(valueV .< lb(iv))
+    if any(valueV .< param_lb(iv))
         isValid = false;
         @warn "Values too low: $valueV";
     end
-    if any(valueV .> ub(iv))
+    if any(valueV .> param_ub(iv))
         isValid = false;
         @warn "Values too high: $valueV";
     end
-    isValid = isValid  &&  all(valueV .<= ub(iv));
+    isValid = isValid  &&  all(valueV .<= param_ub(iv));
     if is_increasing(iv)
         isValid = isValid  &&  all(diff(valueV) .> 0.0);
     elseif is_decreasing(iv)

@@ -94,7 +94,12 @@ end
 
 ## ------------  Retrieve
 
-function value(ca :: CalArray{T1, N}) where {T1, N}
+"""
+	$(SIGNATURES)
+
+Return values of calibrated array.
+"""
+function pvalue(ca :: CalArray{T1, N}) where {T1, N}
     # update_values!(ca);
     return ca.value;
 end

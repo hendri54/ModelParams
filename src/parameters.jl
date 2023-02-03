@@ -1,18 +1,34 @@
 ## -----------  Param
 
-## Constructor when not calibrated
+"""
+	$(SIGNATURES)
+
+Constructor with keyword arguments.
+"""
+function make_param(name :: Symbol, defaultValue :: T1;
+        description = string(name), symbol = string(name), 
+        lb = defaultValue .- 0.001, ub = defaultValue .+ 0.001,
+        isCalibrated = false) where T1
+
+    return Param(name, description, symbol, 
+        deepcopy(defaultValue), defaultValue, lb, ub, isCalibrated)
+end
+
+## Constructor when not calibrated (deprecated)
 function Param(name :: Symbol, description :: T2, symbol :: T2, defaultValue :: T1) where {T1 <: Any,  T2 <: AbstractString}
 
     return Param(name, description, symbol, defaultValue, defaultValue,
         defaultValue .- 0.001, defaultValue .+ 0.001, false)
 end
 
+pmeta(p :: Param) = IdentityMap();  # stub +++++
+
 
 function validate(p :: Param{F1}; silent = true) where F1
     sizeV = size(default_value(p));
     isValid = true;
-    if !Base.isempty(value(p))
-        (size(value(p)) == sizeV)  ||  (isValid = false);
+    if !Base.isempty(pvalue(p))
+        (size(pvalue(p)) == sizeV)  ||  (isValid = false);
     end
     if !Base.isempty(p.lb)
         (size(p.lb) == sizeV)  ||  (isValid = false);
@@ -22,7 +38,7 @@ function validate(p :: Param{F1}; silent = true) where F1
         @warn """
             Invalid Param $p
             default value:  $(default_value(p))
-            value:          $(value(p))
+            value:          $(pvalue(p))
             lb:             $(p.lb)
             ub:             $(p.ub)
         """
@@ -31,17 +47,32 @@ function validate(p :: Param{F1}; silent = true) where F1
 end
 
 
+# """
+# 	$(SIGNATURES)
+
+# Retrieve value of a `Param`.
+# Deprecated. Use `pvalue` to avoid name conflicts with common symbol `value`.
+# """
+# value(p :: Param{F1}) where F1 = p.value;
+
 """
 	$(SIGNATURES)
 
 Retrieve value of a `Param`.
 """
-value(p :: Param{F1}) where F1 = p.value;
+pvalue(p :: Param) = pvalue(pmeta(p), p);
+pvalue(p :: Param, j) = pvalue(pmeta(p), p, j);
+
+pvalue(::IdentityMap, p :: Param) = p.value;
+pvalue(::IdentityMap, p :: Param, j) = p.value[j];
+
+default_value(p :: Param) = default_value(pmeta(p), p);
+default_value(::IdentityMap, p :: Param) = p.defaultValue;
    
 
 # This is what the numerical optimizer sees (only the calibrated entries).
 calibrated_value(p :: Param{F1}) where F1 = 
-    is_calibrated(p) ? value(p) : nothing;
+    is_calibrated(p) ? pvalue(p) : nothing;
 
 
 ## ------------  Show
@@ -86,9 +117,8 @@ end
 Set a random value for an `AbstractParam`.
 """
 function set_random_value!(p :: Param{F1}, rng :: AbstractRNG) where F1
-
     sz = size(default_value(p));
-    newValue = lb(p) .+ (ub(p) .- lb(p)) .* rand(rng, eltype(F1), sz);
+    newValue = param_lb(p) .+ (param_ub(p) .- param_lb(p)) .* rand(rng, eltype(F1), sz);
     set_value!(p, newValue; skipInvalidSize = false);
 end
 
