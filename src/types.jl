@@ -4,7 +4,20 @@ struct ParamsInVector end
 struct ParamsInObject end
 
 
-struct IdentityMap end;
+## Mappings from calibrated parameters to parameter values
+
+abstract type AbstractMap end
+# Each calibrated value is a parameter value: pvalue(p, j) = p.value[j]
+struct IdentityMap <: AbstractMap end;
+# One calibrated parameter for all indices: pvalue(p, j) = p.value
+struct ScalarMap <: AbstractMap end;
+# Each index belongs to exactly one group
+struct GroupedMap{F1} <: AbstractMap 
+    # Group that each index belongs to
+    groupV :: Vector{Int}
+    # Groups that are fixed and their fixed values
+    fixedValueV :: Vector{Union{F1, Missing}}
+end;
 
 
 """

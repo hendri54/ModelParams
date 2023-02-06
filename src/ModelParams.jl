@@ -20,13 +20,17 @@ using ArgCheck, DataStructures, DocStringExtensions, Formatting, Infiltrator, La
 using ModelObjectsLH
 using EconometricsLH # : RegressionTable, get_all_coeff_se, get_coeff_se_multiple, have_same_regressors
 
+# Mappings
+export AbstractMap, IdentityMap, ScalarMap;
 
 # Transformations
 export LinearTransformation, transform_bounds, transform_param, untransform_param
 
 # Parameters
-export AbstractParam, Param
-export calibrate!, fix!, fix_values!, set_bounds!, set_value!, set_default_value!, set_random_value!, update!, validate, default_value, pvalue, is_calibrated;
+export AbstractParam, Param, make_param;
+export calibrated_lb, calibrated_ub, calibrated_value, is_calibrated;
+export set_calibrated_value!;
+export calibrate!, fix!, fix_values!, set_bounds!, set_default_value!, set_random_value!, update!, validate, default_value, pvalue;
 export param_lb, param_ub;
 
 # ParamVector
@@ -40,7 +44,7 @@ export PVectorCollection, set_calibration_status_all_params!, set_default_values
 # Model objects
 export check_fixed_params, check_calibrated_params, check_own_fixed_params, check_own_calibrated_params, validate_all_params
 export collect_pvectors, compare_params, check_params_match, report_param_differences;
-export find_pvector, find_only_param, find_param, pvalue, set_pvalue!, make_guess, perturb_guess_vector, perturb_params, params_equal, validate;
+export find_pvector, find_only_param, find_param, pvalue, set_calibrated_value!, make_guess, perturb_guess_vector, perturb_params, params_equal, validate;
 export has_pvector, get_pvector, get_switches, param_tables, latex_param_table
 export set_values_from_dicts!, sync_own_values!, sync_values!
 export BoundedVector, IncreasingVector, values, set_pvector!
@@ -74,11 +78,13 @@ include("bounded_vector.jl");
 include("bvector.jl");
 # include("grouped_vector.jl");
 # include("calibrated_array.jl");
-include("cal_array_param.jl");
+# include("cal_array_param.jl");
 include("transformations.jl");
 
 include("abstract_params.jl");
 include("parameters.jl");
+include("mappings.jl");
+include("mapped_param.jl");
 include("param_vector.jl");
 
 include("m_objects.jl");
@@ -121,14 +127,6 @@ end
 
 function enforce_bounds!(pvec :: ParamVector, g :: Guess{F1}, guessV :: AbstractVector{F1}) where F1
     clamp!(guessV, param_lb(pvec.pTransform), param_ub(pvec.pTransform));
-    # for (j, v) in enumerate(guessV)
-    #     if v < param_lb(pvec.pTransform)
-    #         guessV[j] = param_lb(pvec.pTransform);
-    #     end
-    #     if v > param_ub(pvec.pTransform)
-    #         guessV[j] = param_ub(pvec.pTransform);
-    #     end
-    # end
 end
 
 

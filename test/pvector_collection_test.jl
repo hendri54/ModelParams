@@ -37,7 +37,7 @@ function make_dict_test()
         for objIdStr in keys(d)
             objId = make_object_id(objIdStr);
             pvec = find_pvector(pvv, objId);
-            @test isequal(d[objIdStr],  make_dict(pvec; isCalibrated = true, valueType = :value))
+            @test isequal(d[objIdStr],  make_dict(pvec; isCalibrated = true, valueType = :calibratedValue))
         end
     end
 end

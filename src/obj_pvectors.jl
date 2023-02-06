@@ -160,7 +160,7 @@ function make_dict(pvv :: PVectorCollection; isCalibrated :: Bool = true)
     if n < 1
         return nothing
     end
-    isCalibrated  ?  (vType = :value)  :  (vType = :defaultValue);
+    isCalibrated  ?  (vType = :calibratedValue)  :  (vType = :defaultValue);
 
     d = nothing;
     for (objId, pv) in pvv.d

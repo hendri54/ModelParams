@@ -156,8 +156,8 @@ function param_default_value(pvec :: ParamVector, pName :: Symbol)
     end
 end
 
-function calibrated_value(pvec :: ParamVector, pName :: Symbol)
-    return calibrated_value(retrieve(pvec, pName));
+function calibrated_value(pvec :: ParamVector, pName :: Symbol; returnIfFixed = true)
+    return calibrated_value(retrieve(pvec, pName); returnIfFixed);
 end
 
 
@@ -216,7 +216,7 @@ function n_calibrated_params(pvec :: ParamVector; isCalibrated :: Bool = true)
     for p in pList
         if isCalibrated
             pVal = calibrated_value(p);
-            @assert !isnothing(pVal)  "calibrated value nothing: $pvec / $p";
+            @assert (!isnothing(pVal)  &&  !ismissing(pVal))  "calibrated value nothing: $pvec / $p";
             nCal = length(pVal);
         else
             nCal = 0;
@@ -294,7 +294,7 @@ Useful for fixing parameters at previously calibrated values.
 """
 function set_default_values_all_params!(pvec :: ParamVector)
     for p in pvec
-        set_default_value!(p, pvalue(p));
+        set_default_value!(p, calibrated_value(p));
     end
 end
 
@@ -338,7 +338,7 @@ function change_value!(pvec :: ParamVector, pName :: Symbol, newValue;
     )
     @assert param_exists(pvec, pName)  "$pName does not exist";
     p = retrieve(pvec, pName);
-    oldValue = set_value!(p, newValue; skipInvalidSize);
+    oldValue = set_calibrated_value!(p, newValue; skipInvalidSize);
 
     # if size(default_value(p)) == size(newValue)  
     #     oldValue = set_value!(p, newValue; skipInvalidSize);
@@ -502,7 +502,6 @@ All values are stored, even if only some are calibrated.
 - `valueType`: `:defaultValue`, `:value`, or `:calibratedValue`. Determines which of those is stored.
 """
 function make_dict(pvec :: ParamVector; isCalibrated :: Bool, valueType :: Symbol)
-
     pd = Dict{Symbol, Any}()
     pList = calibrated_params(pvec; isCalibrated);
     for p in pList
@@ -633,15 +632,23 @@ end
 
 # Make a ParamVector for testing
 # Alternates between calibrated and fixed parameters
+# Offset increases all param values.
 function make_test_pvector(n :: Integer; objId :: Symbol = :obj1,
     offset :: Float64 = 0.0)
 
     pv = ParamVector(ObjectId(objId));
     for i1 = 1 : n
         if i1 == 1
-            p = make_test_cal_array(:p1, 2; offset);
+            p = make_test_mapped_param(:p1, (2, ), IdentityMap(); 
+                offset, isCalibrated = false);
+        elseif i1 == 2
+            p = make_test_mapped_param(:p2, (4,3), ScalarMap(); 
+                offset, isCalibrated = false);
+        elseif i1 == 3
+            p = make_test_mapped_param(:p3, (4,), make_test_grouped_map();
+                offset, isCalibrated = false);
         else
-            p = init_parameter(i1; offset = offset);
+            p = init_test_parameter(i1; offset = offset);
         end
         if isodd(i1)
             calibrate!(p);
@@ -651,7 +658,7 @@ function make_test_pvector(n :: Integer; objId :: Symbol = :obj1,
     return pv
 end
 
-function init_parameter(i1 :: Integer;  offset :: Float64 = 0.0)
+function init_test_parameter(i1 :: Integer;  offset :: Float64 = 0.0)
     pSym = Symbol("p$i1");
     pName = "param$i1";
     pDescr = "sym$i1";

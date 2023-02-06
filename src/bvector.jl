@@ -23,10 +23,18 @@ Base.show(io :: IO,  p :: BVector{T1}) where T1 =
 
 # is_calibrated(ca :: BVector{T1}) where T1 = ca.isCalibrated;
 
-calibrated_value(ca :: BVector{T1}) where T1 = 
-    is_calibrated(ca)  ?  ca.dxV  :  nothing;
-calibrated_lb(ca :: BVector{T1}) where T1 = zeros(T1, length(ca));
-calibrated_ub(ca :: BVector{T1}) where T1 = ones(T1, length(ca));
+function calibrated_value(ca :: BVector; returnIfFixed = true) 
+    if is_calibrated(ca)  ||  returnIfFixed
+        return ca.dxV  
+    else
+        return missing;
+    end
+end
+
+calibrated_lb(ca :: BVector{T1}) where T1 = fill(ca.lb, size(ca));
+    # zeros(T1, length(ca));
+calibrated_ub(ca :: BVector{T1}) where T1 = fill(ca.ub, size(ca));
+    # ones(T1, length(ca));
 
 function validate(ca :: BVector{T1}; silent :: Bool = false) where T1
     isValid = all(x -> x >= zero(T1), ca.dxV)  &&  all(x -> x <= one(T1), ca.dxV);
@@ -38,9 +46,9 @@ is_increasing(iv :: BVector{T1}) where T1 = (iv.increasing == :increasing);
 is_decreasing(iv :: BVector{T1}) where T1 = (iv.increasing == :decreasing);
 is_nonmonotone(iv :: BVector{T1}) where T1 = (iv.increasing == :nonmonotone);
 # For consistency, this returns a Vector
-param_lb(iv :: BVector{T1}) where T1 = fill(iv.lb, size(iv));
-param_ub(iv :: BVector{T1}) where T1 = fill(iv.ub, size(iv));
-# Scalar bounds across all elements
+param_lb(iv :: BVector{T1}) where T1 = calibrated_lb(iv); # fill(iv.lb, size(iv));
+param_ub(iv :: BVector{T1}) where T1 = calibrated_ub(iv); # fill(iv.ub, size(iv));
+# Scalar bounds (user facing)
 scalar_lb(iv :: BVector{T1}) where T1 = iv.lb;
 scalar_ub(iv :: BVector{T1}) where T1 = iv.ub;
 
@@ -64,7 +72,7 @@ function fix!(iv :: BVector{T1}; pValue = nothing) where T1
 end
 
 # The input is in untransformed units.
-function set_value!(iv :: BVector{T1}, vIn;
+function set_calibrated_value!(iv :: BVector{T1}, vIn;
     skipInvalidSize = false) where T1
 
     oldValue = pvalue(iv);

@@ -65,7 +65,7 @@ function set_status_test()
 
         set_default_values_all_params!(pvec);
         for p in pvec
-            @test pvalue(p) ≈ mdl.default_value(p);
+            @test calibrated_value(p) ≈ mdl.default_value(p);
         end
     end
 end
@@ -127,14 +127,15 @@ end
 function set_values_test()
     @testset "Set values" begin
         isCalibrated = true;
-        pv = mdl.make_test_pvector(7);
-        d = make_dict(pv; isCalibrated, valueType = :value);
+        nParams = 7;
+        pv = mdl.make_test_pvector(nParams; offset = 0.0);
+        d = make_dict(pv; isCalibrated, valueType = :calibratedValue);
         # Change values in `pv`
-        pv2 = mdl.make_test_pvector(7; offset = 1.0);
+        pv2 = mdl.make_test_pvector(nParams; offset = 1.0);
         # d2 = make_dict(pv2; isCalibrated, useValues = true);
         ModelParams.set_own_values_from_pvec!(pv, pv2, true);
         # Check that values are now higher using a `Dict`
-        d3 = make_dict(pv; isCalibrated, valueType = :value);
+        d3 = make_dict(pv; isCalibrated, valueType = :calibratedValue);
         @test isequal(keys(d), keys(d3));
         for key in keys(d)
             @test all(d3[key] .> d[key])
@@ -151,8 +152,8 @@ function set_values_test()
             ubnd = fill(20.0, sz);
         end
         set_bounds!(pv, p.name; lb = lbnd, ub = ubnd);
-        @test param_lb(p) == lbnd;
-        @test param_ub(p) == ubnd;
+        @test calibrated_lb(p) == lbnd;
+        @test calibrated_ub(p) == ubnd;
 	end
 end
 

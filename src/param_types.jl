@@ -20,6 +20,20 @@ mutable struct Param{T1 <: Any} <: AbstractParam
 end
 
 
+mutable struct MParam{T1, T2} <: AbstractParam
+    name :: Symbol
+    description :: String
+    symbol :: String
+    value :: T1
+    defaultValue :: T1
+    "Value bounds"
+    lb :: T1
+    ub :: T1
+    isCalibrated :: Bool
+    pMap :: T2
+end
+
+
 ## ----------  ParamVector
 
 """
@@ -185,16 +199,16 @@ end
 # end
 
 
-mutable struct CalArray{T1, N} <: AbstractParam
-    name :: Symbol
-    description :: String
-    symbol :: String
-    value :: Array{T1, N}
-    defaultValue :: Array{T1, N}
-    lb :: Array{T1, N}
-    ub :: Array{T1, N}
-    isCalM :: Array{Bool, N}
-end
+# mutable struct CalArray{T1, N} <: AbstractParam
+#     name :: Symbol
+#     description :: String
+#     symbol :: String
+#     value :: Array{T1, N}
+#     defaultValue :: Array{T1, N}
+#     lb :: Array{T1, N}
+#     ub :: Array{T1, N}
+#     isCalM :: Array{Bool, N}
+# end
 
 
 # -----------

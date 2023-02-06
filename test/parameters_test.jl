@@ -27,7 +27,7 @@ function param_test()
         @test pvalue(p2) == pValue2;
         @test size(p2.ub) == size(pValue2);
         newValue = 9.27;
-        set_value!(p2, newValue);
+        set_calibrated_value!(p2, newValue);
         @test pvalue(p2) ≈ newValue;
         str1 = ModelParams.short_string(p2);
         @test startswith(str1,  "p2: 9.27");
@@ -59,8 +59,8 @@ end
 function array_test(p)
     @testset "Array param $p" begin
         @test validate(p);
-        @test size(pvalue(p)) == size(default_value(p));
-        @test size(param_lb(p)) == size(param_ub(p)) == size(pvalue(p));
+        @test size(calibrated_value(p)) == size(default_value(p));
+        @test size(calibrated_lb(p)) == size(calibrated_ub(p)) == size(calibrated_value(p));
         closeToLb = mdl.close_to_lb(p; rtol = 0.1);
         closeToUb = mdl.close_to_ub(p; rtol = 0.1);
         @test mdl.close_to_bounds(p; rtol = 0.1) == (closeToLb || closeToUb);
@@ -68,11 +68,11 @@ function array_test(p)
         mdl.set_calibration_status!(p, !isCal);
         @test is_calibrated(p) == !isCal;
         
-        lbnd = param_lb(p) .+ 0.1;
-        ubnd = param_ub(p) .+ 0.2;
+        lbnd = calibrated_lb(p) .+ 0.1;
+        ubnd = calibrated_ub(p) .+ 0.2;
         set_bounds!(p; lb = lbnd, ub = ubnd);
-        @test param_lb(p) ≈ lbnd;
-        @test param_ub(p) ≈ ubnd;
+        @test calibrated_lb(p) ≈ lbnd;
+        @test calibrated_ub(p) ≈ ubnd;
 
         pValue = pvalue(p);
         if p isa Param
@@ -95,7 +95,10 @@ end
     vec1_test();
     for p in (
         make_test_array_param(),
-        mdl.make_test_cal_array(:x, 2),
+        mdl.make_test_mapped_param(:m1, (3,), IdentityMap()),
+        mdl.make_test_mapped_param(:m2, nothing, ScalarMap()),
+        mdl.make_test_mapped_param(:m2, nothing, mdl.make_test_grouped_map()),
+        # mdl.make_test_cal_array(:x, 2),
         mdl.make_test_bvector(:x; increasing = :increasing),
         mdl.make_test_bvector(:x; increasing = :decreasing),
         )

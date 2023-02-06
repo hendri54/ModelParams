@@ -27,9 +27,9 @@ function change_values_test()
             @test pvalue(p) ≈ vNew;
 
             @test pvalue(obj, pName) ≈ vNew;
-            set_pvalue!(obj, pName, vNew .+ 0.1);
+            set_calibrated_value!(obj, pName, vNew .+ 0.1);
             @test pvalue(obj, pName) ≈ vNew .+ 0.1;
-            set_pvalue!(obj, pName, vNew);
+            set_calibrated_value!(obj, pName, vNew);
 
             pvec = get_pvector(obj);
             @test pvec isa ParamVector;

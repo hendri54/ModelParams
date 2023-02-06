@@ -24,6 +24,7 @@ end
 
 ## -------------  Basics
 
+# User facing
 Base.size(ca :: CalArray{T1, N}) where {T1, N} = 
     size(ca.defaultValue);
 Base.show(io :: IO,  p :: CalArray{T1, N}) where {T1, N} = 
@@ -32,7 +33,7 @@ Base.show(io :: IO,  p :: CalArray{T1, N}) where {T1, N} =
 is_calibrated(ca :: CalArray{T1, N}) where {T1, N} = any(ca.isCalM);
 
 
-# Returns a Vector with the calibrated parameter values (or empty).
+# Returns a Vector with the calibrated parameter values (or missing).
 calibrated_value(ca :: CalArray{T1, N}) where {T1, N} = 
     calibrated_elements(ca, ca.value);
 
@@ -47,7 +48,8 @@ function calibrated_elements(ca :: CalArray{T1, N}, m :: AbstractArray{T1, N}) w
     if is_calibrated(ca)
         v = m[map_indices(ca)];
     else
-        v = Array{T1,N}();
+        # v = Array{T1,N}();
+        v = missing;
     end
     return v
 end

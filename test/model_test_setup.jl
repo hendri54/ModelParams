@@ -5,20 +5,20 @@ import ModelParams.has_pvector
 
 mdl = ModelParams;
 
+
+## -----------  Obj1
+
 mutable struct Obj1 <: ModelObject
     objId :: ObjectId
-    x :: Float64
-    y :: Vector{Float64}
-    z :: Array{Float64,2}
-    pvec :: ParamVector
+    x :: Param{Float64}
+    y :: Param{Vector{Float64}}
+    z :: Param{Matrix{Float64}}
 end
 
-# function Obj1(x, y, z)
-#     return Obj1(x, y, z, ParamVector(ObjectId(:pv1)))
-# end
+ModelParams.param_loc(::Obj1) = ParamsInObject();
+ModelParams.get_pvector(o :: Obj1) = ParamVector(o.objId, [o.x, o.y, o.z]);
 
 function init_obj1(objId)
-    # objId = ObjectId(:obj1);
     px = Param(:x, "x obj1", "x1", 11.1, 9.9, 1.1, 99.9, true);
     # Important to have vector of length 1 as test case
     valueY = fill(1.1, 1);
@@ -27,76 +27,75 @@ function init_obj1(objId)
     valueZ = [3.3 4.4; 5.5 7.6];
     pz = Param(:z, "z obj1", "z1", valueZ, valueZ .+ 1.0,
         valueZ .- 5.0, valueZ .+ 5.0, false);
-    pvector = ParamVector(objId, [px, py, pz])
-    o1 = Obj1(objId, px.value, py.value, pz.value, pvector);
+    o1 = Obj1(objId, px, py, pz);
     ModelParams.set_own_values_from_pvec!(o1, true);
     return o1
 end
 
-mutable struct Obj3Switches <: ModelSwitches
-    pvec :: ParamVector
-end
 
-function init_obj3_switches(objId :: ObjectId)
-    # objId = ObjectId(:obj3);
-    px = Param(:x, "x", "x", 0.5, 0.6, 0.0, 1.0, true);
-    yV = [1.0, 2.0];
-    py = Param(:y, "y", "y", yV, yV .+ 1.0, [0.0, 0.0], [9.0, 9.0], false);
-    v = [1.0 2.0 3.0; 1.1 2.1 3.1];
-    isCalM = [true false true; false true false];
-    pca = CalArray(:ca, "CalArray", "CalArray", v, v .+ 0.1, v .- 2.0, v .+ 2.0,
-        isCalM);
-    pvec = ParamVector(objId, [px, py, pca]);
-    return Obj3Switches(pvec)
-end
-
-ModelObjectsLH.get_object_id(switches :: Obj3Switches) = get_object_id(switches.pvec);
+## -----------------  Obj3
 
 mutable struct Obj3 <: ModelObject
     objId :: ObjectId
-    switches :: Obj3Switches
-    x :: Float64
-    y :: Vector{Float64}
-    ca :: Matrix{Float64}
+    x :: Param{Float64}
+    y :: Param{Vector{Float64}}
+    ca :: MParam
+    mpScalar :: MParam
+    mpFixed :: MParam
+    mpGrouped :: MParam
 end
-
-ModelParams.get_pvector(o :: Obj3) = o.switches.pvec;
 
 function init_obj3(objId :: ObjectId)
-    switches = init_obj3_switches(objId);
-    ca = retrieve(switches.pvec, :ca);
-    return Obj3(get_object_id(switches), switches, 0.5, [1.0, 2.0], default_value(ca));
+    px = Param(:x, "x", "x", 0.5, 0.6, 0.0, 1.0, true);
+    yV = [1.0, 2.0];
+    py = Param(:y, "y", "y", yV, yV .+ 1.0, [0.0, 0.0], [9.0, 9.0], false);
+    # v = [1.0 2.0 3.0; 1.1 2.1 3.1];
+    # isCalM = [true false true; false true false];
+    # pca = CalArray(:ca, "CalArray", "CalArray", v, v .+ 0.1, v .- 2.0, v .+ 2.0, isCalM);
+    pca = mdl.make_test_mapped_param(:ca, (3,), IdentityMap());
+    mpScalar = mdl.make_test_mapped_param(:mpScalar, (4,3), ScalarMap());
+    mpFixed = mdl.make_test_mapped_param(:ca, (3,), IdentityMap();
+        isCalibrated = false);
+    mpGrouped = mdl.make_test_mapped_param(:mpGrouped, (4,), 
+        mdl.make_test_grouped_map());
+    return Obj3(objId, px, py, pca, mpScalar, mpFixed, mpGrouped)
 end
+
+ModelParams.param_loc(::Obj3) = ParamsInObject();
+ModelParams.get_pvector(o :: Obj3) = 
+    ParamVector(o.objId, [o.x, o.y, o.ca, o.mpScalar, o.mpFixed, o.mpGrouped]);
+
+
+## --------------  Obj2
 
 mutable struct Obj2 <: ModelObject
     objId :: ObjectId
-    a :: Float64
-    y :: Float64
-    b :: Array{Float64,2}
-    bvec :: Vector{Float64}
+    a :: Param{Float64}
+    y :: Param{Float64}
+    b :: Param{Array{Float64,2}}
+    # bvec :: Vector{Float64}  add back in +++++
     o3 :: Obj3
-    pvec :: ParamVector
+    # pvec :: ParamVector
 end
 
-# function Obj2(a, y, b)
-#     return Obj2(a, y, b, ParamVector(ObjectId(:pv1)))
-# end
 
 function init_obj2(objId; valueB = 2.0 .+ [3.3 4.4; 5.5 7.6])
-    # objId = ObjectId(:obj2);
     pa = Param(:a, "a obj2", "a2", 12.1, 7.9, -1.1, 49.9, true);
     valueY = 9.4;
     py = Param(:y, "y obj2", "y2", valueY, valueY .+ 1.0,
         valueY .- 5.0, valueY .+ 5.0, true);
     pb = Param(:b, "b obj2", "b2", valueB, valueB .+ 1.0,
         valueB .- 5.0, valueB .+ 5.0, true);
-    pBvec = mdl.make_test_bvector(:bvec; isCalibrated = true, increasing = :increasing);
-    pvector = ParamVector(objId, [pa, py, pb, pBvec]);
+    # pBvec = mdl.make_test_bvector(:bvec; isCalibrated = true, increasing = :increasing);
+    
     obj3 = init_obj3(make_child_id(objId, :obj3));
-    o2 = Obj2(objId, pa.value, py.value, pb.value, pvalue(pBvec), obj3, pvector);
+    o2 = Obj2(objId, pa, py, pb, obj3);
     ModelParams.set_own_values_from_pvec!(o2, true);
     return o2
 end
+
+ModelParams.param_loc(::Obj2) = ParamsInObject();
+ModelParams.get_pvector(o :: Obj2) = ParamVector(o.objId, [o.a, o.y, o.b]);
 
 
 ## -----------  Obj4 
@@ -113,7 +112,7 @@ ModelParams.has_pvector(::Obj4) = true;
 ModelParams.get_pvector(o :: Obj4) = 
     ParamVector(o.objId, [o.alpha, o.beta, o.gamma]);
 ModelParams.pvalue(o :: Obj4, pName :: Symbol) = 
-    ModelParams.pvalue(getfield(o, pName));
+    ModelParams.pvalue(getfield(o, pName));  # remove +++++
 ModelParams.param_loc(::Obj4) = ModelParams.ParamsInObject();
 
 function init_obj4(objId)
@@ -135,7 +134,7 @@ mutable struct TestModel <: ModelObject
     y :: Float64
 end
 
-has_pvector(o :: TestModel) = false;
+ModelParams.has_pvector(o :: TestModel) = false;
 
 function init_test_model()
     objName = ObjectId(:testModel, "Test model");

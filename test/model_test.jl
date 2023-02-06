@@ -82,9 +82,9 @@ function model_test()
         # The same in a single convenience function, one object at a time
         # Just for testing
         ModelParams.set_params_from_guess!(m, g, vVec);
-        @test objV[1].x ≈ dictV[1][:x];
-        @test objV[1].y ≈ dictV[1][:y];
-        @test objV[3].x ≈ dictV[3][:x];
+        @test calibrated_value(objV[1].x) ≈ dictV[1][:x];
+        @test calibrated_value(objV[1].y) ≈ dictV[1][:y];
+        @test calibrated_value(objV[3].x) ≈ dictV[3][:x];
         vVec2 = get_values(m, g);
         @test isapprox(vVec, vVec2);
 
@@ -143,7 +143,7 @@ function set_status_test()
         pV = mdl.all_params(m);
         @test length(pV) == nCal + nFixed;
         for p in pV
-            @test pvalue(p) ≈ mdl.default_value(p);
+            @test calibrated_value(p) ≈ mdl.default_value(p);
         end
     end
 end

@@ -142,13 +142,13 @@ end
 function check_own_param_value(x, p, isCalibrated)
     pName = name(p);
     if isCalibrated
-        pValue = pvalue(p);
+        pValue = calibrated_value(p);
     else
         pValue = default_value(p);
     end
-    isValid = (pvalue(x, pName) ≈ pValue);
+    isValid = (calibrated_value(x, pName) ≈ pValue);
     if !isValid
-        propValue = pvalue(x, pName);
+        propValue = calibrated_value(x, pName);
         @warn "Invalid value: $pName: $pValue vs. $propValue";
     end
     return isValid
@@ -212,7 +212,7 @@ change_own_value!(obj :: ModelObject, pName :: Symbol, newValue) =
     change_own_value!(param_loc(obj), obj, pName, newValue);
 
 function change_own_value!(::ParamsInObject, x :: ModelObject, pName :: Symbol, newValue)
-    return set_pvalue!(x, pName, newValue);
+    return set_calibrated_value!(x, pName, newValue);
 end
 
 function change_own_value!(::ParamsInVector, obj :: ModelObject, pName :: Symbol, newValue)
@@ -231,11 +231,24 @@ function change_own_value!(::ParamsInVector, obj :: ModelObject, pName :: Symbol
     return oldValue    
 end
 
+calibrated_value(x :: ModelObject, pName :: Symbol) = 
+    calibrated_value(param_loc(x), x, pName);
+
+calibrated_value(::ParamsInObject, x :: ModelObject, pName :: Symbol) = 
+    calibrated_value(getfield(x, pName));
+
+# Assumes a one-to-one mapping between calibrated params and those stored in
+# object. 
+calibrated_value(::ParamsInVector, x :: ModelObject, pName :: Symbol) = 
+    getfield(x, pName);
+
+
+
 
 """
 	$(SIGNATURES)
 
-Value of a parameter in the ModelObject itself.
+Value of a parameter in the ModelObject itself. User facing.
 Takes the value out of an `AbstractParam` if necessary.
 """
 function pvalue(x :: ModelObject, pName :: Symbol)
@@ -263,22 +276,16 @@ Does not change value in `ParamVector` if that's where values are stored.
 Used to set own parameters from Dict and similar.
 `change_value!` changes the `Param` and the value in the object (if they are distinct).
 """
-function set_pvalue!(x :: ModelObject, pName :: Symbol, newValue)
-    set_pvalue!(param_loc(x), x, pName, newValue);
-    # v = getfield(x, pName);
-    # if v isa AbstractParam
-    #     set_value!(v, newValue);
-    # else
-    #     setfield!(x, pName, newValue);
-    # end
+function set_calibrated_value!(x :: ModelObject, pName :: Symbol, newValue)
+    set_calibrated_value!(param_loc(x), x, pName, newValue);
 end
 
-set_pvalue!(::ParamsInObject, x :: ModelObject, pName :: Symbol, newValue) = 
-    set_value!(getfield(x, pName), newValue);
+set_calibrated_value!(::ParamsInObject, x :: ModelObject, pName :: Symbol, newValue) = 
+    set_calibrated_value!(getfield(x, pName), newValue);
 
-function set_pvalue!(::ParamsInVector, x :: ModelObject, 
+function set_calibrated_value!(::ParamsInVector, x :: ModelObject, 
     pName :: Symbol, newValue)
-    @assert !isa(getfield(x, pName), AbstractParam)  "$pName in $x is an AbstractParam";
+    @assert !isa(getfield(x, pName), AbstractParam)  "$pName in $x is an AbstractParam. Set correct param_loc";
     setfield!(x, pName, newValue);
 end
 
@@ -286,13 +293,13 @@ end
 """
 	$(SIGNATURES)
 
-Retrieve a parameter value in a `ModelObject` and its children. 
+Retrieve a parameter value in a `ModelObject` and its children. User facing.
 """
 function get_value(x :: ModelObject, oName :: Symbol, pName :: Symbol)
-    @show x, oName
+    # @show x, oName
     obj = find_only_object(x, oName);
     pvec = get_pvector(obj);
-    @assert length(pvec) > 0  "No ParamVector in $oName / $pName"
+    @assert length(pvec) > 0  "No or empty ParamVector in $oName";
     @assert param_exists(pvec, pName)  "$pName not found";
     p = retrieve(pvec, pName);
     return pvalue(p)
@@ -318,11 +325,11 @@ function set_own_value_from_param!(x :: ModelObject, p :: AbstractParam;
     pName = name(p);
     if pName ∈ propertynames(x)
         if is_calibrated(p)  &&  (!alwaysUseDefaultValue)
-            val = pvalue(p);
+            val = calibrated_value(p; returnIfFixed = true);
         else
             val = default_value(p);
         end
-        set_pvalue!(x, pName, val);
+        set_calibrated_value!(x, pName, val);
     end
 end
 
@@ -337,7 +344,7 @@ Does not change child objects.
 function set_own_values_from_dict!(x :: ModelObject,  d :: D1) where D1 <: AbstractDict
     for (k, val) in d
         if k ∈ propertynames(x)
-            set_pvalue!(x, k, val);
+            set_calibrated_value!(x, k, val);
         else
             @warn "Field $k not found";
         end
@@ -516,7 +523,7 @@ Dict with parameter info for an entire `ModelObject` and its children.
 """
 function make_dict(o :: ModelObject, isCalibrated :: Bool)
     pvecV = collect_pvectors(o);
-    return make_dict(pvecV; isCalibrated, valueType = :value);
+    return make_dict(pvecV; isCalibrated, valueType = :calibratedValue);
 end
 
 
