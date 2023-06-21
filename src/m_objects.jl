@@ -444,11 +444,12 @@ Can be written to various formats using `pretty_table`.
 Currently ignores values in o2 that do not exist in o1.
 Size differences in parameters are permitted.
 """
-function report_param_differences(o1, o2)
+function report_param_differences(o1, o2; sorted = true)
     pvec1V = collect_pvectors(o1);
     pvec2V = collect_pvectors(o2);
 
     tbM = Matrix{String}(undef, 0, 4);
+    vDiffV = Vector{Float64}(undef, 0);
     for (objId, pvec1) in pvec1V
         if has_pvector(pvec2V, objId)
             idStr = repeat("  ", n_parents(objId)) * string(own_name(objId));
@@ -458,21 +459,45 @@ function report_param_differences(o1, o2)
                 pName = name(p1);
                 v1 = pvalue(p1);
                 rowV = nothing;
+                vDiff = 0.0;
+
                 if param_exists(pvec2, pName)
                     p2 = retrieve(pvec2, pName);
                     v2 = pvalue(p2);
+                    vDiff = value_diff(v1, v2);
                     if (size(v1) != size(v2))  ||  (!isapprox(v1, v2; atol = 1e-3))
                         rowV = param_diff_row(idStr, pName, p1.description, v1, v2);
                     end
                 else
                     rowV = param_diff_row(idStr, pName, p1.description, v1, "missing");
+                    vDiff = 1e8;
                 end
-                isnothing(rowV)  ||  (tbM = vcat(tbM, rowV));
+                if !isnothing(rowV)
+                    tbM = vcat(tbM, rowV);
+                    push!(vDiffV, vDiff);
+                end
             end
         end
     end
+    if sorted  &&  !isempty(vDiffV)
+        tbM = tbM[sortperm(vDiffV; rev = true), :];
+    end
     return tbM
 end
+
+function value_diff(v1 :: T1, v2 :: T1) where T1 <: Number
+    return abs(v2 - v1) / max(abs(v1), 0.01);
+end
+
+function value_diff(v1 :: Vector{T1}, v2 :: Vector{T1}) where T1 <: Number
+    if size(v1) != size(v2)
+        return 1e8;
+    else
+        return sum(abs.(v2 .- v1) ./ max.(abs.(v1), 1.0)) / length(v1);
+    end
+end
+
+value_diff(v1, v2) = 1e8;
 
 function param_diff_row(idStr, pName, pDescr, v1, v2)
     # sV = fill(" ", 1, 3);

@@ -248,7 +248,9 @@ function get_values(pvec :: ParamVector, vv :: ValueVector{F1}) where F1
     for (pName, pInfo) in vv.d
         p = retrieve(pvec, pName);
         @assert size(param_lb(pInfo)) == size(calibrated_value(p));
-        append!(valueV, transform_param(pvec.pTransform, p));
+        pValV = transform_param(pvec.pTransform, p);
+        @assert !any(isnan.(pValV))  "NaN in params for param $p in $pvec";
+        append!(valueV, pValV);
     end
 
     return valueV

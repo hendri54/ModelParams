@@ -27,8 +27,15 @@ function make_test_mapped_param(name, sizeV, pMap;
     else
         defaultValue = rand(rng, Float64, sizeV) .+ offset;
     end
+    if pMap isa IncreasingMap
+        lb = zeros(size(defaultValue));
+        ub = ones(size(defaultValue));
+    else
+        lb = defaultValue .- 1.0;
+        ub = defaultValue .+ 1.0;
+    end
     return make_mapped_param(name, defaultValue, 
-        defaultValue .- 1.0, defaultValue .+ 1.0, isCalibrated; pMap)
+        lb, ub, isCalibrated; pMap)
 end
 
 
@@ -45,6 +52,10 @@ function validate(p :: MParam{F1, T1}; silent = true) where {F1, T1}
             (isValid = false);
         (size(calibrated_lb(p)) == sizeV)  ||  (isValid = false);
         (size(calibrated_ub(p)) == sizeV)  ||  (isValid = false);
+    end
+    if pMap isa IncreasingMap
+        all(0.0 .<= calibrated_lb(p) .<= calibrated_ub(p) .<= 1.0)  ||  
+            (isValid = false);
     end
     if !isValid  &&  !silent
         @warn """
@@ -64,11 +75,11 @@ end
 
 Retrieve value of a `Param`. User facing.
 """
-pvalue(p :: MParam) = pvalue(pmeta(p), p);
-pvalue(p :: MParam, j) = pvalue(pmeta(p), p, j);
+# pvalue(p :: MParam) = pvalue(pmeta(p), p);
+# pvalue(p :: MParam, j) = pvalue(pmeta(p), p, j);
 
 # Not user facing. For calibration.
-default_value(p :: MParam) = default_value(pmeta(p), p);
+# default_value(p :: MParam) = default_value(pmeta(p), p);
 
 pmeta(p :: MParam) = p.pMap;
 
@@ -78,7 +89,14 @@ pmeta(p :: MParam) = p.pMap;
 Base.show(io :: IO,  p :: MParam) = 
     print(io, "MParam:  " * show_string(p));
 
+function calibrated_string(p :: MParam)
+    v = default_value(p);
+    return calibrated_string(is_calibrated(p); fixedValue = v, nValues = length(v));
+end
 
+function type_description(p :: MParam)
+    "MParam / " * type_description(pmeta(p));
+end
 
 
 ## ----------  Change / update

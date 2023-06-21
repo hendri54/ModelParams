@@ -35,7 +35,7 @@ is_nonmonotone(iv :: BoundedVector{T1}) where T1 = (iv.increasing == :nonmonoton
 # value_ub(iv :: BoundedVector{T1}) where T1 = iv.ub;
 Base.length(iv :: BoundedVector{T1}) where T1 =  Base.length(iv.dxV);
 
-# Scalar bounds across all elements
+# Scalar bounds across all elements (user facing)
 scalar_lb(iv :: BoundedVector{T1}) where T1 = iv.lb;
 scalar_ub(iv :: BoundedVector{T1}) where T1 = iv.ub;
 
@@ -98,6 +98,7 @@ function dx_to_values(iv :: Union{BoundedVector{T1}, BVector{T1}}, dxV) where T1
 end
 
 function dx_to_values_increasing(dxV, lb, ub)
+    @check all(0.0 .<= dxV .<= 1.0);
     T1 = eltype(dxV);
     n = length(dxV);
     valueV = zeros(T1, n);
@@ -111,6 +112,7 @@ function dx_to_values_increasing(dxV, lb, ub)
 end
 
 function dx_to_values_decreasing(dxV, lb, ub)
+    @check all(0.0 .<= dxV .<= 1.0);
     T1 = eltype(dxV);
     n = length(dxV);
     valueV = zeros(T1, n);

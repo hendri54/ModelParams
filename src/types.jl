@@ -4,13 +4,35 @@ struct ParamsInVector end
 struct ParamsInObject end
 
 
-## Mappings from calibrated parameters to parameter values
+## ----------  Mappings from calibrated parameters to parameter values
 
 abstract type AbstractMap end
+
 # Each calibrated value is a parameter value: pvalue(p, j) = p.value[j]
 struct IdentityMap <: AbstractMap end;
+
 # One calibrated parameter for all indices: pvalue(p, j) = p.value
 struct ScalarMap <: AbstractMap end;
+
+# Base value and deviations
+struct BaseAndDeviationsMap <: AbstractMap end;
+#     baseLb :: F1
+#     baseUb :: F1
+#     devLb :: F1
+#     devUb :: F1
+# end;
+
+# Increasing vector mapping. User facing values lie in [lb, ub].
+struct IncreasingMap{F1} <: AbstractMap 
+    lb :: F1
+    ub :: F1
+end;
+
+struct DecreasingMap{F1} <: AbstractMap
+    lb :: F1
+    ub :: F1
+end;
+
 # Each index belongs to exactly one group
 struct GroupedMap{F1} <: AbstractMap 
     # Group that each index belongs to

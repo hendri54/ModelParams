@@ -2,6 +2,13 @@
 
 ## Change Log 2023
 
+Jun-21:
+- Changed `pvalue` functions to directly dispatch on `pMap` type. To make type stable.
+Apr-11:
+- DecreasingMap (v3.0.1)
+Feb-10:
+- IncreasingMap
+- `short_description`
 Feb-6: (v3.0)
 - renamed `set_pvalue!` to `set_calibrated_value!`
 - renamed `set_value!` to `set_calibrated_value!`
@@ -13,5 +20,9 @@ Feb-3:
 Feb-2:
 - removed `value`; now always use `pvalue`
 
+## Tasks
+
+`IncreasingMap`
+Need a convenient way of constructing an `MParam` using it based on target values in levels.
 
 ----------

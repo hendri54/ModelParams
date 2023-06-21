@@ -81,6 +81,9 @@ pvalue(p :: Param, j) = p.value[j];
 Base.show(io :: IO,  p :: Param{F1}) where F1 = 
     print(io, "Param:  " * show_string(p));
 
+type_description(p :: Param{F1}) where F1 <: Real = "Scalar";
+type_description(p :: Param{F1}) where F1 <: AbstractVector = "Vector";
+type_description(p :: Param{F1}) where F1 <: AbstractArray = "Array";
 
 
 

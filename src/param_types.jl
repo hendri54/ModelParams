@@ -20,6 +20,12 @@ mutable struct Param{T1 <: Any} <: AbstractParam
 end
 
 
+"""
+	$(SIGNATURES)
+
+Mapped Parameter. Stores value and bounds of calibrated parameters.
+`pMap` field determines how those values are mapped into user facing parameters.
+"""
 mutable struct MParam{T1, T2} <: AbstractParam
     name :: Symbol
     description :: String

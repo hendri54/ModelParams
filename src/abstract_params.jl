@@ -126,6 +126,25 @@ function value_string(p :: AbstractParam)
 end
 
 
+"""
+	$(SIGNATURES)
+
+One line description. To be shown in model summary.
+"""
+function short_description(p :: AbstractParam)
+    pVal = pvalue(p);
+    if is_calibrated(p)
+        nCal = n_calibrated(p);
+        s = "Calibrated ($nCal values)"
+    else
+        s = "Fixed of size $(size(pVal)) at " * formatted_value(pVal);
+    end
+    return type_description(p) * " / " * s
+end
+
+type_description(p :: T1) where T1 <: AbstractParam = "$T1";
+
+
 function short_string(p :: AbstractParam)
     vStr = formatted_value(pvalue(p));
     return "$(name(p)): $vStr"

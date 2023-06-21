@@ -59,6 +59,7 @@ end
 function array_test(p)
     @testset "Array param $p" begin
         @test validate(p);
+        @test short_description(p) isa String;
         @test size(calibrated_value(p)) == size(default_value(p));
         @test size(calibrated_lb(p)) == size(calibrated_ub(p)) == size(calibrated_value(p));
         closeToLb = mdl.close_to_lb(p; rtol = 0.1);
@@ -67,6 +68,14 @@ function array_test(p)
         isCal = is_calibrated(p);
         mdl.set_calibration_status!(p, !isCal);
         @test is_calibrated(p) == !isCal;
+
+        pVal = pvalue(p);
+        if p isa MParam
+            pMap = mdl.pmeta(p);
+            if pMap isa IncreasingMap
+                @test all(scalar_lb(pMap) .<= pVal .<= scalar_ub(pMap));
+            end
+        end
         
         lbnd = calibrated_lb(p) .+ 0.1;
         ubnd = calibrated_ub(p) .+ 0.2;
@@ -75,7 +84,7 @@ function array_test(p)
         @test calibrated_ub(p) ≈ ubnd;
 
         pValue = pvalue(p);
-        if p isa Param
+        if p isa Param  # should also work for MParam +++++
             set_random_value!(p, MersenneTwister(12));
             newValue = pvalue(p);
             @test size(newValue) == size(pValue);
@@ -98,6 +107,9 @@ end
         mdl.make_test_mapped_param(:m1, (3,), IdentityMap()),
         mdl.make_test_mapped_param(:m2, nothing, ScalarMap()),
         mdl.make_test_mapped_param(:m2, nothing, mdl.make_test_grouped_map()),
+        mdl.make_test_mapped_param(:m4, (3,), IncreasingMap(2.0, 5.0)),
+        mdl.make_test_mapped_param(:m4, (3,), DecreasingMap(2.0, 5.0)),
+        mdl.make_test_mapped_param(:m5, (4,), BaseAndDeviationsMap()),
         # mdl.make_test_cal_array(:x, 2),
         mdl.make_test_bvector(:x; increasing = :increasing),
         mdl.make_test_bvector(:x; increasing = :decreasing),

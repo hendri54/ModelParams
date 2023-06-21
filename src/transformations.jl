@@ -12,7 +12,9 @@ function transform_param(tr :: LinearTransformation{F1}, p :: AbstractParam) whe
     # else
     #     value = value(p);
     # end
-    return param_lb(tr) .+ (param_ub(tr) .- param_lb(tr)) .* (pValue .- calibrated_lb(p)) ./ (calibrated_ub(p) .- calibrated_lb(p));
+    v = param_lb(tr) .+ (param_ub(tr) .- param_lb(tr)) .* (pValue .- calibrated_lb(p)) ./ (calibrated_ub(p) .- calibrated_lb(p));
+    @assert !any(isnan.(v))  "NaN value for $p";
+    return v
 end
 
 

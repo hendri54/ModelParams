@@ -21,7 +21,8 @@ using ModelObjectsLH
 using EconometricsLH # : RegressionTable, get_all_coeff_se, get_coeff_se_multiple, have_same_regressors
 
 # Mappings
-export AbstractMap, IdentityMap, ScalarMap;
+export AbstractMap, BaseAndDeviationsMap, IdentityMap, ScalarMap;
+export DecreasingMap, IncreasingMap, GroupedMap;
 
 # Transformations
 export LinearTransformation, transform_bounds, transform_param, untransform_param
@@ -31,7 +32,7 @@ export AbstractParam, Param, make_param;
 export calibrated_lb, calibrated_ub, calibrated_value, is_calibrated;
 export set_calibrated_value!;
 export calibrate!, fix!, fix_values!, set_bounds!, set_default_value!, set_random_value!, update!, validate, default_value, pvalue;
-export param_lb, param_ub;
+export param_lb, param_ub, scalar_lb, scalar_ub;
 
 # ParamVector
 export ParamVector, ParamsInObject, ParamsInVector;
@@ -53,7 +54,7 @@ export BoundedVector, IncreasingVector, values, set_pvector!
 export ParamTable, get_symbol, get_description, get_values, set_row!, latex_param_table
 
 # Helpers
-export calibrated_string;
+export calibrated_string, short_description, type_description;
 
 
 const ValueType = Float64;
@@ -147,6 +148,12 @@ end
 	$(SIGNATURES)
 
 Perturb calibrated model parameters. Including child objects.
+
+# Arguments
+- `m`: a `ModelObject`
+- `g`: a `Guess`
+- `dGuess`: perturbation amount; applied to the scaled guesses (usually in [1, 2])
+- `dIdx`: optional indices to be perturbed (defaults to all)
 """
 function perturb_params(m :: ModelObject, g :: Guess{F1}, dGuess; dIdx = nothing) where F1
     guessV = get_values(m, g);
