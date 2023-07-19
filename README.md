@@ -2,6 +2,8 @@
 
 ## Change Log 2023
 
+July-18
+- `default_value` not user facing for all param types. Documented distinction between user facing and internal values everywhere.
 Jun-21:
 - Changed `pvalue` functions to directly dispatch on `pMap` type. To make type stable.
 Apr-11:

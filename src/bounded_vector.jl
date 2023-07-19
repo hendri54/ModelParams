@@ -49,6 +49,8 @@ end
 	$(SIGNATURES)
 
 Switches calibration toggle off. Sets values and default values everywhere. The end result is a `BoundedVector` with fixed (not calibrated) increments that result in values of `valueV`.
+
+`valueV` is not user facing.
 """
 function fix_values!(iv :: BoundedVector{T1}, 
     valueV :: AbstractVector{T1}) where T1
@@ -65,7 +67,7 @@ end
 """
 	$(SIGNATURES)
 
-Returns all values of a `BoundedVector`.
+Returns all values of a `BoundedVector`. User facing.
 """
 function values(iv :: BoundedVector{T1}) where T1
     valueV = dx_to_values(iv, iv.dxV);

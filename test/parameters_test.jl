@@ -28,7 +28,7 @@ function param_test()
         @test size(p2.ub) == size(pValue2);
         newValue = 9.27;
         set_calibrated_value!(p2, newValue);
-        @test pvalue(p2) ≈ newValue;
+        @test calibrated_value(p2) ≈ newValue;
         str1 = ModelParams.short_string(p2);
         @test startswith(str1,  "p2: 9.27");
 

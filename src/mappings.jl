@@ -2,6 +2,7 @@
 
 pvalue(p :: MParam{T1, ScalarMap}) where T1 = only(p.value);
 pvalue(p :: MParam{T1, ScalarMap}, j :: Integer) where T1 = only(p.value);
+# Not user facing (though the same here).
 default_value(p :: MParam{T1, ScalarMap}) where T1 = only(p.defaultValue);
 
 # pvalue(::ScalarMap, p :: MParam) = only(p.value);
@@ -13,6 +14,7 @@ type_description(::ScalarMap) = "Scalar value";
 
 pvalue(p :: MParam{T1, IdentityMap}) where T1 = p.value;
 pvalue(p :: MParam{T1, IdentityMap}, j) where T1 = p.value[j];
+# Not user facing (though the same here).
 default_value(p :: MParam{T1, IdentityMap}) where T1 = p.defaultValue;
 # pvalue(::IdentityMap, p :: MParam) = p.value;
 # pvalue(::IdentityMap, p :: MParam, j) = p.value[j];
@@ -30,8 +32,9 @@ pvalue(p :: MParam{T1, BaseAndDeviationsMap}) where T1 =
 pvalue(p :: MParam{T1, BaseAndDeviationsMap}, j) where T1 = 
     base_and_dev_value(p.value, j);
 
-default_value(p :: MParam{T1, BaseAndDeviationsMap}) where T1 = 
-    [base_and_dev_value(p.defaultValue, j)  for j = 1 : length(p.defaultValue)];
+# Not user facing
+default_value(p :: MParam{T1, BaseAndDeviationsMap}) where T1 = p.defaultValue;
+    # [base_and_dev_value(p.defaultValue, j)  for j = 1 : length(p.defaultValue)];
 
 # pvalue(m :: BaseAndDeviationsMap, p :: MParam) =
 #     [pvalue(m, p, j)  for j = 1 : length(p.value)];
@@ -65,9 +68,11 @@ end
 pvalue(p :: MParam{T1, IncreasingMap{T2}}, j) where {T1, T2} = 
     pvalue(p)[j];
 
+# Not user facing
 function default_value(p :: MParam{T1, IncreasingMap{T2}}) where {T1, T2}
-    iMap = pmeta(p); 
-    return dx_to_values_increasing(p.defaultValue, scalar_lb(iMap), scalar_ub(iMap));
+    return p.defaultValue
+    # iMap = pmeta(p); 
+    # return dx_to_values_increasing(p.defaultValue, scalar_lb(iMap), scalar_ub(iMap));
 end
 
 type_description(::IncreasingMap) = "Increasing vector";
@@ -87,9 +92,11 @@ end
 pvalue(p :: MParam{T1, DecreasingMap{T2}}, j) where {T1, T2} = 
     pvalue(p)[j];
 
+# Not user facing
 function default_value(p :: MParam{T1, DecreasingMap{T2}}) where {T1, T2}
-    iMap = pmeta(p);
-    return dx_to_values_decreasing(p.defaultValue, scalar_lb(iMap), scalar_ub(iMap));
+    return p.defaultValue;
+    # iMap = pmeta(p);
+    # return dx_to_values_decreasing(p.defaultValue, scalar_lb(iMap), scalar_ub(iMap));
 end
 
 # pvalue(iMap :: DecreasingMap, p :: MParam) = 

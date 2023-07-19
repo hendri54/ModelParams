@@ -18,18 +18,26 @@ function change_values_test()
     @testset "Change values by hand" begin
         m = init_test_model();
         for (oName, pName) ∈ ((:o2, :y), (:obj3, :y), (:o4, :beta))
-            vOld = mdl.get_value(m, oName, pName);
-            vNew = vOld .+ 0.5;
-            ModelParams.change_value!(m, oName, pName, vNew);
-            @test ModelParams.get_value(m, oName, pName) ≈ vNew;
             obj = find_only_object(m, oName);
+            # User facing
+            vOld = mdl.get_value(m, oName, pName);
+            # Not user facing
             p = retrieve(obj, pName);
+            pValOld = calibrated_value(p);
+            pValNew = pValOld .+ 0.5;
+            ModelParams.change_value!(m, oName, pName, pValNew);
+
+            p = retrieve(obj, pName);
+            @test calibrated_value(p) ≈ pValNew;
+            
+            # User facing
+            vNew = ModelParams.get_value(m, oName, pName);
             @test pvalue(p) ≈ vNew;
 
             @test pvalue(obj, pName) ≈ vNew;
-            set_calibrated_value!(obj, pName, vNew .+ 0.1);
-            @test pvalue(obj, pName) ≈ vNew .+ 0.1;
-            set_calibrated_value!(obj, pName, vNew);
+            set_calibrated_value!(obj, pName, pValNew .+ 0.1);
+            @test calibrated_value(obj, pName) ≈ pValNew .+ 0.1;
+            set_calibrated_value!(obj, pName, pValNew);
 
             pvec = get_pvector(obj);
             @test pvec isa ParamVector;

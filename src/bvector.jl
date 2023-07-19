@@ -62,17 +62,18 @@ Returns all values of a `BoundedVector`.
 """
 pvalue(iv :: BVector{T1}) where T1 = dx_to_values(iv, iv.dxV);
 
-default_value(iv :: BVector{T1}) where T1 = 
-    dx_to_values(iv, iv.defaultDxV);
+# Not user facing
+default_value(iv :: BVector{T1}) where T1 = iv.defaultDxV;
+    # dx_to_values(iv, iv.defaultDxV);
 
-# Input is in terms of untransformed units.
+# Input is in terms of untransformed units. Not user facing.
 function fix!(iv :: BVector{T1}; pValue = nothing) where T1
    iv.isCalibrated = false;
    isnothing(pValue)  ||  set_default_value!(iv, pValue); 
 end
 
-# The input is in untransformed units.
-function set_calibrated_value!(iv :: BVector{T1}, vIn;
+# The input is in untransformed (user facing) units.
+function set_calibrated_value_user_facing!(iv :: BVector{T1}, vIn;
     skipInvalidSize = false) where T1
 
     oldValue = pvalue(iv);
@@ -91,7 +92,7 @@ function set_calibrated_value!(iv :: BVector{T1}, vIn;
     return oldValue
 end
 
-# Input is in terms of dxV
+# Input is in terms of dxV. Not user facing.
 function set_calibrated_value!(iv :: BVector{T1}, vIn :: AbstractVector{T1};
     skipInvalidSize = false) where T1
     
@@ -108,8 +109,13 @@ function set_calibrated_value!(iv :: BVector{T1}, vIn :: AbstractVector{T1};
 end
 
 # Input is in untransformed units.
-function set_default_value!(iv :: BVector{T1}, vIn :: AbstractVector{T1}) where T1
+function set_default_value_user_facing!(iv :: BVector{T1}, 
+        vIn :: AbstractVector{T1}) where T1
     iv.defaultDxV = values_to_dx(iv, vIn);
+end
+
+function set_default_value!(iv :: BVector{T1}, vIn :: AbstractVector{T1}) where T1
+    iv.defaultDxV .= vIn;
 end
 
 # Bounds have to be scalar or vector with all equal elements.

@@ -156,6 +156,7 @@ function param_default_value(pvec :: ParamVector, pName :: Symbol)
     end
 end
 
+# Not user facing
 function calibrated_value(pvec :: ParamVector, pName :: Symbol; returnIfFixed = true)
     return calibrated_value(retrieve(pvec, pName); returnIfFixed);
 end
@@ -331,7 +332,8 @@ fix!(pvec :: ParamVector, pName :: Symbol) =
 """
 	$(SIGNATURES)
 
-Change the value of parameter `pName`.
+Change the value of parameter `pName`. 
+`newValue` is not user facing.
 """
 function change_value!(pvec :: ParamVector, pName :: Symbol, newValue;
     skipInvalidSize :: Bool = false

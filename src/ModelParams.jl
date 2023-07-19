@@ -4,12 +4,6 @@
 Support for calibrating models.
 
 A `ModelObject` contains a `ParamVector` and the corresponding parameters. It is key to always keep those in sync.
-
-Change:
-    Reporting parameters
-        make a "tree" of the model structure +++
-            each node has name, type, pvec, children
-            then one can re-engineer everything else from this (pvectors, child objects, etc)
 """
 module ModelParams
 
@@ -18,7 +12,7 @@ import Base.append!, Base.length, Base.getindex, Base.values
 import Random: AbstractRNG
 using ArgCheck, DataStructures, DocStringExtensions, Formatting, Infiltrator, Lazy, Parameters, PrettyTables, Random
 using ModelObjectsLH
-using EconometricsLH # : RegressionTable, get_all_coeff_se, get_coeff_se_multiple, have_same_regressors
+using EconometricsLH 
 
 # Mappings
 export AbstractMap, BaseAndDeviationsMap, IdentityMap, ScalarMap;
@@ -40,7 +34,7 @@ export param_exists, make_dict, n_calibrated_params
 export param_table, param_value, param_default_value, report_params, retrieve
 
 # PVectorCollection
-export PVectorCollection, set_calibration_status_all_params!, set_default_values_all_params!
+export PVectorCollection, set_calibration_status!, set_calibration_status_all_params!, set_default_values_all_params!
 
 # Model objects
 export check_fixed_params, check_calibrated_params, check_own_fixed_params, check_own_calibrated_params, validate_all_params

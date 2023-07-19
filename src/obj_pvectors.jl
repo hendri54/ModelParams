@@ -96,7 +96,7 @@ function find_param(o :: ModelObject, pName)
 end
 
 function find_param(pvv :: PVectorCollection, pName)
-    d = Dict{ObjectId, Param}();
+    d = Dict{ObjectId, AbstractParam}();
     for (objId, pvec) in pvv
         if param_exists(pvec, pName)
             p = retrieve(pvec, pName);

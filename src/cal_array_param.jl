@@ -162,7 +162,7 @@ function fix!(p :: CalArray{T1, N}; pValue = nothing) where {T1, N}
 end
 
 
-# Used in calibration. Input should match dimension of calibrated params.
+# Used in calibration. Input should match dimension of calibrated params. Not user facing.
 function set_calibrated_value!(ca :: CalArray{T1, N}, vIn :: AbstractVector{T1};
     skipInvalidSize = false) where {T1, N}
 

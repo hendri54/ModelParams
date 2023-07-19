@@ -31,7 +31,7 @@ is_calibrated(p :: AbstractParam) = p.isCalibrated;
 """
 	$(SIGNATURES)
 
-Calibrated values. This is what the numerical optimizer sees (only the calibrated entries). Can be set to return `Missing` if parameter not calibrated.
+Calibrated values. Not user facing. This is what the numerical optimizer sees (only the calibrated entries). Can be set to return `Missing` if parameter not calibrated.
 """
 function calibrated_value(p :: AbstractParam; returnIfFixed = true)
     if is_calibrated(p) || returnIfFixed
@@ -54,7 +54,7 @@ pvalue(p :: AbstractParam) = p.value;
 	$(SIGNATURES)
 
 Default value of a parameter that is used when not calibrated.
-Returns the values that could be calibrated.
+Returns the values that could be calibrated. NOT user facing.
 """
 default_value(p :: AbstractParam) = p.defaultValue;
 
@@ -190,6 +190,8 @@ end
     
 Set parameter value. Not used during calibration. Input is only calibrated values.
 Invalid size errors, unless `skipInvalidSize == true`. Then the new value is ignored.
+
+`vIn` is in internal units (not user facing).
 """
 function set_calibrated_value!(p :: AbstractParam, vIn;
     skipInvalidSize = false)
@@ -237,7 +239,7 @@ end
 """
     $(SIGNATURES)
 
-Change calibration status to `false`
+Change calibration status to `false`. `pValue` not in user facing units.
 """
 function fix!(p :: AbstractParam; pValue = nothing)
     p.isCalibrated = false;
@@ -253,6 +255,7 @@ end
 # set_calibrated_value!(p :: AbstractParam, vIn; skipInvalidSize = false) = 
 #     set_value!(p, vIn; skipInvalidSize);
 
+# Input not user facing.
 function set_default_value!(p :: AbstractParam, vIn) 
     @assert size(default_value(p)) == size(vIn)  "Size invalid for $(p.name): $(size(vIn)). Expected $(size(default_value(p)))"
     p.defaultValue = vIn
@@ -262,7 +265,7 @@ end
 """
     $(SIGNATURES)
 
-Update a parameter with optional arguments.
+Update a parameter with optional arguments. Values are in internal units (not user facing).
 """
 function update!(p :: AbstractParam; value = nothing, defaultValue = nothing,
     lb = nothing, ub = nothing, isCalibrated = nothing) 

@@ -195,7 +195,7 @@ end
 """
 	$(SIGNATURES)
 
-Change value of a field in a `ModelObject` and its `ParamVector`.
+Change value of a field in a `ModelObject` and its `ParamVector`. `newValue` in internal units. Not user facing.
 
 # Example
 ```julia
@@ -271,6 +271,7 @@ pvalue(::ParamsInVector, x :: ModelObject, pName :: Symbol) =
 Set parameter value in the object itself (if it is stored there).
 Otherwise, set it in matching `Param`. The end result is that 
 `pvalue(x, pName) == newValue`.
+But `newValue` in internal units. Not user facing.
 
 Does not change value in `ParamVector` if that's where values are stored.
 Used to set own parameters from Dict and similar.
@@ -419,6 +420,7 @@ end
 
 Return all `Param`s in a `ModelObject`. Optionally filtered by calibration status.
 Returns `Vector{AbstractParam}`. Note that names of parameters may not be unique.
+`collect_pvectors` returns all parameters as a Dict, so that parent objects can be identified.
 """
 function all_params(x :: ModelObject; isCalibrated = nothing)
     pvecV = collect_pvectors(x);
