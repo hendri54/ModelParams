@@ -140,33 +140,40 @@ mutable struct IncreasingVector{T1} <: ModelObject
 end
 
 
+# """
+# 	$(SIGNATURES)
+
+# Increasing or decreasing vector with bounds.
+# The special case where the vector is of length 1 is supported.
+
+# A `BoundedVector` is typically constructed with an empty `ParamVector`. Then [`set_pvector!`](@ref) is used to initialize the `ParamVector`.
+# The `ParamVector` contains a single entry which must be named `:dxV`. It sets the values for the eponymous `BoundedVector` field. The `dxV` are typically in [0, 1]. They represent the increments in the vector.
+
+# Deprecated.
+
+# # Example: 
+# ```julia
+# bv = BoundedVector(objId, pvec, true, 5.0, 10.0, [0.5, 0.4]);
+# values(bv, 1) == 7.5;
+# values(bv, 2) == 7.5 + 0.4 * (10.0 - 7.5);
+# ```
+# """
+# mutable struct BoundedVector{T1} <: ModelObject
+#     objId :: ObjectId
+#     pvec :: ParamVector
+#     increasing :: Symbol
+#     # Values are in these bounds
+#     lb :: T1
+#     ub :: T1
+#     # Increments, typically in [0, 1]
+#     dxV :: Vector{T1}
+# end
+
 """
-	$(SIGNATURES)
+    BVector
 
-Increasing or decreasing vector with bounds.
-The special case where the vector is of length 1 is supported.
-
-A `BoundedVector` is typically constructed with an empty `ParamVector`. Then [`set_pvector!`](@ref) is used to initialize the `ParamVector`.
-The `ParamVector` contains a single entry which must be named `:dxV`. It sets the values for the eponymous `BoundedVector` field. The `dxV` are typically in [0, 1]. They represent the increments in the vector.
-
-# Example: 
-```julia
-bv = BoundedVector(objId, pvec, true, 5.0, 10.0, [0.5, 0.4]);
-values(bv, 1) == 7.5;
-values(bv, 2) == 7.5 + 0.4 * (10.0 - 7.5);
-```
+Bounded vector in interval `lb` to `ub`.
 """
-mutable struct BoundedVector{T1} <: ModelObject
-    objId :: ObjectId
-    pvec :: ParamVector
-    increasing :: Symbol
-    # Values are in these bounds
-    lb :: T1
-    ub :: T1
-    # Increments, typically in [0, 1]
-    dxV :: Vector{T1}
-end
-
 mutable struct BVector{T1} <: AbstractParam
     name :: Symbol
     description :: String

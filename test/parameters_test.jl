@@ -4,17 +4,22 @@ mdl = ModelParams;
 
 function param_test()
     @testset "Param" begin
-        pValue = [1.1 2.2; 3.3 4.4]
+        pValue = [1.1 2.2; 3.3 4.4];
+        defaultValue = pValue .+ 0.1;
 
         # Simple constructor
-        p1 = Param(:p1, "param1", "\$p_{1}\$", pValue);
+        p1 = make_param(:p1, pValue; description = "param1",
+            symbol = "\$p_{1}\$", isCalibrated = true);
+        set_default_value!(p1, defaultValue);
         # show(p1);
         @test pvalue(p1) == pValue;
         @test size(p1.lb) == size(pValue);
-        calibrate!(p1);
-        @test p1.isCalibrated == true;
         fix!(p1);
         @test p1.isCalibrated == false;
+        @test pvalue(p1) == defaultValue;
+        calibrate!(p1);
+        @test p1.isCalibrated == true;
+        @test pvalue(p1) == pValue;
         validate(p1);
 
         # Full constructor
@@ -57,7 +62,7 @@ function vec1_test()
 end
 
 function array_test(p)
-    @testset "Array param $p" begin
+    @testset "Mapped param $p" begin
         @test validate(p);
         @test short_description(p) isa String;
         @test size(calibrated_value(p)) == size(default_value(p));
@@ -68,6 +73,15 @@ function array_test(p)
         isCal = is_calibrated(p);
         mdl.set_calibration_status!(p, !isCal);
         @test is_calibrated(p) == !isCal;
+
+        calibrate!(p);
+        pVal = pvalue(p);
+        calVal = calibrated_value(p);
+        set_default_value!(p, calVal .- 0.1);
+        @test pvalue(p) == pVal;
+        @test default_value(p) ≈ calVal .- 0.1;
+        fix!(p);
+        @test !all(isapprox.(pvalue(p), pVal));
 
         pVal = pvalue(p);
         if p isa MParam

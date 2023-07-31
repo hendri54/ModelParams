@@ -55,14 +55,24 @@ scalar_ub(iv :: BVector{T1}) where T1 = iv.ub;
 
 ## -----------  Retrieve
 
-"""
-	$(SIGNATURES)
+# """
+# 	$(SIGNATURES)
 
-Returns all values of a `BoundedVector`.
-"""
-pvalue(iv :: BVector{T1}) where T1 = dx_to_values(iv, iv.dxV);
+# Returns all values of a `BVector`.
+# """
+# function pvalue(iv :: BVector{T1}) where T1 
+#     if is_calibrated(iv)
+#         dx_to_values(iv, iv.dxV);
+#     else
+#         return default_value(iv);
+#     end
+# end
+
+calibrated_value_user_facing(iv :: BVector) = dx_to_values(iv, iv.dxV);
+default_value_user_facing(iv :: BVector) = dx_to_values(iv, iv.defaultDxV);
 
 # Not user facing
+calibrated_value_only(iv :: BVector) = iv.dxV;
 default_value(iv :: BVector{T1}) where T1 = iv.defaultDxV;
     # dx_to_values(iv, iv.defaultDxV);
 
@@ -134,5 +144,110 @@ function vec_to_scalar(v :: AbstractVector{F1}) where F1 <: Real
     @assert all(isapprox.(v, first(v)))  "All elements expected to be the same.";
     return first(v)
 end
+
+
+function dx_to_values(iv :: BVector{T1}, dxV) where T1
+    # n = length(iv);
+    if is_increasing(iv)
+        valueV = dx_to_values_increasing(dxV, scalar_lb(iv), scalar_ub(iv))
+    elseif is_decreasing(iv)
+        valueV = dx_to_values_decreasing(dxV, scalar_lb(iv), scalar_ub(iv))
+    elseif is_nonmonotone(iv)
+        valueV = copy(dxV);
+    else
+        error("Invalid");
+    end
+    return valueV
+end
+
+function dx_to_values_increasing(dxV, lb, ub)
+    @check all(0.0 .<= dxV .<= 1.0);
+    T1 = eltype(dxV);
+    n = length(dxV);
+    valueV = zeros(T1, n);
+    valueV[1] = lb + dxV[1] * (ub - lb);
+    if n > 1
+        for j = 2 : n
+            valueV[j] = valueV[j-1] + dxV[j] * (ub - valueV[j-1]);
+        end
+    end
+    return valueV
+end
+
+function dx_to_values_decreasing(dxV, lb, ub)
+    @check all(0.0 .<= dxV .<= 1.0);
+    T1 = eltype(dxV);
+    n = length(dxV);
+    valueV = zeros(T1, n);
+    valueV[1] = ub - dxV[1] * (ub - lb);
+    if n > 1
+        for j = 2 : n
+            valueV[j] = valueV[j-1] - dxV[j] * (valueV[j-1] - lb);
+        end
+    end
+    return valueV
+end
+
+function values_to_dx(iv :: BVector{T1}, valueV :: AbstractVector{T1}) where T1
+    @assert check_values(iv, valueV);
+    n = length(iv);
+
+    if is_increasing(iv)
+        dxV = values_to_dx_increasing(valueV, scalar_lb(iv), scalar_ub(iv));
+    elseif is_decreasing(iv)
+        dxV = values_to_dx_decreasing(valueV, scalar_lb(iv), scalar_ub(iv));
+    elseif is_nonmonotone(iv)
+        dxV = copy(valueV);
+    else
+        error("Invalid");
+    end
+    return dxV
+end
+
+function values_to_dx_increasing(valueV :: AbstractVector{T1}, lb, ub) where T1
+    n = length(valueV);
+    dxV = zeros(T1, n);
+    dxV[1] = (valueV[1] - lb) / (ub - lb);
+    if n > 1
+        for j = 2 : n
+            dxV[j] = (valueV[j] - valueV[j-1]) / (ub - valueV[j-1]);
+        end
+    end
+    return dxV
+end
+
+function values_to_dx_decreasing(valueV :: AbstractVector{T1}, lb, ub) where T1
+    n = length(valueV);
+    dxV = zeros(T1, n);
+    dxV[1] = (ub - valueV[1]) / (ub - lb);
+    if n > 1
+        for j = 2 : n
+            dxV[j] = (valueV[j-1] - valueV[j]) / (valueV[j-1] - lb);
+        end
+    end
+    return dxV
+end
+
+
+function check_values(iv :: BVector{T1}, valueV :: AbstractVector{T1}) where T1
+    isValid = true;
+    isValid = isValid  &&  isequal(length(valueV), length(iv));
+    if any(valueV .< scalar_lb(iv))
+        isValid = false;
+        @warn "Values too low: $valueV";
+    end
+    if any(valueV .> scalar_ub(iv))
+        isValid = false;
+        @warn "Values too high: $valueV";
+    end
+    isValid = isValid  &&  all(valueV .<= scalar_ub(iv));
+    if is_increasing(iv)
+        isValid = isValid  &&  all(diff(valueV) .> 0.0);
+    elseif is_decreasing(iv)
+        isValid = isValid  &&  all(diff(valueV) .< 0.0);
+    end
+    return isValid
+end
+
 
 # -------------

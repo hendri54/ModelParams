@@ -2,6 +2,9 @@
 
 ## Change Log 2023
 
+July-31
+- removed BoundedVector
+- ensured that `pvalue`  returns fixed value for all types when not calibrated.
 July-18
 - `default_value` not user facing for all param types. Documented distinction between user facing and internal values everywhere.
 Jun-21:

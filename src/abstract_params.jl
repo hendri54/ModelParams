@@ -35,19 +35,43 @@ Calibrated values. Not user facing. This is what the numerical optimizer sees (o
 """
 function calibrated_value(p :: AbstractParam; returnIfFixed = true)
     if is_calibrated(p) || returnIfFixed
-        return p.value
+        return calibrated_value_only(p);
     else
         return missing;
     end
 end
 
+"""
+	$(SIGNATURES)
+
+User facing version of calibrated value. Returns the calibrated value even if the parameter is fixed.
+"""
+calibrated_value_user_facing(p :: AbstractParam) = p.value;
+
+default_value_user_facing(p :: AbstractParam) = p.defaultValue;
 
 """
 	$(SIGNATURES)
 
-User facing parameter values. Constructed from calibrated and fixed values.
+Always returns calibrated value, even if param is fixed. NOT user facing.
 """
-pvalue(p :: AbstractParam) = p.value;
+calibrated_value_only(p :: AbstractParam) = p.value;
+
+
+"""
+	$(SIGNATURES)
+
+User facing parameter values. Constructed from calibrated and fixed values. Returns calibrated value if calibrated and fixed value if fixed.
+"""
+function pvalue(p :: AbstractParam)
+    if is_calibrated(p)
+        return calibrated_value_user_facing(p);
+    else
+        return default_value_user_facing(p);
+    end
+end
+
+pvalue(p :: AbstractParam, j) = pvalue(p)[j];
 
 
 """

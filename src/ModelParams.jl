@@ -42,7 +42,7 @@ export collect_pvectors, compare_params, check_params_match, report_param_differ
 export find_pvector, find_only_param, find_param, pvalue, set_calibrated_value!, make_guess, perturb_guess_vector, perturb_params, params_equal, validate;
 export has_pvector, get_pvector, get_switches, param_tables, latex_param_table
 export set_values_from_dicts!, sync_own_values!, sync_values!
-export BoundedVector, IncreasingVector, values, set_pvector!
+export IncreasingVector, values, set_pvector!
 
 # ParamTable
 export ParamTable, get_symbol, get_description, get_values, set_row!, latex_param_table
@@ -69,7 +69,7 @@ include("guess.jl");
 
 # Parameters
 include("increasing_vector.jl");
-include("bounded_vector.jl");
+# include("bounded_vector.jl");
 include("bvector.jl");
 # include("grouped_vector.jl");
 # include("calibrated_array.jl");

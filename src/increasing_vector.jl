@@ -17,6 +17,7 @@ values(iv :: IncreasingVector{T1}, idx) where T1 =
 Base.length(iv :: IncreasingVector) = Base.length(iv.dxV) + 1;
 
 
+
 # Displays parameters in levels, not as intercept and increments.
 function param_table(iv :: IncreasingVector{T1}, 
         isCalibrated :: Bool) where T1

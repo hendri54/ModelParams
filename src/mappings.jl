@@ -1,21 +1,37 @@
 ## ---------  Scalar map
 
-pvalue(p :: MParam{T1, ScalarMap}) where T1 = only(p.value);
-pvalue(p :: MParam{T1, ScalarMap}, j :: Integer) where T1 = only(p.value);
+calibrated_value_user_facing(p :: MParam{T1, ScalarMap}) where T1 = only(p.value);
+default_value_user_facing(p :: MParam{T1, ScalarMap}) where T1 = only(p.defaultValue);
 # Not user facing (though the same here).
 default_value(p :: MParam{T1, ScalarMap}) where T1 = only(p.defaultValue);
+calibrated_value_only(p :: MParam{T1, ScalarMap}) where T1 = only(p.value);
+
+# function pvalue(p :: MParam{T1, ScalarMap}) where T1
+#     if is_calibrated(p)
+#         return only(p.value);
+#     else
+#         return default_value(p);
+#     end
+# end
+
+pvalue(p :: MParam{T1, ScalarMap}, j :: Integer) where T1 = pvalue(p);
 
 # pvalue(::ScalarMap, p :: MParam) = only(p.value);
 # pvalue(::ScalarMap, p :: MParam, j :: Integer) = only(p.value);
 # default_value(::ScalarMap, p :: MParam) = only(p.defaultValue);
 type_description(::ScalarMap) = "Scalar value";
 
+
 ## ----------  Identity map
 
-pvalue(p :: MParam{T1, IdentityMap}) where T1 = p.value;
-pvalue(p :: MParam{T1, IdentityMap}, j) where T1 = p.value[j];
+calibrated_value_user_facing(p :: MParam{T1, IdentityMap}) where T1 = p.value;
+default_value_user_facing(p :: MParam{T1, IdentityMap}) where T1 = p.defaultValue;
 # Not user facing (though the same here).
 default_value(p :: MParam{T1, IdentityMap}) where T1 = p.defaultValue;
+calibrated_value_only(p :: MParam{T1, IdentityMap}) where T1 = p.value;
+
+# pvalue(p :: MParam{T1, IdentityMap}) where T1 = p.value;
+# pvalue(p :: MParam{T1, IdentityMap}, j) where T1 = pvalue(p)[j];
 # pvalue(::IdentityMap, p :: MParam) = p.value;
 # pvalue(::IdentityMap, p :: MParam, j) = p.value[j];
 # default_value(::IdentityMap, p :: MParam) = p.defaultValue;
@@ -26,14 +42,20 @@ type_description(::IdentityMap) = "Array value";
 # one deviation normalized to 1
 # When constructing: first element is the base. Others are deviations.
 
-pvalue(p :: MParam{T1, BaseAndDeviationsMap}) where T1 =
-    [pvalue(p, j)  for j = 1 : length(p.value)];
+calibrated_value_user_facing(p :: MParam{T1, BaseAndDeviationsMap}) where T1 =
+    [calibrated_value_user_facing(p, j)  for j = 1 : length(p.value)];
 
-pvalue(p :: MParam{T1, BaseAndDeviationsMap}, j) where T1 = 
+calibrated_value_user_facing(p :: MParam{T1, BaseAndDeviationsMap}, j) where T1 = 
     base_and_dev_value(p.value, j);
+
+default_value_user_facing(p :: MParam{T1, BaseAndDeviationsMap}) where T1 = 
+    [default_value_user_facing(p, j) for j = 1 : length(p.defaultValue)];
+default_value_user_facing(p :: MParam{T1, BaseAndDeviationsMap}, j) where T1 = 
+    base_and_dev_value(p.defaultValue, j);
 
 # Not user facing
 default_value(p :: MParam{T1, BaseAndDeviationsMap}) where T1 = p.defaultValue;
+calibrated_value_only(p :: MParam{T1, BaseAndDeviationsMap}) where T1 = p.value;
     # [base_and_dev_value(p.defaultValue, j)  for j = 1 : length(p.defaultValue)];
 
 # pvalue(m :: BaseAndDeviationsMap, p :: MParam) =
@@ -60,20 +82,27 @@ type_description(::BaseAndDeviationsMap) = "Base and deviations";
 scalar_lb(iMap :: IncreasingMap) = iMap.lb;
 scalar_ub(iMap :: IncreasingMap) = iMap.ub;
 
-function pvalue(p :: MParam{T1, IncreasingMap{T2}}) where {T1, T2}
+function calibrated_value_user_facing(p :: MParam{T1, IncreasingMap{T2}}) where {T1, T2}
     iMap = pmeta(p); 
     return dx_to_values_increasing(p.value, scalar_lb(iMap), scalar_ub(iMap));
 end
 
-pvalue(p :: MParam{T1, IncreasingMap{T2}}, j) where {T1, T2} = 
-    pvalue(p)[j];
+# pvalue(p :: MParam{T1, IncreasingMap{T2}}, j) where {T1, T2} = 
+#     pvalue(p)[j];
+
+function default_value_user_facing(p :: MParam{T1, IncreasingMap{T2}}) where {T1, T2}
+    iMap = pmeta(p); 
+    return dx_to_values_increasing(p.defaultValue, scalar_lb(iMap), scalar_ub(iMap));
+end
 
 # Not user facing
-function default_value(p :: MParam{T1, IncreasingMap{T2}}) where {T1, T2}
-    return p.defaultValue
-    # iMap = pmeta(p); 
-    # return dx_to_values_increasing(p.defaultValue, scalar_lb(iMap), scalar_ub(iMap));
-end
+# function default_value(p :: MParam{T1, IncreasingMap{T2}}) where {T1, T2}
+#     return p.defaultValue
+#     # iMap = pmeta(p); 
+#     # return dx_to_values_increasing(p.defaultValue, scalar_lb(iMap), scalar_ub(iMap));
+# end
+
+# calibrated_value_only(p :: MParam{T1, IncreasingMap{T2}}) where {T1, T2} = p.value;
 
 type_description(::IncreasingMap) = "Increasing vector";
 
@@ -84,20 +113,26 @@ type_description(::IncreasingMap) = "Increasing vector";
 scalar_lb(iMap :: DecreasingMap) = iMap.lb;
 scalar_ub(iMap :: DecreasingMap) = iMap.ub;
 
-function pvalue(p :: MParam{T1, DecreasingMap{T2}}) where {T1, T2}
+function calibrated_value_user_facing(p :: MParam{T1, DecreasingMap{T2}}) where {T1, T2}
     iMap = pmeta(p);
     return dx_to_values_decreasing(p.value, scalar_lb(iMap), scalar_ub(iMap));
 end
 
-pvalue(p :: MParam{T1, DecreasingMap{T2}}, j) where {T1, T2} = 
-    pvalue(p)[j];
+function default_value_user_facing(p :: MParam{T1, DecreasingMap{T2}}) where {T1, T2}
+    iMap = pmeta(p);
+    return dx_to_values_decreasing(p.defaultValue, scalar_lb(iMap), scalar_ub(iMap));
+end
+
+# pvalue(p :: MParam{T1, DecreasingMap{T2}}, j) where {T1, T2} = 
+#     pvalue(p)[j];
 
 # Not user facing
-function default_value(p :: MParam{T1, DecreasingMap{T2}}) where {T1, T2}
-    return p.defaultValue;
-    # iMap = pmeta(p);
-    # return dx_to_values_decreasing(p.defaultValue, scalar_lb(iMap), scalar_ub(iMap));
-end
+# function default_value(p :: MParam{T1, DecreasingMap{T2}}) where {T1, T2}
+#     return p.defaultValue;
+#     # iMap = pmeta(p);
+#     # return dx_to_values_decreasing(p.defaultValue, scalar_lb(iMap), scalar_ub(iMap));
+# end
+
 
 # pvalue(iMap :: DecreasingMap, p :: MParam) = 
 #     dx_to_values_decreasing(p.value, scalar_lb(iMap), scalar_ub(iMap));
@@ -126,8 +161,10 @@ function pvalue(p :: MParam{T1, GroupedMap{T2}}, j :: Integer) where {T1, T2}
     g = get_group(m, j);
     if group_fixed(m, g)
         v = fixed_value(m, g);
-    else
+    elseif is_calibrated(p)
         v = group_calibrated_value(p, g);
+    else
+        v = group_default_value(p, g);
     end
     return v
 end
@@ -136,7 +173,7 @@ end
 default_value(p :: MParam{T1, GroupedMap{T1}}) where T1 = p.defaultValue;
 
 # Default value for one group. Nothing if that group is fixed.
-function group_default_value(p :: MParam{T1, GroupedMap{T1}}, g) where T1
+function group_default_value(p :: MParam{T1, GroupedMap{T2}}, g) where {T1, T2}
     m = pmeta(p);
     if group_fixed(m, g)
         return missing

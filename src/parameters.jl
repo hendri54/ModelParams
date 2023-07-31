@@ -59,13 +59,18 @@ end
 # """
 # value(p :: Param{F1}) where F1 = p.value;
 
-"""
-	$(SIGNATURES)
+# """
+# 	$(SIGNATURES)
 
-Retrieve value of a `Param`. User facing.
-"""
-pvalue(p :: Param) = p.value;
-pvalue(p :: Param, j) = p.value[j];
+# Retrieve value of a `Param`. User facing.
+# """
+# pvalue(p :: Param) = p.value;
+# pvalue(p :: Param, j) = p.value[j];
+
+calibrated_value_user_facing(p :: Param) = p.value;
+default_value_user_facing(p :: Param) = p.defaultValue;
+calibrated_value_only(p :: Param) = p.value;
+default_value(p :: Param) = p.defaultValue;
 
 # pvalue(::IdentityMap, p :: Param) = p.value;
 # pvalue(::IdentityMap, p :: Param, j) = p.value[j];

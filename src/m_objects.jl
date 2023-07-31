@@ -196,6 +196,7 @@ end
 	$(SIGNATURES)
 
 Change value of a field in a `ModelObject` and its `ParamVector`. `newValue` in internal units. Not user facing.
+Changes only the calibrated value, not the default value.
 
 # Example
 ```julia
