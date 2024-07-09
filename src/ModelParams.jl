@@ -10,7 +10,7 @@ module ModelParams
 import Base.show, Base.isempty, Base.isequal
 import Base.append!, Base.length, Base.getindex, Base.values
 import Random: AbstractRNG
-using ArgCheck, DataStructures, DocStringExtensions, Formatting, Infiltrator, Lazy, Parameters, PrettyTables, Random
+using ArgCheck, DataStructures, DocStringExtensions, Format, Infiltrator, Lazy, Parameters, PrettyTables, Random
 using ModelObjectsLH
 using EconometricsLH 
 
@@ -25,7 +25,7 @@ export LinearTransformation, transform_bounds, transform_param, untransform_para
 export AbstractParam, Param, make_param;
 export calibrated_lb, calibrated_ub, calibrated_value, is_calibrated;
 export set_calibrated_value!;
-export calibrate!, fix!, fix_values!, set_bounds!, set_default_value!, set_random_value!, update!, validate, default_value, pvalue;
+export calibrate!, fix!, set_bounds!, set_default_value!, set_random_value!, update!, validate, default_value, pvalue;
 export param_lb, param_ub, scalar_lb, scalar_ub;
 
 # ParamVector
@@ -42,7 +42,7 @@ export collect_pvectors, compare_params, check_params_match, report_param_differ
 export find_pvector, find_only_param, find_param, pvalue, set_calibrated_value!, make_guess, perturb_guess_vector, perturb_params, params_equal, validate;
 export has_pvector, get_pvector, get_switches, param_tables, latex_param_table
 export set_values_from_dicts!, sync_own_values!, sync_values!
-export IncreasingVector, values, set_pvector!
+export IncreasingVector, values;
 
 # ParamTable
 export ParamTable, get_symbol, get_description, get_values, set_row!, latex_param_table

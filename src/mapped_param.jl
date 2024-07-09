@@ -4,6 +4,9 @@ export MParam, make_mapped_param;
 	$(SIGNATURES)
 
 Constructor with keyword arguments.
+
+For grouped params:
+`defaultValue, lb, ub` are only provided for the groups that are not fixed.
 """
 function make_mapped_param(name :: Symbol, defaultValue :: T1, lb :: T1, ub :: T1,
         isCalibrated :: Bool;

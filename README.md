@@ -1,5 +1,10 @@
 # ModelParams.jl
 
+## Change Log 2024
+
+July 9
+- replaced Formatting.jl
+
 ## Change Log 2023
 
 July-31
@@ -26,6 +31,9 @@ Feb-2:
 - removed `value`; now always use `pvalue`
 
 ## Tasks
+
+`GroupedMap`
+need a convenient way of defining a map where one scalar is calibrated and applied to all group entries
 
 `IncreasingMap`
 Need a convenient way of constructing an `MParam` using it based on target values in levels.
