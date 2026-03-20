@@ -62,7 +62,7 @@ function vec1_test()
 end
 
 function array_test(p)
-    @testset "Mapped param $p" begin
+    @testset "Param $p" begin
         @test validate(p);
         @test short_description(p) isa String;
         @test size(calibrated_value(p)) == size(default_value(p));
@@ -78,8 +78,13 @@ function array_test(p)
         pVal = pvalue(p);
         calVal = calibrated_value(p);
         set_default_value!(p, calVal .- 0.1);
+        # Setting default value should not change calibrated value
         @test pvalue(p) == pVal;
+        # But it should change default value
         @test default_value(p) ≈ calVal .- 0.1;
+        # This test fails +++++
+        # Logic not clear. What should be returned when calibration status
+        # is turned off?
         fix!(p);
         @test !all(isapprox.(pvalue(p), pVal));
 
@@ -91,6 +96,9 @@ function array_test(p)
             end
         end
         
+        # This is necessary for CalVector. If all elements are fixed, there
+        # are no bounds to be set.
+        calibrate!(p);
         lbnd = calibrated_lb(p) .+ 0.1;
         ubnd = calibrated_ub(p) .+ 0.2;
         set_bounds!(p; lb = lbnd, ub = ubnd);
@@ -127,6 +135,9 @@ end
         # mdl.make_test_cal_array(:x, 2),
         mdl.make_test_bvector(:x; increasing = :increasing),
         mdl.make_test_bvector(:x; increasing = :decreasing),
+        # mdl.make_test_cal_vector(:all),
+        # mdl.make_test_cal_vector(:none),
+        # mdl.make_test_cal_vector(:some)
         )
         array_test(p);
     end

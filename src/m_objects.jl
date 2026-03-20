@@ -26,7 +26,7 @@ By default, ModelObjects are assumed to have `ParamVector`s.
 has_pvector(o :: ModelObject) = true;
 has_pvector(o) = false;
 
-function ModelObjectsLH.get_object_id(switches :: ModelSwitches)
+function CommonLH.get_object_id(switches :: ModelSwitches)
     if has_pvector(switches)
         return get_object_id(get_pvector(switches))
     else
@@ -146,7 +146,13 @@ function check_own_param_value(x, p, isCalibrated)
     else
         pValue = default_value(p);
     end
-    isValid = (calibrated_value(x, pName) ≈ pValue);
+    if ismissing(pValue)
+        # This happens when there are no calibrated values. Then default_value
+        # is also missing.
+        isValid = ismissing(calibrated_value(x, pName));
+    else
+        isValid = (calibrated_value(x, pName) ≈ pValue);
+    end
     if !isValid
         propValue = calibrated_value(x, pName);
         @warn "Invalid value: $pName: $pValue vs. $propValue";

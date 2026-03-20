@@ -11,7 +11,14 @@ import Base.show, Base.isempty, Base.isequal
 import Base.append!, Base.length, Base.getindex, Base.values
 import Random: AbstractRNG
 using ArgCheck, DataStructures, DocStringExtensions, Format, Infiltrator, Lazy, Parameters, PrettyTables, Random
-using ModelObjectsLH
+using CommonLH: SingleId, has_index, make_string, make_single_id,
+    ObjectId, make_object_id, make_child_id, own_name, n_parents, description,
+    ModelSwitches, ModelObject, is_model_object,
+    collect_model_objects, collect_model_objects_for_any, collect_object_ids,
+    get_child_objects, find_object, find_only_object,
+    object_structure, show_object_structure, ObjIdSeparator
+import CommonLH
+import CommonLH: get_object_id, get_value
 using EconometricsLH 
 
 # Mappings
@@ -23,7 +30,7 @@ export LinearTransformation, transform_bounds, transform_param, untransform_para
 
 # Parameters
 export AbstractParam, Param, make_param;
-export calibrated_lb, calibrated_ub, calibrated_value, is_calibrated;
+export calibrated_lb, calibrated_ub, calibrated_value, is_calibrated, n_calibrated;
 export set_calibrated_value!;
 export calibrate!, fix!, set_bounds!, set_default_value!, set_random_value!, update!, validate, default_value, pvalue;
 export param_lb, param_ub, scalar_lb, scalar_ub;
@@ -78,6 +85,7 @@ include("transformations.jl");
 
 include("abstract_params.jl");
 include("parameters.jl");
+# include("cal_vector.jl");
 include("mappings.jl");
 include("mapped_param.jl");
 include("param_vector.jl");

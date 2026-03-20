@@ -1,4 +1,5 @@
-using Test, ModelObjectsLH,  ModelParams
+using CommonLH: ObjectId, ModelObject, ModelSwitches, SingleId, make_object_id, make_child_id, own_name, make_string, ObjIdSeparator, get_object_id, is_model_object, collect_model_objects, collect_model_objects_for_any, collect_object_ids, get_child_objects, find_object, find_only_object, get_value, object_structure, show_object_structure, has_index, make_single_id, n_parents, description
+using Test, ModelParams
 
 ## Parameter vector test
 import ModelParams.get_pvector
@@ -54,7 +55,7 @@ function pvectorTest()
 end
 
 
-function set_status_test()
+function pvector_set_status_test()
     @testset "Set status" begin
         n = 7;
         pvec = mdl.make_test_pvector(n);
@@ -124,7 +125,7 @@ function pvectorDictTest()
 end
 
 
-function set_values_test()
+function pvector_set_values_test()
     @testset "Set values" begin
         isCalibrated = true;
         nParams = 7;
@@ -204,7 +205,7 @@ function get_pvector_test()
 end
 
 
-function report_test()
+function pvector_report_test()
     @testset "Pvector reporting" begin
         pv = mdl.make_test_pvector(9);
 
@@ -237,12 +238,12 @@ end
 
 @testset "ParamVector" begin
     pvectorTest();
-    set_status_test();
+    pvector_set_status_test();
     iter_test()
     get_pvector_test()
     pvectorDictTest()
-    set_values_test()
-    report_test()
+    pvector_set_values_test()
+    pvector_report_test()
 end
 
 # -------------

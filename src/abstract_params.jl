@@ -44,7 +44,8 @@ end
 """
 	$(SIGNATURES)
 
-User facing version of calibrated value. Returns the calibrated value even if the parameter is fixed.
+User facing version of calibrated value. Returns the calibrated value even if the parameter is fixed. If some values are fixed, their calibrated values are still returned.
+Transformations from internal representation into user facing values is applied.
 """
 calibrated_value_user_facing(p :: AbstractParam) = p.value;
 
@@ -54,6 +55,7 @@ default_value_user_facing(p :: AbstractParam) = p.defaultValue;
 	$(SIGNATURES)
 
 Always returns calibrated value, even if param is fixed. NOT user facing.
+Transformations into user facing values NOT applied.
 """
 calibrated_value_only(p :: AbstractParam) = p.value;
 
@@ -78,7 +80,9 @@ pvalue(p :: AbstractParam, j) = pvalue(p)[j];
 	$(SIGNATURES)
 
 Default value of a parameter that is used when not calibrated.
-Returns the values that could be calibrated. NOT user facing.
+Returns the values that could be calibrated; and only those elements.
+NOT user facing.
+missing if no values can be calibrated.
 """
 default_value(p :: AbstractParam) = p.defaultValue;
 

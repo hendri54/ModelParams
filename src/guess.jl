@@ -217,7 +217,14 @@ Make vector of guesses into model parameters. For object and children.
 This changes the values in `m` and in its `pvector`.
 """
 function set_params_from_guess!(m :: ModelObject, guess :: Guess{F1},
-    guessV :: AbstractVector{F1}) where F1
+        guessV :: AbstractVector{F1}) where F1
+
+    _, nElem = n_calibrated_params(m; isCalibrated = true);
+    if length(guessV) != nElem
+        error("Wrong length of guess vector: ", length(guessV),
+            "\n No of calibrated param values: $nElem");
+    end
+
     objV = collect_model_objects(m);
     # Copy param vectors into model
     for obj in objV 

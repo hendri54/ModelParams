@@ -1,5 +1,19 @@
 # ModelParams.jl
 
+## Change Log 2025
+
+July 12
+
+- `set_params_from_guess!` checks that guess has correct length.
+
+July 2
+
+- removed CalVector. Important reason: The set of potentially calibrated parameters must be fixed. Otherwise, setting default values, calibrated values, and copying params from one object to another is not possible.
+
+June 30
+
+- added CalVector (v5)
+
 ## Change Log 2024
 
 July 9

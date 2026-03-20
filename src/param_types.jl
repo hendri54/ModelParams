@@ -20,6 +20,25 @@ mutable struct Param{T1 <: Any} <: AbstractParam
 end
 
 
+# """
+#     CalVector
+
+# Vector where some elements are calibrated; others are fixed.
+# Default values for all elements are stored.
+# """
+# mutable struct CalVector{T1} <: AbstractParam
+#     name :: Symbol
+#     description :: String
+#     symbol :: String
+#     value :: Vector{T1}
+#     defaultValue :: Vector{T1}
+#     "Value bounds"
+#     lb :: Vector{T1}
+#     ub :: Vector{T1}
+#     isCalibrated :: Vector{Bool}
+# end
+
+
 """
 	$(SIGNATURES)
 

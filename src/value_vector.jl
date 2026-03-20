@@ -1,4 +1,6 @@
 ## ------------  ParamInfo
+# Usually stores transformed values and bounds of the transformation.
+
 
 export ParamInfo
 # export set_value!
