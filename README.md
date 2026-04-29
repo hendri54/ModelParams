@@ -1,5 +1,10 @@
 # ModelParams.jl
 
+## Change Log 2026
+
+Apr 13
+- dev EconometricsLH (to update CategoricalArrays) (v5.1)
+
 ## Change Log 2025
 
 July 12
